@@ -4,152 +4,183 @@ En esta clase mejoras y fortaleces tus automatizaciones para que sean más rápi
 
 ---
 
-## 🧠 Qué vas a aprender 
+## 🎯 Objetivo de la clase
 
-- Cómo optimizar workflows existentes  
-- Reducción de errores y fallos  
-- Manejo de grandes volúmenes de datos  
-- Estrategias de escalabilidad  
-- Monitoreo y logging  
-- Mejora del rendimiento  
+Optimizar workflows existentes para que funcionen de forma eficiente, estable y escalable en entornos reales.
 
 ---
 
-## ⚙️ Conceptos clave 
+## 🚨 Problema
+
+Muchas automatizaciones:
+
+* Funcionan, pero son lentas
+* Fallan ante errores
+* No escalan con más datos
+
+👉 Resultado: sistemas inestables que no sirven en producción.
+
+---
+
+## 💡 Enfoque de esta clase
+
+Pasar de **automatizaciones funcionales → sistemas listos para producción**.
+
+---
+
+## 🧠 Qué vas a aprender
+
+* Cómo optimizar workflows existentes
+* Reducción de errores y fallos
+* Manejo de grandes volúmenes de datos
+* Estrategias de escalabilidad
+* Monitoreo y logging
+* Mejora del rendimiento
+
+---
+
+## ⚙️ Conceptos clave
 
 ### 🔸 Optimización
-Mejorar un sistema para que use menos recursos y funcione más rápido.
+
+Mejorar rendimiento y eficiencia del sistema.
 
 ### 🔸 Escalabilidad
-Capacidad de un sistema para manejar más carga sin perder rendimiento.
+
+Capacidad de manejar más carga sin fallar.
 
 ### 🔸 Logging
-Registro de lo que ocurre en un sistema para análisis y debugging.
+
+Registro de eventos para análisis.
 
 ### 🔸 Manejo de errores
-Estrategias para evitar que un flujo falle completamente.
+
+Evitar fallos completos del sistema.
 
 ---
 
-## 🛠️ Ejercicio práctico 
+## 🛠️ Ejercicio práctico
 
 ### 🚀 Caso: Optimizar un sistema existente
 
-**Objetivo:**  
-Tomar uno de los workflows anteriores (leads, CRM, operaciones o IA) y:
+**Objetivo:**
+Tomar un workflow previo y:
 
-- Mejorarlo  
-- Hacerlo más eficiente  
-- Prepararlo para producción  
+* Mejorarlo
+* Hacerlo más eficiente
+* Prepararlo para producción
 
 ---
 
-## 🧩 Flujo del sistema 
+## 🧩 Flujo del sistema
 
 1. **Trigger**
-   - Flujo existente  
+
+   * Flujo existente
 
 2. **Optimización**
-   - Reducir pasos innecesarios  
+
+   * Reducir pasos innecesarios
 
 3. **Control de errores**
-   - Manejo de fallos  
+
+   * Manejo de fallos
 
 4. **Logging**
-   - Registrar eventos  
+
+   * Registrar eventos
 
 5. **Mejoras**
-   - Ajustes de rendimiento  
+
+   * Ajustes de rendimiento
 
 ---
 
-## 📌 Pasos 
+## 📌 Pasos
 
-1. Elegir un workflow existente  
-2. Identificar puntos lentos o innecesarios  
-3. Simplificar estructura del flujo  
-4. Agregar manejo de errores (Try/Catch o rutas alternativas)  
-5. Implementar logging (guardar eventos clave)  
-6. Optimizar uso de nodos  
-7. Probar con múltiples escenarios  
-8. Medir resultados  
+1. Elegir un workflow
+2. Identificar cuellos de botella
+3. Simplificar flujo
+4. Añadir manejo de errores
+5. Implementar logging
+6. Optimizar nodos
+7. Probar escenarios
+8. Medir resultados
 
 ---
 
-## 📧 Ejemplo 
+## 📧 Ejemplo
 
 ### 🔹 Antes
 
-- Flujo con pasos duplicados  
-- Sin validaciones  
-- Sin manejo de errores  
+* Flujo duplicado
+* Sin validaciones
+* Sin manejo de errores
 
 ### 🔹 Después
 
-- Flujo simplificado  
-- Validaciones incluidas  
-- Manejo de errores activo  
-- Registro de actividad  
+* Flujo optimizado
+* Validaciones activas
+* Manejo de errores
+* Logging implementado
 
 ---
 
-## 📦 Entregable 
+## 📦 Entregable
 
-✅ Un sistema que:
+✅ Sistema que:
 
-- Está optimizado y simplificado  
-- Maneja errores correctamente  
-- Registra eventos importantes  
-- Es más rápido y estable  
-
----
-
-## 🧪 Buenas prácticas 
-
-- Mantener workflows simples  
-- Reutilizar nodos cuando sea posible  
-- Validar datos en cada etapa crítica  
-- Registrar errores y eventos  
-- Probar con diferentes volúmenes de datos  
+* Está optimizado
+* Maneja errores
+* Registra eventos
+* Es estable y rápido
 
 ---
 
-## ⚠️ Errores comunes 
+## 🧪 Buenas prácticas
 
-- Automatizaciones demasiado complejas  
-- No manejar errores  
-- No medir rendimiento  
-- Duplicar lógica innecesariamente  
-- Ignorar logs  
-
----
-
-## 🧩 Bonus (nivel pro) 
-
-- Sistema de alertas automáticas (cuando algo falla)  
-- Dashboards de monitoreo  
-- Reintentos automáticos  
-- Modularización de workflows  
-- Versionado de automatizaciones  
+* Mantener flujos simples
+* Reutilizar lógica
+* Validar datos
+* Registrar eventos clave
+* Probar con volumen
 
 ---
 
-## 🚀 Resultado esperado 
+## ⚠️ Errores comunes
+
+* Complejidad innecesaria
+* No manejar errores
+* No medir rendimiento
+* Duplicar lógica
+* Ignorar logs
+
+---
+
+## 🧩 Bonus (nivel pro)
+
+* Alertas automáticas
+* Dashboards de monitoreo
+* Reintentos automáticos
+* Modularización
+* Versionado de workflows
+
+---
+
+## 🚀 Resultado esperado
 
 Al finalizar esta clase tendrás:
 
-- Automatizaciones optimizadas y listas para producción  
-- Sistemas más rápidos y confiables  
-- Base para escalar proyectos reales  
+* Automatizaciones listas para producción
+* Sistemas estables
+* Flujos escalables
 
 ---
 
-## 📌 Siguiente paso 
+## 📌 Siguiente paso
 
-Crear, documentar y presentar tu **proyecto final optimizado**, listo para:
+👉 Crear proyecto final
+👉 Documentarlo
+👉 Prepararlo para clientes o portafolio
 
-- Portafolio  
-- Clientes  
-- Producto digital  
-
-🚀 Este es el punto donde pasas de aprender → a construir algo vendible.
+🚀 Pasas de optimización → a producto real

@@ -8,36 +8,58 @@ En esta clase transformas tu sistema de leads en un **mini CRM automatizado**, c
 
 Construir un sistema que no solo capture leads, sino que también:
 
-- Les haga seguimiento automático  
-- Los clasifique según su estado  
-- Mantenga comunicación activa  
+* Les haga seguimiento automático
+* Los clasifique según su estado
+* Mantenga comunicación activa
+
+---
+
+## 🚨 Problema
+
+Capturar leads no es suficiente:
+
+* No hay seguimiento
+* Se pierden oportunidades
+* No existe organización
+
+👉 Resultado: leads que nunca se convierten en clientes.
+
+---
+
+## 💡 Enfoque de esta clase
+
+Pasar de **captura de leads → gestión inteligente de clientes**.
 
 ---
 
 ## 🧠 Qué vas a aprender
 
-- Qué es un CRM y cómo estructurarlo
-- Automatización de seguimiento
-- Envío de emails automatizados
-- Clasificación de leads (pipeline)
-- Gestión del ciclo de vida del cliente
+* Qué es un CRM y cómo estructurarlo
+* Automatización de seguimiento
+* Envío de emails automatizados
+* Clasificación de leads (pipeline)
+* Gestión del ciclo de vida del cliente
 
 ---
 
 ## ⚙️ Conceptos clave
 
 ### 🔸 CRM (Customer Relationship Management)
+
 Sistema para gestionar la relación con clientes y leads.
 
 ### 🔸 Pipeline
-Etapas por las que pasa un lead, por ejemplo:
-- Nuevo
-- Contactado
-- Interesado
-- Cliente
+
+Etapas del lead:
+
+* Nuevo
+* Contactado
+* Interesado
+* Cliente
 
 ### 🔸 Follow-up
-Seguimiento automático para mantener el contacto con el lead.
+
+Seguimiento automático para mantener el contacto.
 
 ---
 
@@ -45,96 +67,105 @@ Seguimiento automático para mantener el contacto con el lead.
 
 ### 🚀 Caso: Seguimiento automático de leads
 
-**Objetivo:**  
+**Objetivo:**
 Después de capturar un lead, el sistema:
 
-1. Lo guarda  
-2. Lo clasifica  
-3. Le envía un mensaje automático  
-4. Programa un seguimiento  
+1. Lo guarda
+2. Lo clasifica
+3. Envía mensaje automático
+4. Programa seguimiento
 
 ---
 
 ## 🧩 Flujo del sistema
 
 1. **Trigger**
-   - Lead capturado (desde clase anterior)
+
+   * Lead capturado
 
 2. **Clasificación**
-   - Asignar estado: "Nuevo"
+
+   * Estado: "Nuevo"
 
 3. **Acción 1**
-   - Guardar o actualizar en base de datos (Sheets / Airtable / CRM)
+
+   * Guardar en base de datos
 
 4. **Acción 2**
-   - Enviar email automático de bienvenida
+
+   * Email de bienvenida
 
 5. **Delay**
-   - Esperar (ej: 1 día)
+
+   * Espera (ej: 1 día)
 
 6. **Acción 3**
-   - Enviar seguimiento
+
+   * Seguimiento
 
 ---
 
 ## 📌 Pasos
 
-1. Reutilizar el workflow de leads  
-2. Agregar campo de estado (pipeline)  
-3. Configurar nodo de email (SMTP, Gmail, etc.)  
-4. Crear mensaje automático  
-5. Agregar nodo de espera (Delay)  
-6. Configurar segundo mensaje  
-7. Probar todo el flujo completo  
+1. Reutilizar workflow de leads
+2. Agregar campo de estado
+3. Configurar email
+4. Crear mensaje automático
+5. Agregar delay
+6. Configurar seguimiento
+7. Probar flujo completo
 
 ---
 
-## 📧 Ejemplo de email automático
+## 📧 Ejemplo
 
-**Asunto:** Gracias por tu interés  
+### 🔹 Email automático
+
+**Asunto:** Gracias por tu interés
 
 **Mensaje:**
 
-Hola {{nombre}},  
-Gracias por contactarnos. Hemos recibido tu información y pronto estaremos en contacto contigo.  
+Hola {{nombre}},
+Gracias por contactarnos. Hemos recibido tu información y pronto estaremos en contacto contigo.
 
 ---
 
 ## 📦 Entregable
 
-✅ Un sistema que:
+✅ Sistema que:
 
-- Gestiona leads en un pipeline  
-- Envía al menos 1 email automático  
-- Realiza seguimiento después de un tiempo  
-- Mantiene los datos actualizados  
+* Gestiona leads en pipeline
+* Envía email automático
+* Hace seguimiento
+* Mantiene datos actualizados
 
 ---
 
 ## 🧪 Buenas prácticas
 
-- Personalizar mensajes con variables  
-- No enviar spam (espaciar comunicaciones)  
-- Usar estados claros en el pipeline  
-- Probar cada etapa del flujo  
+* Personalizar mensajes
+* Espaciar comunicaciones
+* Usar estados claros
+* Probar cada etapa
+* Mantener lógica simple
 
 ---
 
 ## ⚠️ Errores comunes
 
-- No configurar correctamente el email  
-- No usar delays correctamente  
-- Enviar mensajes sin personalización  
-- No actualizar el estado del lead  
+* Email mal configurado
+* No usar delays correctamente
+* Mensajes genéricos
+* No actualizar estado del lead
 
 ---
 
 ## 🧩 Bonus (nivel pro)
 
-- Múltiples etapas de seguimiento  
-- Integración con herramientas como HubSpot o Notion  
-- Automatizar cambio de estado según comportamiento  
-- Crear secuencias completas de emails  
+* Secuencias de múltiples emails
+* Integración con HubSpot o Notion
+* Cambio automático de estado
+* Automatización basada en comportamiento
 
 ---
 
@@ -142,12 +173,15 @@ Gracias por contactarnos. Hemos recibido tu información y pronto estaremos en c
 
 Al finalizar esta clase tendrás:
 
-- Un **mini CRM automatizado funcionando**
-- Seguimiento automático de leads
-- Base para automatizar ventas y comunicación
+* Un **mini CRM automatizado funcionando**
+* Seguimiento automático
+* Base para automatizar ventas
 
 ---
 
 ## 📌 Siguiente paso
 
-En la siguiente clase construirás **automatizaciones inteligentes con lógica condicional y decisiones automáticas (IF, filtros, ramas)**.
+👉 Automatizaciones con lógica condicional
+👉 Flujos que toman decisiones automáticamente
+
+🚀 Pasas de seguimiento → a inteligencia

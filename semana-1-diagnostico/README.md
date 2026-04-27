@@ -1,4 +1,6 @@
-# 🧠 Semana 1 — Diagnóstico Estratégico de Automatización e instalacion de N8N
+# 🧠 Semana 1 — Diagnóstico Estratégico de Automatización e Instalación de n8n
+
+---
 
 ## 🎯 Objetivo
 
@@ -26,6 +28,36 @@ Antes de automatizar, necesitas **pensar como sistema**:
 2. Identificar cuellos de botella
 3. Medir impacto vs esfuerzo
 4. Priorizar correctamente
+
+---
+
+## 🧠 Qué vas a aprender
+
+* Cómo identificar procesos automatizables dentro de un negocio
+* Pensamiento sistémico aplicado a automatización
+* Cómo detectar cuellos de botella reales
+* Priorizar automatizaciones con impacto
+* Crear un diagnóstico antes de usar herramientas
+
+---
+
+## ⚙️ Conceptos clave
+
+### 🔸 Automatización estratégica
+
+Automatizar procesos que generan impacto real en el negocio.
+
+### 🔸 Cuello de botella
+
+Punto donde el proceso se ralentiza o depende de intervención manual.
+
+### 🔸 Impacto vs esfuerzo
+
+Método para decidir qué automatizar primero.
+
+### 🔸 Proceso repetitivo
+
+Tarea que ocurre frecuentemente y sigue una estructura similar.
 
 ---
 
@@ -60,8 +92,6 @@ Preguntas clave:
 
 ### 3. Matriz Impacto vs Esfuerzo
 
-Clasifica cada proceso:
-
 | Proceso        | Impacto | Esfuerzo | Prioridad |
 | -------------- | ------- | -------- | --------- |
 | Leads manuales | Alto    | Bajo     | 🔥 Alta   |
@@ -78,6 +108,74 @@ Selecciona 1–3 procesos para automatizar primero.
 
 ---
 
+## 🛠️ Ejercicio práctico
+
+### 🚀 Diagnóstico de un negocio real o propio
+
+**Objetivo:**
+Identificar oportunidades reales de automatización.
+
+**Instrucciones:**
+
+1. Lista mínimo 5 procesos
+2. Identifica los repetitivos
+3. Detecta cuellos de botella
+4. Clasifica (impacto vs esfuerzo)
+5. Selecciona 3 prioritarios
+
+---
+
+## 🧩 Flujo del sistema
+
+1. **Entrada**
+
+   * Procesos del negocio
+
+2. **Análisis**
+
+   * Tareas repetitivas
+
+3. **Evaluación**
+
+   * Impacto vs esfuerzo
+
+4. **Salida**
+
+   * Automatizaciones priorizadas
+
+---
+
+## 📌 Pasos
+
+1. Elegir un negocio
+2. Listar procesos
+3. Detectar tareas repetitivas
+4. Identificar fricción
+5. Clasificar procesos
+6. Priorizar
+7. Documentar
+
+---
+
+## 📧 Ejemplo
+
+### 🔹 Antes (manual)
+
+* Cliente llena formulario
+* Equipo revisa correo
+* Copia datos a Excel
+* Responde manualmente
+
+### 🔹 Después (automatizado)
+
+* Formulario → captura automática
+* Datos → guardados en sistema
+* Respuesta → automática
+
+👉 Este análisis es el puente hacia la automatización.
+
+---
+
 ## 🧪 Caso Real — Empresa de Servicios
 
 ### Contexto
@@ -90,54 +188,52 @@ Empresa que recibe leads desde:
 
 ### Problema
 
-* Leads se responden manualmente
-* No hay seguimiento
-* Se pierden clientes
+* Respuestas manuales
+* Sin seguimiento
+* Pérdida de clientes
 
-### Oportunidad detectada
+### Oportunidad
 
 Automatizar:
 
 1. Captura de leads
-2. Registro en base de datos
+2. Registro
 3. Respuesta automática
-4. Clasificación de cliente
+4. Clasificación
 
 ---
 
-## 📦 Entregable de la Semana
+## 📦 Entregable
 
-Documento o tablero con:
+✔ Documento o tablero con:
 
-✔ Lista de procesos
-✔ Cuellos de botella identificados
-✔ Matriz impacto vs esfuerzo
-✔ 3 oportunidades priorizadas
+* Lista de procesos
+* Cuellos de botella
+* Matriz impacto vs esfuerzo
+* 3 automatizaciones priorizadas
 
 ---
 
 ## 🛠️ Herramientas recomendadas
 
-* Notion / Google Sheets → análisis
-* Miro / FigJam → mapas de procesos
-* n8n → (se empieza en semana 2)
+* Notion / Google Sheets
+* Miro / FigJam
+* n8n (desde semana 2)
 
 ---
 
 ## 🎥 Video del módulo
 
-👉 Explicación del diagnóstico paso a paso
-👉 Ejemplo real aplicado
+👉 Explicación paso a paso
+👉 Caso real aplicado
 
 [Agregar link aquí]
 
 ---
 
-## 📌 Plantilla sugerida (usar en templates)
+## 📌 Plantilla sugerida
 
-Crea un archivo en `/templates`:
-
-**diagnostico-automatizacion.xlsx**
+Archivo: `/templates/diagnostico-automatizacion.xlsx`
 
 Columnas:
 
@@ -151,6 +247,16 @@ Columnas:
 
 ---
 
+## 🧪 Buenas prácticas
+
+* Pensar en procesos, no herramientas
+* Priorizar impacto
+* Mantener análisis simple
+* Validar con casos reales
+* Documentar todo
+
+---
+
 ## ⚠️ Errores comunes
 
 * Automatizar sin diagnóstico
@@ -160,12 +266,30 @@ Columnas:
 
 ---
 
+## 🧩 Bonus (nivel pro)
+
+* Mapear procesos completos
+* Calcular tiempo ahorrado
+* Estimar ROI
+* Crear roadmap por fases
+
+---
+
 ## 🚀 Resultado esperado
 
 Al finalizar esta semana tendrás:
 
-👉 Claridad total de qué automatizar
-👉 Un roadmap inicial
-👉 Base para tu primer workflow en n8n
+* Diagnóstico claro
+* Procesos priorizados
+* Base para workflows
+* Mentalidad estratégica
 
+---
 
+## 📌 Siguiente paso
+
+👉 Instalar n8n
+👉 Aprender su funcionamiento
+👉 Crear tu primer flujo
+
+🚀 Pasas de análisis → a ejecución

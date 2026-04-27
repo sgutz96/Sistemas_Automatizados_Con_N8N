@@ -4,164 +4,199 @@ En esta clase construyes un sistema completo integrando todo lo aprendido: autom
 
 ---
 
-## 🧠 Qué vas a aprender 
+## 🎯 Objetivo de la clase
 
-- Cómo diseñar un sistema end-to-end  
-- Integración de múltiples workflows  
-- Pensamiento de producto (no solo automatización)  
-- Cómo estructurar soluciones reales para clientes  
-- Documentación y presentación de proyectos  
+Diseñar y construir un sistema end-to-end funcional que resuelva un problema real utilizando automatización avanzada.
 
 ---
 
-## ⚙️ Conceptos clave 
+## 🚨 Problema
+
+Muchos proyectos:
+
+* No están conectados entre sí
+* No resuelven un problema completo
+* No están listos para producción
+
+👉 Resultado: proyectos incompletos que no generan valor real.
+
+---
+
+## 💡 Enfoque de esta clase
+
+Pasar de **automatizaciones aisladas → sistema completo tipo producto**.
+
+---
+
+## 🧠 Qué vas a aprender
+
+* Cómo diseñar un sistema end-to-end
+* Integración de múltiples workflows
+* Pensamiento de producto
+* Cómo estructurar soluciones reales
+* Documentación y presentación
+
+---
+
+## ⚙️ Conceptos clave
 
 ### 🔸 Sistema completo
-Conjunto de automatizaciones conectadas que resuelven un problema real.
+
+Automatizaciones conectadas que resuelven un problema real.
 
 ### 🔸 Integración
-Unión de diferentes herramientas (APIs, CRM, IA, etc.).
+
+Conexión de APIs, CRM, IA y más.
 
 ### 🔸 Flujo end-to-end
-Proceso completo desde la entrada de datos hasta el resultado final.
+
+Proceso completo desde entrada hasta resultado.
 
 ### 🔸 Producto automatizado
-Sistema listo para ser usado o vendido.
+
+Sistema listo para uso o venta.
 
 ---
 
-## 🛠️ Ejercicio práctico 
+## 🛠️ Ejercicio práctico
 
 ### 🚀 Caso: Sistema automatizado de gestión de clientes
 
-**Objetivo:**  
+**Objetivo:**
 Construir un sistema que:
 
-- Capture leads  
-- Los gestione en un CRM  
-- Automatice seguimiento  
-- Tome decisiones (operaciones)  
-- Use APIs externas  
-- Integre IA para análisis y respuestas  
+* Capture leads
+* Gestione CRM
+* Automatice seguimiento
+* Tome decisiones
+* Use APIs
+* Integre IA
 
 ---
 
-## 🧩 Flujo del sistema 
+## 🧩 Flujo del sistema
 
-1. **Captura de lead**
-   - Webhook / formulario  
+1. **Captura**
+
+   * Webhook / formulario
 
 2. **Validación**
-   - Limpieza de datos  
+
+   * Limpieza de datos
 
 3. **CRM**
-   - Registro y estado del lead  
+
+   * Registro y estado
 
 4. **Automatización**
-   - Envío de emails  
+
+   * Emails
 
 5. **IA**
-   - Clasificación o generación de respuesta  
+
+   * Clasificación
 
 6. **Operaciones**
-   - Decisiones según comportamiento  
+
+   * Decisiones
 
 7. **API**
-   - Integraciones externas  
+
+   * Integraciones
 
 8. **Optimización**
-   - Logging y control de errores  
+
+   * Logging y errores
 
 ---
 
-## 📌 Pasos 
+## 📌 Pasos
 
-1. Definir el problema a resolver  
-2. Diseñar el flujo completo (mapa del sistema)  
-3. Crear workflows separados (modular)  
-4. Conectar todos los componentes  
-5. Integrar IA en puntos clave  
-6. Agregar APIs externas  
-7. Implementar lógica condicional  
-8. Añadir logging y manejo de errores  
-9. Probar el sistema completo  
-10. Documentar el proyecto  
-
----
-
-## 📧 Ejemplo 
-
-### 🔹 Caso real
-
-Un usuario deja sus datos →  
-El sistema lo guarda →  
-Recibe un email →  
-La IA clasifica su intención →  
-Se asigna a ventas o soporte →  
-Se hace seguimiento automático →  
-Se registra toda la actividad  
+1. Definir problema
+2. Diseñar sistema
+3. Crear workflows modulares
+4. Conectar componentes
+5. Integrar IA
+6. Agregar APIs
+7. Implementar lógica
+8. Añadir logging
+9. Probar sistema
+10. Documentar
 
 ---
 
-## 📦 Entregable 
+## 📧 Ejemplo
 
-✅ Un sistema completo que:
+### 🔹 Flujo real
 
-- Integra múltiples workflows  
-- Automatiza un proceso real  
-- Usa IA y APIs  
-- Está optimizado y documentado  
-- Funciona de principio a fin  
-
----
-
-## 🧪 Buenas prácticas 
-
-- Pensar en el usuario final  
-- Diseñar antes de construir  
-- Mantener workflows modulares  
-- Documentar cada parte  
-- Probar escenarios reales  
+Usuario deja datos →
+Se guarda →
+Recibe email →
+IA clasifica →
+Se asigna →
+Seguimiento automático →
+Registro completo
 
 ---
 
-## ⚠️ Errores comunes 
+## 📦 Entregable
 
-- Intentar hacer todo en un solo workflow  
-- No planificar el sistema  
-- No probar completamente  
-- Falta de manejo de errores  
-- No documentar  
+✅ Sistema que:
 
----
-
-## 🧩 Bonus (nivel pro) 
-
-- Convertir el sistema en un producto SaaS  
-- Crear dashboard de monitoreo  
-- Integración con múltiples canales (email, WhatsApp, CRM)  
-- Sistema multi-cliente  
-- Plantilla reutilizable para vender  
+* Integra workflows
+* Automatiza proceso real
+* Usa IA y APIs
+* Está optimizado
+* Está documentado
+* Funciona end-to-end
 
 ---
 
-## 🚀 Resultado esperado 
+## 🧪 Buenas prácticas
+
+* Diseñar antes de construir
+* Mantener modularidad
+* Pensar en usuario final
+* Documentar todo
+* Probar escenarios reales
+
+---
+
+## ⚠️ Errores comunes
+
+* Un solo workflow gigante
+* Falta de planificación
+* No probar completo
+* No manejar errores
+* No documentar
+
+---
+
+## 🧩 Bonus (nivel pro)
+
+* Convertir en SaaS
+* Dashboard de monitoreo
+* Multi-canal (email, WhatsApp, CRM)
+* Multi-cliente
+* Plantilla vendible
+
+---
+
+## 🚀 Resultado esperado
 
 Al finalizar esta clase tendrás:
 
-- Un **sistema completo funcional**
-- Proyecto listo para portafolio  
-- Base para ofrecer servicios o crear producto  
+* Un **sistema completo funcional**
+* Proyecto listo para portafolio
+* Base para servicio o producto
 
 ---
 
-## 📌 Siguiente paso 
+## 📌 Siguiente paso
 
-Llevar tu proyecto al siguiente nivel:
+👉 Publicar en GitHub
+👉 Crear demo
+👉 Ofrecer como servicio
+👉 Convertir en producto
 
-- Publicarlo (GitHub + documentación)  
-- Crear demo o video  
-- Ofrecerlo como servicio  
-- Convertirlo en producto digital  
-
-🚀 Aquí es donde pasas de aprender → a generar valor real.
+🚀 Pasas de proyecto → a negocio real

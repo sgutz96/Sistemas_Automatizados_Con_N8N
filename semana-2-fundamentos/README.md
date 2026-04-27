@@ -1,5 +1,7 @@
 # ⚙️ Semana 2 — Fundamentos Aplicados de n8n
 
+---
+
 ## 🎯 Objetivo
 
 Construir el primer workflow funcional en n8n, entendiendo la lógica básica de automatización: **trigger → procesamiento → acción**.
@@ -22,6 +24,36 @@ Muchas personas:
 
 Aquí no aprendes n8n completo.
 Aprendes lo suficiente para **hacer que algo funcione hoy**.
+
+---
+
+## 🧠 Qué vas a aprender
+
+* Cómo funciona n8n a nivel práctico
+* La estructura base de cualquier automatización
+* Cómo usar triggers, nodos y acciones
+* Cómo conectar pasos dentro de un workflow
+* Cómo probar y validar automatizaciones
+
+---
+
+## ⚙️ Conceptos clave
+
+### 🔸 Workflow
+
+Flujo de automatización compuesto por nodos conectados.
+
+### 🔸 Trigger
+
+Evento que inicia el flujo (ej: webhook).
+
+### 🔸 Nodo
+
+Unidad que procesa o transforma datos.
+
+### 🔸 Acción
+
+Resultado ejecutado por el sistema (ej: enviar respuesta).
 
 ---
 
@@ -71,6 +103,22 @@ Ejecutan tareas:
 
 ---
 
+## 🛠️ Ejercicio práctico
+
+### 🚀 Crear tu primer workflow funcional
+
+**Objetivo:**
+Construir un flujo que reciba datos y responda automáticamente.
+
+**Instrucciones:**
+
+1. Crear un webhook
+2. Recibir datos (nombre y email)
+3. Procesarlos
+4. Enviar una respuesta automática
+
+---
+
 ## 🧪 Caso práctico — Primer Workflow Real
 
 ### 🎯 Objetivo
@@ -92,6 +140,36 @@ Simular la captura de un lead y procesarlo automáticamente.
 * Se elimina el proceso manual
 * Se valida la lógica de automatización
 * Base lista para escalar en semana 3
+
+---
+
+## 🧩 Flujo del sistema
+
+1. **Entrada**
+
+   * Webhook recibe datos
+
+2. **Procesamiento**
+
+   * Nodo SET organiza la información
+
+3. **Salida**
+
+   * Respuesta automática
+
+---
+
+## 📌 Pasos
+
+1. Crear un nuevo workflow en n8n
+2. Agregar nodo Webhook
+3. Configurar método POST
+4. Añadir nodo SET
+5. Definir campos (name, email)
+6. Agregar nodo de respuesta
+7. Conectar nodos
+8. Ejecutar el flujo
+9. Probar con datos reales
 
 ---
 
@@ -121,6 +199,38 @@ Responder con mensaje:
 
 ---
 
+## 📧 Ejemplo
+
+### 🔹 Input
+
+```json
+{
+  "name": "Carlos",
+  "email": "carlos@email.com"
+}
+```
+
+### 🔹 Output
+
+```json
+{
+  "message": "Lead recibido correctamente"
+}
+```
+
+---
+
+## 📦 Entregable
+
+✔ Un workflow que:
+
+* Recibe datos
+* Procesa información
+* Devuelve una respuesta
+* Funciona correctamente en n8n
+
+---
+
 ## 📂 Archivos incluidos
 
 * `primer-workflow.json` → flujo listo para importar
@@ -145,28 +255,49 @@ Responder con mensaje:
 
 ---
 
-## 📌 Buenas prácticas
+## 🧪 Buenas prácticas
 
-* Nombra bien los nodos
-* Mantén flujos simples
-* Prueba cada paso
-* No compliques la lógica
+* Mantener workflows simples
+* Nombrar nodos claramente
+* Probar cada nodo individualmente
+* Validar datos de entrada
+* Documentar el flujo
 
 ---
 
 ## ⚠️ Errores comunes
 
 * No activar el workflow
-* No probar el webhook
-* Conectar mal los nodos
-* No validar datos
+* No ejecutar el webhook correctamente
+* Conexiones incorrectas entre nodos
+* No probar con datos reales
+* No entender el flujo de datos
 
 ---
 
-## 🧠 Resultado esperado
+## 🧩 Bonus (nivel pro)
 
-Al terminar esta semana tendrás:
+* Agregar validación con nodo IF
+* Enviar datos a Google Sheets
+* Enviar notificación por email
+* Usar múltiples nodos en secuencia
 
-✔ Tu primer workflow funcionando
-✔ Entendimiento de cómo fluye la información
-✔ Base para automatizaciones reales
+---
+
+## 🚀 Resultado esperado
+
+Al finalizar esta semana tendrás:
+
+* Tu primer workflow funcionando
+* Entendimiento práctico de n8n
+* Base para automatizaciones reales
+
+---
+
+## 📌 Siguiente paso
+
+👉 Construir un flujo real aplicado a negocio
+👉 Conectar múltiples acciones
+👉 Crear automatizaciones útiles
+
+🚀 Pasas de básico → a real

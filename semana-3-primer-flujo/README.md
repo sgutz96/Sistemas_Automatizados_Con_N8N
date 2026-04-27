@@ -12,31 +12,36 @@ Diseñar, construir y ejecutar tu **primer workflow funcional en n8n**, conectan
 
 ## 🧠 Qué vas a aprender
 
-- Cómo estructurar un workflow correctamente
-- Diferencia entre **triggers** y **acciones**
-- Cómo conectar nodos dentro de n8n
-- Manejo básico de datos entre pasos
-- Buenas prácticas para automatizaciones reales
+* Cómo estructurar un workflow correctamente
+* Diferencia entre **triggers** y **acciones**
+* Cómo conectar nodos dentro de n8n
+* Manejo básico de datos entre pasos
+* Buenas prácticas para automatizaciones reales
 
 ---
 
 ## ⚙️ Conceptos clave
 
 ### 🔸 Workflow
-Un flujo de automatización compuesto por nodos conectados que ejecutan acciones.
+
+Flujo de automatización compuesto por nodos conectados.
 
 ### 🔸 Trigger
-Es el evento que inicia el flujo. Ejemplos:
-- Webhook
-- Cron (tiempo programado)
-- Evento externo
+
+Evento que inicia el flujo:
+
+* Webhook
+* Cron
+* Evento externo
 
 ### 🔸 Acción
-Son los pasos que ejecuta el flujo después del trigger:
-- Enviar datos
-- Crear registros
-- Notificar
-- Transformar información
+
+Pasos que ejecutan el flujo:
+
+* Enviar datos
+* Crear registros
+* Notificar
+* Transformar información
 
 ---
 
@@ -44,32 +49,81 @@ Son los pasos que ejecuta el flujo después del trigger:
 
 ### 🚀 Caso: Notificación automática desde un formulario
 
-**Objetivo:**  
-Cada vez que se reciba información (simulada o real), enviar una notificación automática.
+**Objetivo:**
+Cada vez que se reciba información, enviar una notificación automática.
 
 ---
 
-### 🧩 Flujo básico
+## 🧪 Caso práctico
 
-1. **Trigger**
-   - Webhook o manual trigger
+Simular un formulario que envía datos y dispara una acción automática.
+
+---
+
+## 🧩 Flujo del sistema
+
+1. **Entrada**
+
+   * Webhook recibe datos
 
 2. **Procesamiento**
-   - Set / Function (opcional para estructurar datos)
 
-3. **Acción**
-   - Enviar mensaje (Email, Slack, Telegram, etc.)
+   * Nodo SET organiza información
+
+3. **Salida**
+
+   * Envío de notificación
 
 ---
 
-### 📌 Pasos
+## 🧩 Flujo básico
 
-1. Crear un nuevo workflow en n8n  
-2. Agregar un **trigger**
-3. Conectar un nodo de **acción**
-4. Configurar los datos de entrada
-5. Ejecutar el flujo
-6. Verificar que la automatización funciona
+1. **Trigger**
+
+   * Webhook o manual trigger
+
+2. **Procesamiento**
+
+   * Set / Function
+
+3. **Acción**
+
+   * Enviar mensaje (Email, Slack, Telegram, etc.)
+
+---
+
+## 📌 Pasos
+
+1. Crear un nuevo workflow en n8n
+2. Agregar un nodo Webhook
+3. Configurar el trigger
+4. Añadir nodo de procesamiento (Set)
+5. Agregar nodo de acción
+6. Conectar todos los nodos
+7. Ejecutar el flujo
+8. Probar con datos reales
+9. Validar resultados
+
+---
+
+## 📧 Ejemplo
+
+### 🔹 Input
+
+```json id="3i4d2k"
+{
+  "nombre": "Laura",
+  "email": "laura@email.com"
+}
+```
+
+### 🔹 Output
+
+```json id="z9p1qs"
+{
+  "mensaje": "Nuevo lead recibido"
+}
+```
 
 ---
 
@@ -77,35 +131,37 @@ Cada vez que se reciba información (simulada o real), enviar una notificación 
 
 ✅ Un workflow funcional que:
 
-- Se activa automáticamente o manualmente  
-- Procesa datos correctamente  
-- Ejecuta una acción real (notificación o registro)
+* Se activa automáticamente o manualmente
+* Procesa datos correctamente
+* Ejecuta una acción real (notificación o registro)
 
 ---
 
-## 🧪 Recomendaciones
+## 🧪 Buenas prácticas
 
-- Empieza simple (no sobrecomplicar)
-- Prueba cada nodo individualmente
-- Usa datos de prueba claros
-- Nombra bien tus nodos (clave para escalar)
+* Mantener flujos simples
+* Probar cada nodo individualmente
+* Usar datos claros
+* Nombrar nodos correctamente
+* Validar datos antes de ejecutar acciones
 
 ---
 
 ## ⚠️ Errores comunes
 
-- No conectar correctamente los nodos  
-- No probar el trigger antes de continuar  
-- Ignorar el formato de los datos  
-- Automatizar sin entender el proceso  
+* No conectar correctamente los nodos
+* No probar el trigger
+* Ignorar el formato de datos
+* Automatizar sin entender el flujo
 
 ---
 
-## 🧩 Bonus (opcional)
+## 🧩 Bonus (nivel pro)
 
-- Agregar múltiples acciones en el flujo  
-- Filtrar datos antes de ejecutar acciones  
-- Conectar con una herramienta real (Google Sheets, CRM, etc.)
+* Agregar múltiples acciones
+* Filtrar datos antes de ejecutar
+* Conectar con herramientas reales (Sheets, CRM)
+* Agregar lógica condicional (IF)
 
 ---
 
@@ -113,12 +169,16 @@ Cada vez que se reciba información (simulada o real), enviar una notificación 
 
 Al finalizar esta clase tendrás:
 
-- Tu **primera automatización real funcionando**
-- Entendimiento claro de cómo construir workflows
-- Base sólida para automatizaciones más complejas
+* Tu **primera automatización real funcionando**
+* Entendimiento claro de workflows
+* Base sólida para automatizaciones más complejas
 
 ---
 
 ## 📌 Siguiente paso
 
-En la siguiente clase vas a construir un sistema completo de **captura y gestión de leads automatizados**.
+👉 Construir un sistema completo de leads
+👉 Integrar almacenamiento de datos
+👉 Crear automatizaciones útiles para negocio
+
+🚀 Pasas de flujo básico → a sistema real
