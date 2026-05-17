@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seccion 3 — Instalación de n8n · Cloud y Local</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #1f1f28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0eeff;
+    --text2: #9b95b8;
+    --text3: #5c577a;
+    --accent: #7c6ef5;
+    --accent2: #a598ff;
+    --accent-glow: rgba(124,110,245,0.18);
+    --green: #22c97a;
+    --green-bg: rgba(34,201,122,0.1);
+    --red: #f05a5a;
+    --red-bg: rgba(240,90,90,0.1);
+    --amber: #f0a030;
+    --amber-bg: rgba(240,160,48,0.1);
+    --teal: #20d4b0;
+    --teal-bg: rgba(32,212,176,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,110,245,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,110,245,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .week {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .sidebar-logo h2 { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .sidebar-logo p { font-size: 12px; color: var(--text3); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+  .nav-section {
+    padding: 16px 12px 8px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 12.5px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--accent-glow); border-color: rgba(124,110,245,0.3); color: var(--accent2); }
+  .nav-item .nav-num {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    background: var(--bg4);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+  .nav-item.active .nav-num { background: rgba(124,110,245,0.25); color: var(--accent2); }
+
+  .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); }
+  .progress-bar { background: var(--bg4); border-radius: 4px; height: 4px; margin-bottom: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--teal)); border-radius: 4px; transition: width 0.4s ease; }
+  .progress-text { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); }
+
+  /* MAIN */
+  .main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: calc(100% - 260px); }
+  .section { display: none; animation: fadeIn 0.25s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* SECTION HEADER */
+  .section-header { margin-bottom: 36px; }
+  .section-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .section-tag .dot {
+    width: 6px; height: 6px;
+    background: var(--accent); border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .section-header h1 { font-size: 36px; font-weight: 800; color: var(--text); line-height: 1.15; margin-bottom: 12px; }
+  .section-header h1 span { color: var(--accent2); }
+  .section-header p { font-size: 16px; color: var(--text2); line-height: 1.7; max-width: 640px; }
+
+  /* GRIDS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* CARDS */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .card.accent-border { border-color: rgba(124,110,245,0.3); }
+  .card.green-border  { border-color: rgba(34,201,122,0.3); }
+  .card.red-border    { border-color: rgba(240,90,90,0.25); }
+  .card.amber-border  { border-color: rgba(240,160,48,0.3); }
+  .card.teal-border   { border-color: rgba(32,212,176,0.3); }
+  .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text3); margin-bottom: 8px;
+  }
+  .card h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  .card p  { font-size: 14px; color: var(--text2); line-height: 1.7; }
+
+  /* STAT */
+  .stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+  .stat-num  { font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--accent2); line-height: 1; margin-bottom: 6px; }
+  .stat-label { font-size: 12px; color: var(--text2); line-height: 1.4; }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-family: 'JetBrains Mono', monospace; }
+  .badge-red    { background: var(--red-bg);   color: var(--red); }
+  .badge-green  { background: var(--green-bg); color: var(--green); }
+  .badge-amber  { background: var(--amber-bg); color: var(--amber); }
+  .badge-accent { background: var(--accent-glow); color: var(--accent2); }
+  .badge-teal   { background: var(--teal-bg);  color: var(--teal); }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; }
+  .checklist li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; font-size: 14px; color: var(--text2); border-bottom: 1px solid var(--border); line-height: 1.5; }
+  .checklist li:last-child { border-bottom: none; }
+  .check { color: var(--green); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .cross { color: var(--red);   font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+
+  /* HIGHLIGHT / TIP / WARNING / NOTE */
+  .highlight { background: var(--accent-glow); border: 1px solid rgba(124,110,245,0.25); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; font-size: 14px; color: var(--text2); line-height: 1.7; }
+  .highlight strong { color: var(--accent2); }
+  .tip { background: var(--green-bg); border-left: 3px solid var(--green); border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 16px; font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .tip strong { color: var(--green); }
+  .warning { background: var(--red-bg); border-left: 3px solid var(--red); border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 16px; font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .warning strong { color: var(--red); }
+  .note { background: var(--amber-bg); border-left: 3px solid var(--amber); border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 16px; font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .note strong { color: var(--amber); }
+
+  /* CODE BLOCK */
+  .code-block { background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text2); line-height: 1.9; margin-bottom: 16px; overflow-x: auto; }
+  .code-block .kw      { color: var(--accent2); }
+  .code-block .str     { color: var(--green); }
+  .code-block .comment { color: var(--text3); }
+  .code-block .key     { color: var(--amber); }
+  .code-block .cmd     { color: var(--teal); }
+  .code-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .code-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); }
+  .code-dots { display: flex; gap: 5px; }
+  .code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #f05a5a; } .dot-y { background: #f0a030; } .dot-g { background: #22c97a; }
+
+  /* TABS */
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border2); padding-bottom: 0; }
+  .tab-btn {
+    padding: 10px 20px; font-size: 13px; font-weight: 600; font-family: 'Syne', sans-serif;
+    background: transparent; border: none; border-bottom: 2px solid transparent;
+    color: var(--text3); cursor: pointer; transition: all 0.15s; margin-bottom: -1px;
+  }
+  .tab-btn:hover { color: var(--text2); }
+  .tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+
+  /* COMPARISON TABLE */
+  .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .comp-table th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); border-bottom: 1px solid var(--border2); font-family: 'JetBrains Mono', monospace; }
+  .comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: middle; }
+  .comp-table tr:last-child td { border-bottom: none; }
+  .comp-table tr:hover td { background: var(--bg3); }
+  .comp-table td:first-child { color: var(--text); font-weight: 600; }
+
+  /* STEP CARDS */
+  .step-card { display: flex; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .step-card:last-child { border-bottom: none; }
+  .sc-num { width: 34px; height: 34px; border-radius: 8px; background: var(--accent-glow); border: 1px solid rgba(124,110,245,0.35); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--accent2); flex-shrink: 0; }
+  .sc-num.green  { background: var(--green-bg); border-color: rgba(34,201,122,0.35); color: var(--green); }
+  .sc-num.amber  { background: var(--amber-bg); border-color: rgba(240,160,48,0.35); color: var(--amber); }
+  .sc-num.teal   { background: var(--teal-bg);  border-color: rgba(32,212,176,0.35); color: var(--teal); }
+  .sc-body h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+  .sc-body p  { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* DELIVERABLE */
+  .deliverable-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .deliverable-item:last-child { border-bottom: none; }
+  .d-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--accent-glow); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .d-text h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .d-text p  { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+  /* TOOL PILL */
+  .tool-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text2); margin: 4px; }
+
+  /* NAV BUTTONS */
+  .nav-btns { display: flex; gap: 12px; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.15s; border: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #6b5ee0; transform: translateY(-1px); }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+  .btn-ghost:hover { background: var(--bg4); color: var(--text); }
+
+  /* SEP */
+  .sep { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* CONCEPT CARD */
+  .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .concept-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .concept-icon { font-size: 24px; margin-bottom: 10px; }
+  .concept-card h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .concept-card p  { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+  /* ICON ROW */
+  .icon-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: 13px; color: var(--text2); border-bottom: 1px solid var(--border); }
+  .icon-row:last-child { border-bottom: none; }
+  .icon-row .ico { font-size: 18px; flex-shrink: 0; width: 28px; text-align: center; }
+
+  /* ENV TABLE */
+  .env-row { display: flex; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .env-row:last-child { border-bottom: none; }
+  .env-key { font-family: 'JetBrains Mono', monospace; color: var(--amber); font-size: 12px; flex: 0 0 220px; }
+  .env-val { color: var(--text2); line-height: 1.5; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">// Seccion 03</div>
+      <h2>Automatización con n8n</h2>
+      <p>Instalación Cloud y Local</p>
+    </div>
+
+    <div class="nav-section">Contenido</div>
+
+    <a class="nav-item active" onclick="showSection('intro', this)">
+      <div class="nav-num">01</div>Introducción
+    </a>
+    <a class="nav-item" onclick="showSection('comparativa', this)">
+      <div class="nav-num">02</div>Cloud vs Local
+    </a>
+    <a class="nav-item" onclick="showSection('cloud', this)">
+      <div class="nav-num">03</div>n8n Cloud — Setup
+    </a>
+    <a class="nav-item" onclick="showSection('docker', this)">
+      <div class="nav-num">04</div>Docker — Instalación
+    </a>
+    <a class="nav-item" onclick="showSection('npm', this)">
+      <div class="nav-num">05</div>npm — Instalación local
+    </a>
+    <a class="nav-item" onclick="showSection('configuracion', this)">
+      <div class="nav-num">06</div>Configuración inicial
+    </a>
+    <a class="nav-item" onclick="showSection('interfaz', this)">
+      <div class="nav-num">07</div>Interfaz de n8n
+    </a>
+    <a class="nav-item" onclick="showSection('primera-prueba', this)">
+      <div class="nav-num">08</div>Primera prueba real
+    </a>
+    <a class="nav-item" onclick="showSection('errores', this)">
+      <div class="nav-num">09</div>Errores comunes
+    </a>
+    <a class="nav-item" onclick="showSection('buenas-practicas', this)">
+      <div class="nav-num">10</div>Buenas prácticas
+    </a>
+    <a class="nav-item" onclick="showSection('entregable', this)">
+      <div class="nav-num">11</div>Entregable y cierre
+    </a>
+
+    <div class="sidebar-footer">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress" style="width: 9%"></div>
+      </div>
+      <div class="progress-text" id="progress-text">Sección 1 de 11</div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ========== S01: INTRO ========== -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Seccion 3 · Instalación</div>
+        <h1>Instalar n8n y <span>Dejarlo Listo</span></h1>
+        <p>Tienes el diagnóstico, tienes claro qué automatizar, ya construiste tu primer workflow. Ahora toca tener n8n corriendo en un entorno real y controlado.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="stat-card">
+          <div class="stat-num">2</div>
+          <div class="stat-label">formas de instalar n8n: Cloud y Local</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">&lt;10</div>
+          <div class="stat-label">minutos para tener n8n Cloud funcionando</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">100%</div>
+          <div class="stat-label">control con instalación local vía Docker</div>
+        </div>
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">🎯 Objetivo de esta Seccion</div>
+        <h3>Tener n8n instalado, configurado y funcionando</h3>
+        <p>No importa si eliges Cloud o local: al final de esta Seccion tendrás n8n corriendo, con tu primer workflow activo y listo para conectar herramientas reales en las Seccions siguientes.</p>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🧠 Qué vas a aprender esta Seccion</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span> Diferencias entre n8n Cloud y n8n Local (self-hosted)</li>
+          <li><span class="check">✓</span> Cómo crear una cuenta y configurar n8n Cloud paso a paso</li>
+          <li><span class="check">✓</span> Cómo instalar n8n con Docker (opción recomendada para local)</li>
+          <li><span class="check">✓</span> Cómo instalar n8n con npm (opción ligera sin Docker)</li>
+          <li><span class="check">✓</span> Configuración inicial: credenciales, variables de entorno y persistencia</li>
+          <li><span class="check">✓</span> Reconocer la interfaz de n8n y sus áreas clave</li>
+          <li><span class="check">✓</span> Ejecutar y verificar tu primera prueba real</li>
+          <li><span class="check">✓</span> Errores frecuentes de instalación y cómo resolverlos</li>
+        </ul>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="background: linear-gradient(135deg, rgba(124,110,245,0.08), rgba(124,110,245,0.03)); border-color: rgba(124,110,245,0.3);">
+          <div class="card-label">☁️ Opción A</div>
+          <h3 style="margin-bottom: 8px;">n8n Cloud</h3>
+          <p style="margin-bottom: 16px;">Sin instalación. Entra, crea tu cuenta y empiezas en minutos. Ideal para aprender y proyectos pequeños.</p>
+          <div><span class="badge badge-green">✓ Sin servidor</span> <span class="badge badge-green">✓ Rápido</span></div>
+        </div>
+        <div class="card" style="background: linear-gradient(135deg, rgba(32,212,176,0.08), rgba(32,212,176,0.03)); border-color: rgba(32,212,176,0.3);">
+          <div class="card-label">🖥️ Opción B</div>
+          <h3 style="margin-bottom: 8px;">n8n Local (self-hosted)</h3>
+          <p style="margin-bottom: 16px;">Control total. Tus datos, tus reglas, sin límites de ejecución. Vía Docker (recomendado) o npm.</p>
+          <div><span class="badge badge-teal">✓ Control total</span> <span class="badge badge-teal">✓ Sin costos</span></div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-primary" onclick="goTo('comparativa')">Siguiente: Cloud vs Local →</button>
+      </div>
+    </section>
+
+    <!-- ========== S02: COMPARATIVA ========== -->
+    <section id="comparativa" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Cloud vs <span>Local</span></h1>
+        <p>Antes de instalar, elige la opción correcta para tu caso. No hay una respuesta universal — depende de tus objetivos, presupuesto y nivel técnico.</p>
+      </div>
+
+      <div class="card" style="overflow: hidden; padding: 0;">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th>Criterio</th>
+              <th style="color: var(--accent2);">☁️ n8n Cloud</th>
+              <th style="color: var(--teal);">🖥️ Local — Docker</th>
+              <th style="color: var(--green);">📦 Local — npm</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Instalación</td><td>Solo crear cuenta</td><td>Docker + 1 comando</td><td>Node.js + npm install</td></tr>
+            <tr><td>Tiempo de setup</td><td><span class="badge badge-green">~5 min</span></td><td><span class="badge badge-amber">~15 min</span></td><td><span class="badge badge-amber">~10 min</span></td></tr>
+            <tr><td>Costo</td><td>Desde $20/mes (trial gratis)</td><td>$0 (solo servidor si aplica)</td><td>$0</td></tr>
+            <tr><td>Requiere servidor</td><td>No</td><td>No (corre local o VPS)</td><td>No (corre local)</td></tr>
+            <tr><td>Persistencia de datos</td><td>Automática en la nube</td><td>Volumen Docker configurado</td><td>Carpeta local</td></tr>
+            <tr><td>Límite de ejecuciones</td><td>Sí (según plan)</td><td>Ilimitado</td><td>Ilimitado</td></tr>
+            <tr><td>Control de versiones</td><td>Gestionado por n8n</td><td>Total (tú actualizas)</td><td>Total (tú actualizas)</td></tr>
+            <tr><td>Ideal para</td><td>Aprender, proyectos pequeños</td><td>Producción, equipos, escalable</td><td>Desarrollo rápido, pruebas</td></tr>
+            <tr><td>Nivel técnico</td><td><span class="badge badge-green">Básico</span></td><td><span class="badge badge-amber">Intermedio</span></td><td><span class="badge badge-amber">Intermedio</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid-3">
+        <div class="card" style="background: rgba(124,110,245,0.05); border-color: rgba(124,110,245,0.25); text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 10px;">🎓</div>
+          <h4 style="font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Estás aprendiendo</h4>
+          <p style="font-size: 12px; color: var(--text2); line-height: 1.6;">Usa <strong style="color: var(--accent2);">n8n Cloud</strong>. Sin fricción, sin setup. Enfócate en el workflow, no en el servidor.</p>
+        </div>
+        <div class="card" style="background: rgba(32,212,176,0.05); border-color: rgba(32,212,176,0.25); text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 10px;">🚀</div>
+          <h4 style="font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Quieres producción</h4>
+          <p style="font-size: 12px; color: var(--text2); line-height: 1.6;">Usa <strong style="color: var(--teal);">Docker</strong>. Es la opción más robusta, portable y recomendada para proyectos reales.</p>
+        </div>
+        <div class="card" style="background: rgba(34,201,122,0.05); border-color: rgba(34,201,122,0.25); text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 10px;">⚡</div>
+          <h4 style="font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Prueba rápida local</h4>
+          <p style="font-size: 12px; color: var(--text2); line-height: 1.6;">Usa <strong style="color: var(--green);">npm</strong>. Un solo comando y n8n corre en tu máquina al instante.</p>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>📌 Recomendación del curso:</strong> si estás comenzando, empieza con <strong>n8n Cloud</strong> para familiarizarte con la interfaz. Cuando quieras control total o vayas a producción, migra a <strong>Docker</strong>. Los workflows se exportan/importan con un clic, la migración es trivial.
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('cloud')">Siguiente: n8n Cloud Setup →</button>
+      </div>
+    </section>
+
+    <!-- ========== S03: CLOUD ========== -->
+    <section id="cloud" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>n8n Cloud <span>— Setup</span></h1>
+        <p>La forma más rápida de empezar con n8n. Sin instalación, sin servidor, sin configuración técnica.</p>
+      </div>
+
+      <div class="highlight">
+        <strong>☁️ URL oficial:</strong> <span style="font-family:'JetBrains Mono',monospace; color: var(--teal);">https://app.n8n.cloud</span> — El trial gratuito dura 14 días, sin tarjeta de crédito requerida.
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">📋 Pasos para crear tu cuenta Cloud</div>
+        <div style="margin-top: 12px;">
+          <div class="step-card">
+            <div class="sc-num">1</div>
+            <div class="sc-body">
+              <h4>Ir a app.n8n.cloud</h4>
+              <p>Abre tu navegador y navega a <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">https://app.n8n.cloud</span>. Haz clic en "Start for free" o "Sign up".</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="sc-num">2</div>
+            <div class="sc-body">
+              <h4>Crear cuenta con email o Google</h4>
+              <p>Usa tu email de trabajo o tu cuenta de Google. Recibirás un email de verificación — confírmalo antes de continuar.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="sc-num">3</div>
+            <div class="sc-body">
+              <h4>Elegir nombre de instancia</h4>
+              <p>Se te pedirá un nombre para tu instancia. Por ejemplo: <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">mi-empresa</span>. Tu URL quedará así: <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">mi-empresa.app.n8n.cloud</span></p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="sc-num">4</div>
+            <div class="sc-body">
+              <h4>Elegir región y plan</h4>
+              <p>Selecciona la región más cercana (normalmente US East o EU West). Para empezar, elige el plan Starter o el trial gratuito. No se requiere tarjeta.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="sc-num">5</div>
+            <div class="sc-body">
+              <h4>¡Listo! Acceder al dashboard</h4>
+              <p>En menos de 2 minutos tu instancia estará activa. Serás redirigido al editor de workflows. Aquí empieza todo.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card green-border">
+          <div class="card-label">✅ Lo que incluye el trial gratis</div>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="check">✓</span>14 días de acceso completo</li>
+            <li><span class="check">✓</span>Hasta 5 workflows activos</li>
+            <li><span class="check">✓</span>2.500 ejecuciones incluidas</li>
+            <li><span class="check">✓</span>Acceso a todos los nodos</li>
+            <li><span class="check">✓</span>Sin tarjeta de crédito requerida</li>
+          </ul>
+        </div>
+        <div class="card amber-border">
+          <div class="card-label">⚠️ Limitaciones a considerar</div>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="cross">✗</span>Ejecuciones limitadas por plan</li>
+            <li><span class="cross">✗</span>No tienes acceso al servidor</li>
+            <li><span class="cross">✗</span>No puedes instalar nodos custom fácilmente</li>
+            <li><span class="cross">✗</span>Costo mensual después del trial</li>
+            <li><span class="cross">✗</span>Datos en servidores de n8n (no tuyos)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tip">
+        <strong>💡 Pro tip:</strong> exporta tus workflows regularmente desde Cloud (menú ⋯ → Download). Si en el futuro migras a Docker, solo importas el JSON y todo sigue funcionando exactamente igual.
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('comparativa')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('docker')">Siguiente: Docker — Instalación →</button>
+      </div>
+    </section>
+
+    <!-- ========== S04: DOCKER ========== -->
+    <section id="docker" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 4</div>
+        <h1>Docker <span>— Instalación</span></h1>
+        <p>La forma más robusta y recomendada de instalar n8n en local o en un servidor. Un solo comando y tienes n8n corriendo de manera aislada y portable.</p>
+      </div>
+
+      <div class="highlight">
+        <strong>🐳 Prerequisito:</strong> necesitas Docker instalado en tu máquina. Descárgalo en <span style="font-family:'JetBrains Mono',monospace; color: var(--teal);">https://docker.com/get-started</span> — disponible para Mac, Windows y Linux.
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">🔍 Verificar que Docker está instalado</div>
+        <div class="code-top" style="margin-top: 12px; margin-bottom: 6px;">
+          <div class="code-label">Terminal</div>
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        </div>
+        <div class="code-block" style="margin-bottom: 0;">
+<span class="comment"># Verificar versión de Docker</span>
+<span class="cmd">docker --version</span>
+<span class="comment"># → Docker version 24.x.x, build xxxxxxx</span>
+
+<span class="comment"># Verificar que Docker Desktop está corriendo</span>
+<span class="cmd">docker ps</span>
+<span class="comment"># → Debe mostrar la lista de contenedores (vacía si es la primera vez)</span>
+        </div>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🚀 Opción 1 — Comando rápido (desarrollo)</div>
+        <h3 style="margin-bottom: 6px;">Un solo comando para empezar</h3>
+        <p style="margin-bottom: 16px; font-size: 13px;">Perfecto para aprender y probar. Los datos se pierden si el contenedor se elimina.</p>
+        <div class="code-top">
+          <div class="code-label">Terminal</div>
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        </div>
+        <div class="code-block" style="margin-bottom: 0;">
+<span class="cmd">docker run -it --rm \
+  --name n8n \
+  -p 5678:5678 \
+  docker.n8n.io/n8nio/n8n</span>
+
+<span class="comment"># Luego abrir en el navegador:</span>
+<span class="str">http://localhost:5678</span>
+        </div>
+      </div>
+
+      <div class="card teal-border">
+        <div class="card-label">🏭 Opción 2 — Con persistencia (recomendado)</div>
+        <h3 style="margin-bottom: 6px;">Datos guardados aunque reinicies el contenedor</h3>
+        <p style="margin-bottom: 16px; font-size: 13px;">Usa un volumen Docker para que tus workflows y credenciales se guarden de forma permanente.</p>
+        <div class="code-top">
+          <div class="code-label">Terminal — Mac / Linux</div>
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        </div>
+        <div class="code-block">
+<span class="comment"># Crear volumen para persistir datos</span>
+<span class="cmd">docker volume create n8n_data</span>
+
+<span class="comment"># Correr n8n con el volumen montado</span>
+<span class="cmd">docker run -d \
+  --name n8n \
+  -p 5678:5678 \
+  -v n8n_data:/home/node/.n8n \
+  --restart unless-stopped \
+  docker.n8n.io/n8nio/n8n</span>
+        </div>
+        <div class="code-top">
+          <div class="code-label">Terminal — Windows (PowerShell)</div>
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        </div>
+        <div class="code-block" style="margin-bottom: 0;">
+<span class="cmd">docker volume create n8n_data</span>
+
+<span class="cmd">docker run -d `
+  --name n8n `
+  -p 5678:5678 `
+  -v n8n_data:/home/node/.n8n `
+  --restart unless-stopped `
+  docker.n8n.io/n8nio/n8n</span>
+        </div>
+      </div>
+
+      <div class="card green-border">
+        <div class="card-label">📋 Opción 3 — Docker Compose (nivel pro)</div>
+        <h3 style="margin-bottom: 6px;">Con archivo docker-compose.yml</h3>
+        <p style="margin-bottom: 16px; font-size: 13px;">La forma más ordenada y escalable. Crea el archivo <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">docker-compose.yml</span> en una carpeta vacía:</p>
+        <div class="code-block">
+<span class="key">version</span>: <span class="str">'3.8'</span>
+<span class="key">services</span>:
+  <span class="key">n8n</span>:
+    <span class="key">image</span>: <span class="str">docker.n8n.io/n8nio/n8n</span>
+    <span class="key">container_name</span>: <span class="str">n8n</span>
+    <span class="key">restart</span>: <span class="str">unless-stopped</span>
+    <span class="key">ports</span>:
+      - <span class="str">"5678:5678"</span>
+    <span class="key">volumes</span>:
+      - <span class="str">n8n_data:/home/node/.n8n</span>
+    <span class="key">environment</span>:
+      - <span class="str">N8N_BASIC_AUTH_ACTIVE=true</span>
+      - <span class="str">N8N_BASIC_AUTH_USER=admin</span>
+      - <span class="str">N8N_BASIC_AUTH_PASSWORD=tu_password</span>
+      - <span class="str">GENERIC_TIMEZONE=America/Bogota</span>
+
+<span class="key">volumes</span>:
+  <span class="key">n8n_data</span>:
+        </div>
+        <div class="code-top" style="margin-bottom: 6px;">
+          <div class="code-label">Levantar con Docker Compose</div>
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        </div>
+        <div class="code-block" style="margin-bottom: 0;">
+<span class="comment"># Levantar en segundo plano</span>
+<span class="cmd">docker compose up -d</span>
+
+<span class="comment"># Ver logs</span>
+<span class="cmd">docker compose logs -f</span>
+
+<span class="comment"># Detener</span>
+<span class="cmd">docker compose down</span>
+        </div>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🔧 Comandos útiles de Docker</div>
+        <div style="margin-top: 12px;">
+          <div class="icon-row"><div class="ico">▶️</div><div><span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">docker start n8n</span> — iniciar contenedor detenido</div></div>
+          <div class="icon-row"><div class="ico">⏹️</div><div><span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">docker stop n8n</span> — detener contenedor</div></div>
+          <div class="icon-row"><div class="ico">🔄</div><div><span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">docker restart n8n</span> — reiniciar contenedor</div></div>
+          <div class="icon-row"><div class="ico">📋</div><div><span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">docker logs n8n -f</span> — ver logs en tiempo real</div></div>
+          <div class="icon-row"><div class="ico">🔍</div><div><span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">docker ps</span> — ver contenedores activos</div></div>
+          <div class="icon-row"><div class="ico">🗑️</div><div><span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">docker rm -f n8n</span> — eliminar contenedor (datos en volumen se conservan)</div></div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('cloud')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('npm')">Siguiente: npm — Instalación local →</button>
+      </div>
+    </section>
+
+    <!-- ========== S05: NPM ========== -->
+    <section id="npm" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 5</div>
+        <h1>npm <span>— Instalación Local</span></h1>
+        <p>La instalación más directa si ya tienes Node.js en tu máquina. Sin Docker, sin complicaciones — ideal para desarrollo y pruebas rápidas.</p>
+      </div>
+
+      <div class="highlight">
+        <strong>📦 Prerequisito:</strong> necesitas Node.js versión 18 o superior. Descárgalo en <span style="font-family:'JetBrains Mono',monospace; color: var(--teal);">https://nodejs.org</span> — descarga la versión LTS.
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">🔍 Verificar prerequisitos</div>
+        <div class="code-top" style="margin-top: 12px; margin-bottom: 6px;">
+          <div class="code-label">Terminal</div>
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        </div>
+        <div class="code-block" style="margin-bottom: 0;">
+<span class="comment"># Verificar Node.js (requiere v18+)</span>
+<span class="cmd">node --version</span>
+<span class="comment"># → v20.x.x ✓</span>
+
+<span class="comment"># Verificar npm</span>
+<span class="cmd">npm --version</span>
+<span class="comment"># → 10.x.x ✓</span>
+        </div>
+      </div>
+
+      <div class="card teal-border">
+        <div class="card-label">⚡ Instalación con npx (sin instalar globalmente)</div>
+        <h3 style="margin-bottom: 6px;">La forma más rápida — cero instalación previa</h3>
+        <p style="margin-bottom: 16px; font-size: 13px;">Con <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">npx</span> ejecutas n8n directamente sin instalarlo de forma permanente. Perfecto para probar.</p>
+        <div class="code-top">
+          <div class="code-label">Terminal</div>
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        </div>
+        <div class="code-block" style="margin-bottom: 0;">
+<span class="comment"># Ejecutar n8n directamente con npx</span>
+<span class="cmd">npx n8n</span>
+
+<span class="comment"># Esperar a que aparezca en la terminal:</span>
+<span class="str">Editor is now accessible via:
+http://localhost:5678</span>
+
+<span class="comment"># Abrir en el navegador → localhost:5678</span>
+        </div>
+      </div>
+
+      <div class="card green-border">
+        <div class="card-label">🏠 Instalación global (uso permanente)</div>
+        <h3 style="margin-bottom: 6px;">Instalar n8n como comando disponible siempre</h3>
+        <div class="code-top" style="margin-top: 12px;">
+          <div class="code-label">Terminal</div>
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        </div>
+        <div class="code-block" style="margin-bottom: 0;">
+<span class="comment"># Instalar n8n globalmente</span>
+<span class="cmd">npm install n8n -g</span>
+
+<span class="comment"># Puede tardar 2-5 minutos. Cuando termine:</span>
+
+<span class="comment"># Iniciar n8n</span>
+<span class="cmd">n8n start</span>
+
+<span class="comment"># Para que corra en background (Mac/Linux)</span>
+<span class="cmd">n8n start &</span>
+
+<span class="comment"># Abrir en el navegador</span>
+<span class="str">http://localhost:5678</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="background: var(--bg3);">
+          <div class="card-label">✅ Ventajas de npm</div>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="check">✓</span>No necesita Docker</li>
+            <li><span class="check">✓</span>Setup en un solo comando</li>
+            <li><span class="check">✓</span>Integra fácil con el entorno local</li>
+            <li><span class="check">✓</span>Rápido para desarrollo</li>
+          </ul>
+        </div>
+        <div class="card" style="background: var(--bg3);">
+          <div class="card-label">⚠️ Limitaciones de npm</div>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="cross">✗</span>Menos aislado que Docker</li>
+            <li><span class="cross">✗</span>Depende de la versión de Node del sistema</li>
+            <li><span class="cross">✗</span>Más difícil de escalar en producción</li>
+            <li><span class="cross">✗</span>No auto-reinicia si el proceso muere</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tip">
+        <strong>💡 Recomendación:</strong> para aprender usa <strong>npx n8n</strong> — es el comando más rápido. Si quieres usarlo de manera regular en tu máquina local, instálalo globalmente con npm. Para producción, usa Docker o Cloud.
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('docker')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('configuracion')">Siguiente: Configuración inicial →</button>
+      </div>
+    </section>
+
+    <!-- ========== S06: CONFIGURACIÓN ========== -->
+    <section id="configuracion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6</div>
+        <h1>Configuración <span>Inicial</span></h1>
+        <p>Una vez que n8n está corriendo, hay 5 configuraciones esenciales que debes hacer antes de construir tu primer workflow real.</p>
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">👤 Paso 1 — Crear usuario administrador</div>
+        <p style="margin-bottom: 16px;">La primera vez que abres n8n en local, te pedirá crear el usuario principal. Este usuario tiene acceso total a la instancia.</p>
+        <div class="grid-2" style="margin-bottom: 0;">
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border);">
+            <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 10px;">Datos requeridos</div>
+            <div class="icon-row" style="border: none; padding: 6px 0;"><div class="ico">📧</div><div>Email de administrador</div></div>
+            <div class="icon-row" style="border: none; padding: 6px 0;"><div class="ico">🔑</div><div>Contraseña segura (+12 caracteres)</div></div>
+            <div class="icon-row" style="border: none; padding: 6px 0;"><div class="ico">👤</div><div>Nombre y apellido</div></div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border);">
+            <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 10px;">Buenas prácticas</div>
+            <div class="icon-row" style="border: none; padding: 6px 0;"><div class="ico">✅</div><div>Usa email real, no temporal</div></div>
+            <div class="icon-row" style="border: none; padding: 6px 0;"><div class="ico">✅</div><div>Guarda la contraseña en un gestor</div></div>
+            <div class="icon-row" style="border: none; padding: 6px 0;"><div class="ico">✅</div><div>Este email recibirá alertas del sistema</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card amber-border">
+        <div class="card-label">🌍 Paso 2 — Variables de entorno clave</div>
+        <h3 style="margin-bottom: 16px;">Configuración avanzada para instalaciones locales</h3>
+        <p style="margin-bottom: 16px; font-size: 13px;">Agrega estas variables en tu <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">docker-compose.yml</span> o como variables del sistema:</p>
+        <div style="margin-top: 8px;">
+          <div class="env-row"><div class="env-key">GENERIC_TIMEZONE</div><div class="env-val"><span style="font-family:'JetBrains Mono',monospace; color: var(--green); font-size: 12px;">America/Bogota</span> — zona horaria para schedules y logs</div></div>
+          <div class="env-row"><div class="env-key">N8N_HOST</div><div class="env-val"><span style="font-family:'JetBrains Mono',monospace; color: var(--green); font-size: 12px;">localhost</span> o tu dominio si usas servidor externo</div></div>
+          <div class="env-row"><div class="env-key">N8N_PORT</div><div class="env-val"><span style="font-family:'JetBrains Mono',monospace; color: var(--green); font-size: 12px;">5678</span> — puerto por defecto, cámbialo si hay conflicto</div></div>
+          <div class="env-row"><div class="env-key">N8N_ENCRYPTION_KEY</div><div class="env-val">Clave para encriptar credenciales guardadas. Genera una aleatoria y guárdala en lugar seguro.</div></div>
+          <div class="env-row"><div class="env-key">N8N_BASIC_AUTH_ACTIVE</div><div class="env-val"><span style="font-family:'JetBrains Mono',monospace; color: var(--green); font-size: 12px;">true</span> — activa autenticación básica HTTP (importante si expones al exterior)</div></div>
+          <div class="env-row"><div class="env-key">WEBHOOK_URL</div><div class="env-val">URL pública si usas un servidor o ngrok. Necesaria para que los webhooks externos funcionen.</div></div>
+        </div>
+      </div>
+
+      <div class="card teal-border">
+        <div class="card-label">🔐 Paso 3 — Configurar credenciales</div>
+        <p style="margin-bottom: 16px;">Las credenciales se guardan en n8n de forma encriptada. Las usarás en los nodos para conectar servicios.</p>
+        <div class="step-card" style="padding: 12px 0;">
+          <div class="sc-num teal">1</div>
+          <div class="sc-body"><h4>Ir a Settings → Credentials</h4><p>En el menú lateral izquierdo, haz clic en el ícono de llave o en "Credentials" en el menú de Settings.</p></div>
+        </div>
+        <div class="step-card" style="padding: 12px 0;">
+          <div class="sc-num teal">2</div>
+          <div class="sc-body"><h4>Crear nueva credencial</h4><p>Clic en "Add Credential" → busca el servicio (Gmail, Slack, Google Sheets, etc.) → ingresa los datos de acceso.</p></div>
+        </div>
+        <div class="step-card" style="padding: 12px 0; border: none;">
+          <div class="sc-num teal">3</div>
+          <div class="sc-body"><h4>Probar y guardar</h4><p>Usa el botón "Test" para verificar que la conexión funciona antes de guardar. n8n confirma con un mensaje verde.</p></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card green-border">
+          <div class="card-label">🔗 Paso 4 — Configurar ngrok (webhooks locales)</div>
+          <p style="margin-bottom: 12px; font-size: 13px;">Para recibir webhooks externos en tu instalación local, necesitas exponer el puerto 5678 al internet. ngrok lo hace en segundos.</p>
+          <div class="code-block" style="margin-bottom: 0; font-size: 11px;">
+<span class="comment"># Instalar ngrok (Mac con Homebrew)</span>
+<span class="cmd">brew install ngrok</span>
+
+<span class="comment"># Exponer n8n al exterior</span>
+<span class="cmd">ngrok http 5678</span>
+
+<span class="comment"># Copiar URL generada (ejemplo):</span>
+<span class="str">https://abc123.ngrok.io</span>
+<span class="comment"># Usarla como WEBHOOK_URL</span>
+          </div>
+        </div>
+        <div class="card accent-border">
+          <div class="card-label">⚙️ Paso 5 — Settings de n8n</div>
+          <p style="margin-bottom: 12px; font-size: 13px;">Revisa estas opciones dentro de la interfaz de n8n antes de empezar:</p>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="check">✓</span>Zona horaria correcta configurada</li>
+            <li><span class="check">✓</span>Email de notificaciones configurado</li>
+            <li><span class="check">✓</span>Límite de historial de ejecuciones</li>
+            <li><span class="check">✓</span>Modo de guardado automático activado</li>
+            <li><span class="check">✓</span>Community nodes activados si necesitas más nodos</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('npm')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('interfaz')">Siguiente: Interfaz de n8n →</button>
+      </div>
+    </section>
+
+    <!-- ========== S07: INTERFAZ ========== -->
+    <section id="interfaz" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 7</div>
+        <h1>Interfaz <span>de n8n</span></h1>
+        <p>Antes de construir workflows, necesitas conocer las zonas de la interfaz. n8n tiene una UI muy limpia — en 5 minutos la dominas.</p>
+      </div>
+
+      <div class="card" style="background: var(--bg3); margin-bottom: 20px;">
+        <div class="card-label">🗺️ Mapa de la interfaz</div>
+        <div style="background: var(--bg4); border-radius: 10px; border: 1px solid var(--border2); padding: 20px; margin-top: 12px;">
+          <div style="display: grid; grid-template-columns: 60px 1fr; gap: 0; border: 1px solid rgba(124,110,245,0.2); border-radius: 8px; overflow: hidden;">
+            <div style="background: rgba(124,110,245,0.1); border-right: 1px solid rgba(124,110,245,0.2); padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 20px; font-size: 18px;">
+              <span title="Workflows">🔄</span>
+              <span title="Executions">📋</span>
+              <span title="Credentials">🔑</span>
+              <span title="Variables">📦</span>
+              <span title="Settings">⚙️</span>
+            </div>
+            <div>
+              <div style="background: rgba(124,110,245,0.05); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="color: var(--accent2); font-size: 13px; font-family: 'Syne', sans-serif; font-weight: 600;">📂 Mis Workflows</span>
+                <span style="font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace;">[ + New Workflow ]</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 16px;">
+                <div style="background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; padding: 12px;">
+                  <div style="font-size: 11px; color: var(--green); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace;">● ACTIVE</div>
+                  <div style="font-size: 12px; color: var(--text); font-weight: 600; font-family: 'Syne', sans-serif;">Lead Capture</div>
+                  <div style="font-size: 10px; color: var(--text3); margin-top: 4px; font-family: 'JetBrains Mono', monospace;">Modificado: hace 2h</div>
+                </div>
+                <div style="background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; padding: 12px;">
+                  <div style="font-size: 11px; color: var(--text3); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace;">○ INACTIVE</div>
+                  <div style="font-size: 12px; color: var(--text); font-weight: 600; font-family: 'Syne', sans-serif;">Email Digest</div>
+                  <div style="font-size: 10px; color: var(--text3); margin-top: 4px; font-family: 'JetBrains Mono', monospace;">Modificado: ayer</div>
+                </div>
+                <div style="background: rgba(124,110,245,0.06); border: 1px dashed rgba(124,110,245,0.3); border-radius: 6px; padding: 12px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--accent); font-family: 'JetBrains Mono', monospace; cursor: pointer;">
+                  + Nuevo workflow
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card" style="border-color: rgba(124,110,245,0.3);">
+          <div class="concept-icon">🔄</div>
+          <h4>Workflows</h4>
+          <p>Lista de todos tus workflows. Aquí los creas, editas, activas/desactivas y duplicas. Los workflows activos tienen el toggle en verde.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(32,212,176,0.3);">
+          <div class="concept-icon">📋</div>
+          <h4>Executions (historial)</h4>
+          <p>Registro de cada vez que un workflow se ejecutó. Puedes ver si fue exitoso o falló, qué datos pasaron por cada nodo y cuánto tardó.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(240,160,48,0.3);">
+          <div class="concept-icon">🔑</div>
+          <h4>Credentials</h4>
+          <p>Aquí guardas los accesos a servicios externos: Gmail, Slack, Google Sheets, APIs. Se guardan encriptadas y las usas en los nodos.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(34,201,122,0.3);">
+          <div class="concept-icon">⚙️</div>
+          <h4>Settings</h4>
+          <p>Configuración de tu instancia: usuarios, zona horaria, encriptación, límite de historial y opciones avanzadas del sistema.</p>
+        </div>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🖥️ El editor de workflows — zonas clave</div>
+        <div style="margin-top: 12px;">
+          <div class="icon-row"><div class="ico">🎨</div><div><strong style="color: var(--text);">Canvas</strong> — el lienzo donde arrastras y conectas nodos. Aquí vives el 90% del tiempo.</div></div>
+          <div class="icon-row"><div class="ico">➕</div><div><strong style="color: var(--text);">Add Node (+)</strong> — botón para agregar nuevos nodos. Busca por nombre o categoría.</div></div>
+          <div class="icon-row"><div class="ico">▶️</div><div><strong style="color: var(--text);">Execute Workflow</strong> — ejecuta el workflow en modo test. Muestra datos en cada nodo.</div></div>
+          <div class="icon-row"><div class="ico">🔘</div><div><strong style="color: var(--text);">Toggle Activate</strong> — activa o desactiva el workflow en producción.</div></div>
+          <div class="icon-row"><div class="ico">💾</div><div><strong style="color: var(--text);">Save</strong> — guarda el workflow. n8n también guarda automáticamente al ejecutar.</div></div>
+          <div class="icon-row"><div class="ico">⋯</div><div><strong style="color: var(--text);">Menú (···)</strong> — importar, exportar, duplicar, ver historial del workflow actual.</div></div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <strong>💡 Shortcut esencial:</strong> en el canvas, haz doble clic en cualquier área vacía para abrir el buscador de nodos al instante. Es la forma más rápida de agregar nodos sin usar el ratón.
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('configuracion')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('primera-prueba')">Siguiente: Primera prueba real →</button>
+      </div>
+    </section>
+
+    <!-- ========== S08: PRIMERA PRUEBA ========== -->
+    <section id="primera-prueba" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Primera <span>Prueba Real</span></h1>
+        <p>n8n está instalado y configurado. Ahora verificamos que todo funciona correctamente con una prueba end-to-end.</p>
+      </div>
+
+      <div class="highlight">
+        <strong>🎯 Objetivo:</strong> ejecutar el workflow de la Seccion 2 (Lead Capture) en tu nueva instalación y confirmar que responde correctamente. Si lo haces funcionar aquí, tu entorno está 100% listo.
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">🔄 Importar el workflow de Seccion 2</div>
+        <div style="margin-top: 12px;">
+          <div class="step-card">
+            <div class="sc-num">1</div>
+            <div class="sc-body">
+              <h4>Abrir n8n en el navegador</h4>
+              <p>Cloud: <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">https://tu-instancia.app.n8n.cloud</span> — Local: <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">http://localhost:5678</span></p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="sc-num">2</div>
+            <div class="sc-body">
+              <h4>Importar el archivo JSON</h4>
+              <p>En la pantalla principal de Workflows → clic en el menú ⋯ → "Import from file" → selecciona <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">primer-workflow.json</span></p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="sc-num">3</div>
+            <div class="sc-body">
+              <h4>Verificar los nodos</h4>
+              <p>Confirma que aparecen los 3 nodos: Webhook → SET → Respond to Webhook. Todos conectados en ese orden.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="sc-num">4</div>
+            <div class="sc-body">
+              <h4>Activar el workflow</h4>
+              <p>Haz clic en el toggle superior derecho. El indicador cambia a verde: <span style="color: var(--green); font-weight: 600;">● Active</span>. Copia la URL del webhook que aparece en el nodo.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card teal-border">
+        <div class="card-label">🧪 Probar con cURL o Postman</div>
+        <div class="tab-bar" style="margin-top: 12px;">
+          <button class="tab-btn active" onclick="switchTab(this, 'tab-curl')">cURL</button>
+          <button class="tab-btn" onclick="switchTab(this, 'tab-postman')">Postman</button>
+          <button class="tab-btn" onclick="switchTab(this, 'tab-python')">Python</button>
+        </div>
+
+        <div id="tab-curl" class="tab-content active">
+          <div class="code-block" style="margin-bottom: 0;">
+<span class="comment"># Reemplaza la URL con la de tu webhook</span>
+<span class="cmd">curl -X POST \
+  https://tu-instancia/webhook/lead-capture \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Carlos", "email": "carlos@email.com"}'</span>
+
+<span class="comment"># Respuesta esperada:</span>
+{
+  <span class="key">"message"</span>: <span class="str">"Lead recibido correctamente"</span>
+}
+          </div>
+        </div>
+
+        <div id="tab-postman" class="tab-content">
+          <div class="step-card" style="padding: 10px 0;">
+            <div class="sc-num green" style="width: 26px; height: 26px; font-size: 11px;">1</div>
+            <div class="sc-body"><h4 style="font-size: 13px;">Abrir Postman → New Request</h4><p>Selecciona método <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">POST</span> y pega la URL del webhook.</p></div>
+          </div>
+          <div class="step-card" style="padding: 10px 0;">
+            <div class="sc-num green" style="width: 26px; height: 26px; font-size: 11px;">2</div>
+            <div class="sc-body"><h4 style="font-size: 13px;">Body → raw → JSON</h4><p>Selecciona "Body" → "raw" → en el dropdown elige "JSON" y pega el payload.</p></div>
+          </div>
+          <div class="step-card" style="padding: 10px 0; border: none;">
+            <div class="sc-num green" style="width: 26px; height: 26px; font-size: 11px;">3</div>
+            <div class="sc-body"><h4 style="font-size: 13px;">Send → verificar respuesta</h4><p>Haz clic en Send. Deberías ver el mensaje de confirmación con status 200 en el panel de respuesta.</p></div>
+          </div>
+        </div>
+
+        <div id="tab-python" class="tab-content">
+          <div class="code-block" style="margin-bottom: 0;">
+<span class="kw">import</span> requests
+
+url = <span class="str">"https://tu-instancia/webhook/lead-capture"</span>
+payload = {
+    <span class="key">"name"</span>: <span class="str">"Carlos"</span>,
+    <span class="key">"email"</span>: <span class="str">"carlos@email.com"</span>
+}
+
+response = requests.post(url, json=payload)
+<span class="kw">print</span>(response.json())
+<span class="comment"># → {'message': 'Lead recibido correctamente'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card green-border">
+          <div class="card-label">✅ Señales de éxito</div>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="check">✓</span>La petición devuelve status 200</li>
+            <li><span class="check">✓</span>El JSON de respuesta es correcto</li>
+            <li><span class="check">✓</span>En n8n aparece ejecución exitosa (verde)</li>
+            <li><span class="check">✓</span>Puedes ver los datos en cada nodo del historial</li>
+          </ul>
+        </div>
+        <div class="card red-border">
+          <div class="card-label">🚫 Si algo falla — primeros pasos</div>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="cross">✗</span>¿El workflow está activado (toggle verde)?</li>
+            <li><span class="cross">✗</span>¿La URL del webhook es correcta?</li>
+            <li><span class="cross">✗</span>¿Enviaste Content-Type: application/json?</li>
+            <li><span class="cross">✗</span>¿n8n está corriendo? (verifica localhost:5678)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('interfaz')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('errores')">Siguiente: Errores comunes →</button>
+      </div>
+    </section>
+
+    <!-- ========== S09: ERRORES ========== -->
+    <section id="errores" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Errores <span>Comunes</span></h1>
+        <p>Los errores más frecuentes durante la instalación de n8n. Organizados por tipo para que los encuentres rápido.</p>
+      </div>
+
+      <div class="card red-border">
+        <div class="card-label">🐳 Errores de Docker</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">"Port 5678 is already in use"</strong><br>
+              <span style="font-size: 13px;">Otro proceso usa ese puerto. Solución: <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">docker stop n8n</span> o cambia el puerto en el comando: <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">-p 5679:5678</span> y abre <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">localhost:5679</span>.</span>
+            </div>
+          </li>
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">"Cannot connect to Docker daemon"</strong><br>
+              <span style="font-size: 13px;">Docker Desktop no está corriendo. Abre la aplicación Docker Desktop en tu sistema y espera a que inicie completamente.</span>
+            </div>
+          </li>
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">Contenedor se detiene inmediatamente</strong><br>
+              <span style="font-size: 13px;">Revisa los logs: <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">docker logs n8n</span>. El problema más común es una variable de entorno mal escrita o un volumen con permisos incorrectos.</span>
+            </div>
+          </li>
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">Los datos desaparecen al reiniciar</strong><br>
+              <span style="font-size: 13px;">Olvidaste montar el volumen. Asegúrate de incluir <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">-v n8n_data:/home/node/.n8n</span> en el comando de Docker.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card amber-border">
+        <div class="card-label">📦 Errores de npm</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">"node: command not found"</strong><br>
+              <span style="font-size: 13px;">Node.js no está instalado. Descarga la versión LTS desde <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">nodejs.org</span> e instala. Luego reinicia la terminal.</span>
+            </div>
+          </li>
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">"npm WARN deprecated" al instalar</strong><br>
+              <span style="font-size: 13px;">Son advertencias, no errores críticos. La instalación continúa. Si aparece "npm ERR!" sí es un problema — verifica la versión de Node.</span>
+            </div>
+          </li>
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">n8n se detiene al cerrar la terminal</strong><br>
+              <span style="font-size: 13px;">El proceso muere cuando cierras la terminal. Usa <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">n8n start &</span> o instala <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">pm2</span> para mantenerlo corriendo en background.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🌐 Errores de webhooks y red</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">Webhook no recibe datos externos</strong><br>
+              <span style="font-size: 13px;">En instalación local, los servicios externos no pueden alcanzar <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">localhost</span>. Usa ngrok para exponer el puerto: <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">ngrok http 5678</span> y configura esa URL como WEBHOOK_URL.</span>
+            </div>
+          </li>
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">Error 404 al llamar el webhook</strong><br>
+              <span style="font-size: 13px;">El workflow no está activo. Verifica que el toggle en el editor esté en verde (Active). Si está en test mode, el webhook solo responde dentro del editor.</span>
+            </div>
+          </li>
+          <li><span class="cross">✗</span>
+            <div>
+              <strong style="color: var(--text);">Error de CORS en el navegador</strong><br>
+              <span style="font-size: 13px;">Agrega el encabezado <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">N8N_CORS_ORIGINS=*</span> como variable de entorno, o configura el dominio específico que necesita acceder.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="tip">
+        <strong>🔍 Regla de oro para debugging:</strong> ante cualquier error, lo primero es revisar los logs. En Docker: <span style="font-family:'JetBrains Mono',monospace; color: var(--green); font-size: 12px;">docker logs n8n -f</span>. En npm: los mensajes aparecen directo en la terminal. El 90% de los problemas se resuelven con la información del log.
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('primera-prueba')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('buenas-practicas')">Siguiente: Buenas prácticas →</button>
+      </div>
+    </section>
+
+    <!-- ========== S10: BUENAS PRÁCTICAS ========== -->
+    <section id="buenas-practicas" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 10</div>
+        <h1>Buenas <span>Prácticas</span></h1>
+        <p>Lo que separa una instalación amateur de una instalación profesional. Aplica estas prácticas desde el día 1.</p>
+      </div>
+
+      <div class="card green-border" style="margin-bottom: 12px;">
+        <div class="card-label">🔒 Seguridad</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Siempre usa autenticación</strong><br><span style="font-size: 13px;">Nunca expongas n8n al internet sin <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">N8N_BASIC_AUTH_ACTIVE=true</span> o sin un proxy con autenticación. Una instancia abierta es un riesgo real.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Guarda la N8N_ENCRYPTION_KEY</strong><br><span style="font-size: 13px;">Si pierdes esta clave, pierdes acceso a todas tus credenciales guardadas. Guárdala en un gestor de contraseñas como 1Password o Bitwarden.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Usa HTTPS en producción</strong><br><span style="font-size: 13px;">En local está bien usar HTTP. Pero si despliegas en un servidor, configura SSL/TLS con un certificado (Let's Encrypt es gratuito) y un proxy como nginx.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Rota las credenciales periódicamente</strong><br><span style="font-size: 13px;">Los API keys de servicios externos deben rotarse cada 90 días o cuando sospechas una filtración. n8n lo hace fácil desde Credentials.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card accent-border" style="margin-bottom: 12px;">
+        <div class="card-label">💾 Backups y mantenimiento</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Exporta tus workflows regularmente</strong><br><span style="font-size: 13px;">Descarga el JSON de cada workflow importante al menos una vez por Seccion. Si algo falla, los restauras en minutos sin perder trabajo.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Haz backup del volumen Docker</strong><br><span style="font-size: 13px;">El volumen <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">n8n_data</span> contiene workflows, credenciales e historial. Cópialo periódicamente o sincronízalo con una herramienta de backup.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Mantén n8n actualizado</strong><br><span style="font-size: 13px;">Revisa las release notes antes de actualizar. Para Docker: <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">docker pull docker.n8n.io/n8nio/n8n</span> y reinicia el contenedor.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card amber-border">
+        <div class="card-label">🗂️ Organización desde el inicio</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Nombra los workflows de forma clara</strong><br><span style="font-size: 13px;">Usa un formato consistente: <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">[Sistema] — Función — Versión</span>. Ejemplo: "CRM — Lead Capture v2". Evita nombres genéricos como "Workflow 1".</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Usa tags para categorizar</strong><br><span style="font-size: 13px;">n8n permite agregar tags a los workflows. Crea tags como "producción", "testing", "marketing", "ventas" para filtrar rápido.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Documenta con notas en el canvas</strong><br><span style="font-size: 13px;">Agrega notas (Sticky Notes) explicando qué hace cada sección del workflow. Tu yo del futuro te lo agradecerá.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Separa entornos dev y prod</strong><br><span style="font-size: 13px;">Si puedes, ten una instancia de testing y una de producción. Prueba siempre en testing antes de activar en producción.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🚀 Nivel pro — configuraciones avanzadas</div>
+        <div class="grid-2" style="margin-top: 12px; margin-bottom: 0;">
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px;">🔁 pm2 para npm (auto-restart)</h4>
+            <div class="code-block" style="margin-bottom: 0; font-size: 11px;">
+<span class="comment"># Instalar pm2 globalmente</span>
+<span class="cmd">npm install pm2 -g</span>
+
+<span class="comment"># Iniciar n8n con pm2</span>
+<span class="cmd">pm2 start n8n -- start</span>
+
+<span class="comment"># Auto-inicio al reiniciar el sistema</span>
+<span class="cmd">pm2 startup
+pm2 save</span>
+            </div>
+          </div>
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px;">🌐 Actualizar n8n en Docker</h4>
+            <div class="code-block" style="margin-bottom: 0; font-size: 11px;">
+<span class="comment"># Descargar nueva imagen</span>
+<span class="cmd">docker pull docker.n8n.io/n8nio/n8n</span>
+
+<span class="comment"># Detener y eliminar contenedor anterior</span>
+<span class="cmd">docker stop n8n
+docker rm n8n</span>
+
+<span class="comment"># Volver a correr (datos en volumen)</span>
+<span class="cmd">docker run -d --name n8n ...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('errores')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('entregable')">Siguiente: Entregable y cierre →</button>
+      </div>
+    </section>
+
+    <!-- ========== S11: ENTREGABLE ========== -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 11</div>
+        <h1>Entregable y <span>Cierre</span></h1>
+        <p>Lo que debes tener funcionando al finalizar esta Seccion. Una instalación correcta es la base de todo lo que viene.</p>
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">📦 Entregable de la Seccion 3</div>
+        <h3 style="margin-bottom: 20px;">n8n instalado, configurado y verificado</h3>
+
+        <div class="deliverable-item">
+          <div class="d-icon">⚡</div>
+          <div class="d-text">
+            <h4>n8n corriendo y accesible</h4>
+            <p>Cloud: acceso a <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">tu-instancia.app.n8n.cloud</span> — Local: n8n respondiendo en <span style="font-family:'JetBrains Mono',monospace; color: var(--teal); font-size: 12px;">localhost:5678</span>. El dashboard carga correctamente.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">👤</div>
+          <div class="d-text">
+            <h4>Usuario administrador configurado</h4>
+            <p>Cuenta creada, email verificado y contraseña guardada en un gestor. Puedes hacer login sin problemas.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">⚙️</div>
+          <div class="d-text">
+            <h4>Variables de entorno configuradas</h4>
+            <p>Al menos: zona horaria correcta, puerto configurado y (si es local) variable de encriptación definida.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">🔄</div>
+          <div class="d-text">
+            <h4>Workflow de Seccion 2 importado y activo</h4>
+            <p>El workflow Lead Capture está importado, activado y ejecutándose correctamente en la nueva instalación.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">✅</div>
+          <div class="d-text">
+            <h4>Prueba end-to-end exitosa</h4>
+            <p>Al menos una ejecución real con datos de prueba, respuesta 200 confirmada y el historial de ejecuciones mostrando éxito en verde.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">📸</div>
+          <div class="d-text">
+            <h4>Captura del dashboard funcionando</h4>
+            <p>Screenshot del editor de n8n con el workflow activo. Evidencia de que tu entorno está 100% operativo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">✅ Checklist final de la Seccion</div>
+        <div class="grid-2" style="margin-top: 12px; margin-bottom: 0;">
+          <ul class="checklist">
+            <li><span class="check">✓</span>n8n accesible en el navegador</li>
+            <li><span class="check">✓</span>Usuario admin creado y verificado</li>
+            <li><span class="check">✓</span>Zona horaria configurada correctamente</li>
+            <li><span class="check">✓</span>Workflow de S2 importado</li>
+          </ul>
+          <ul class="checklist">
+            <li><span class="check">✓</span>Workflow activado (toggle verde)</li>
+            <li><span class="check">✓</span>Prueba con POST exitosa</li>
+            <li><span class="check">✓</span>Historial de ejecuciones visible</li>
+            <li><span class="check">✓</span>Backup del workflow exportado</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🛠️ Tu stack esta Seccion</div>
+        <div style="margin-top: 12px;">
+          <span class="tool-pill">☁️ n8n Cloud</span>
+          <span class="tool-pill">🐳 Docker</span>
+          <span class="tool-pill">📦 npm / npx</span>
+          <span class="tool-pill">🌐 ngrok</span>
+          <span class="tool-pill">🧪 Postman / cURL</span>
+          <span class="tool-pill" style="border-color: rgba(34,201,122,0.4); color: var(--green);">✅ n8n operativo</span>
+        </div>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(32,212,176,0.06) 100%); border-color: rgba(124,110,245,0.25);">
+        <div style="text-align: center; padding: 16px 0 8px;">
+          <div style="font-size: 40px; margin-bottom: 12px;">🔌</div>
+          <h3 style="font-size: 22px; margin-bottom: 10px;">Seccion 4 — Integraciones Reales</h3>
+          <p style="color: var(--text2); font-size: 14px; max-width: 520px; margin: 0 auto 20px;">Con n8n instalado y funcionando, la Seccion 4 conectamos herramientas del mundo real: Google Sheets, Gmail, Slack y Telegram. Tus workflows dejan de ser ejercicios y se convierten en sistemas que trabajan mientras tú no.</p>
+          <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <span class="badge badge-green">📊 Google Sheets</span>
+            <span class="badge badge-accent">📧 Gmail</span>
+            <span class="badge badge-teal">💬 Slack / Telegram</span>
+            <span class="badge badge-amber">🔗 APIs externas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('buenas-practicas')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('intro')">↺ Reiniciar desde el inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections = ['intro','comparativa','cloud','docker','npm','configuracion','interfaz','primera-prueba','errores','buenas-practicas','entregable'];
+
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goTo(id) {
+    const el = document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+    showSection(id, el);
+  }
+
+  function updateProgress(id) {
+    const idx = sections.indexOf(id);
+    const pct = Math.round(((idx + 1) / sections.length) * 100);
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `Sección ${idx + 1} de ${sections.length}`;
+  }
+
+  function switchTab(btn, tabId) {
+    const parent = btn.closest('.card');
+    parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    parent.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+</script>
+
+</body>
+</html>

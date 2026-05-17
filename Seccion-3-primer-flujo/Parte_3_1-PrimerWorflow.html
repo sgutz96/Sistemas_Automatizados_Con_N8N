@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seccion 3 — Primer Flujo Real con n8n</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #1f1f28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0eeff;
+    --text2: #9b95b8;
+    --text3: #5c577a;
+    --accent: #7c6ef5;
+    --accent2: #a598ff;
+    --accent-glow: rgba(124,110,245,0.18);
+    --green: #22c97a;
+    --green-bg: rgba(34,201,122,0.1);
+    --red: #f05a5a;
+    --red-bg: rgba(240,90,90,0.1);
+    --amber: #f0a030;
+    --amber-bg: rgba(240,160,48,0.1);
+    --teal: #20d4b0;
+    --teal-bg: rgba(32,212,176,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,110,245,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,110,245,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .week {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .sidebar-logo h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .sidebar-logo p {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .nav-section {
+    padding: 16px 12px 8px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-glow);
+    border-color: rgba(124,110,245,0.3);
+    color: var(--accent2);
+  }
+  .nav-item .nav-num {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    background: var(--bg4);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+  .nav-item.active .nav-num {
+    background: rgba(124,110,245,0.25);
+    color: var(--accent2);
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .progress-bar {
+    background: var(--bg4);
+    border-radius: 4px;
+    height: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--teal));
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 260px;
+    flex: 1;
+    padding: 40px 48px;
+    max-width: calc(100% - 260px);
+  }
+
+  .section { display: none; animation: fadeIn 0.25s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-header { margin-bottom: 36px; }
+  .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .section-tag .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .section-header h1 {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .section-header h1 span { color: var(--accent2); }
+  .section-header p {
+    font-size: 16px;
+    color: var(--text2);
+    line-height: 1.7;
+    max-width: 640px;
+  }
+
+  /* GRIDS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card.accent-border { border-color: rgba(124,110,245,0.3); }
+  .card.green-border { border-color: rgba(34,201,122,0.3); }
+  .card.red-border { border-color: rgba(240,90,90,0.25); }
+  .card.amber-border { border-color: rgba(240,160,48,0.3); }
+  .card.teal-border { border-color: rgba(32,212,176,0.3); }
+  .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+  .card h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  .card p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+
+  /* STAT CARDS */
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 32px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent2);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label { font-size: 12px; color: var(--text2); line-height: 1.4; }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-accent { background: var(--accent-glow); color: var(--accent2); }
+  .badge-teal { background: var(--teal-bg); color: var(--teal); }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    font-size: 14px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check { color: var(--green); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .cross { color: var(--red); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .num-badge {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--accent-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent2);
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* CODE BLOCKS */
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.9;
+    margin-top: 12px;
+    overflow-x: auto;
+  }
+  .code-block .kw { color: var(--accent2); }
+  .code-block .str { color: var(--green); }
+  .code-block .comment { color: var(--text3); }
+  .code-block .key { color: var(--amber); }
+  .code-block .val { color: var(--teal); }
+
+  /* FLOW DIAGRAM */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 20px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .flow-node {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 16px 18px;
+    text-align: center;
+    flex-shrink: 0;
+    min-width: 130px;
+  }
+  .flow-node .fn-icon { font-size: 22px; margin-bottom: 6px; }
+  .flow-node .fn-type {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+  .flow-node .fn-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .flow-node.trigger-node { border-color: rgba(240,160,48,0.4); background: rgba(240,160,48,0.05); }
+  .flow-node.trigger-node .fn-type { color: var(--amber); }
+  .flow-node.process-node { border-color: rgba(124,110,245,0.4); background: rgba(124,110,245,0.05); }
+  .flow-node.process-node .fn-type { color: var(--accent2); }
+  .flow-node.action-node { border-color: rgba(34,201,122,0.4); background: rgba(34,201,122,0.05); }
+  .flow-node.action-node .fn-type { color: var(--green); }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: var(--text3);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* STEP LIST */
+  .step-list { list-style: none; }
+  .step-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .step-item:last-child { border-bottom: none; }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,110,245,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent2);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-content h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .step-content p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .step-content .step-tag {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--bg4);
+    color: var(--text3);
+  }
+
+  /* CONCEPT CARDS */
+  .concept-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .concept-card .cc-icon { font-size: 24px; margin-bottom: 10px; }
+  .concept-card h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .concept-card p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .concept-card .cc-tags { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .cc-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--bg4);
+    color: var(--text3);
+    border: 1px solid var(--border);
+  }
+
+  /* TOOL PILLS */
+  .tool-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    margin: 4px;
+  }
+
+  /* DELIVERABLE */
+  .deliverable-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .deliverable-item:last-child { border-bottom: none; }
+  .d-icon {
+    font-size: 22px;
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .d-text h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .d-text p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* NAV BUTTONS */
+  .nav-btns {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  /* HIGHLIGHT BOX */
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(32,212,176,0.05) 100%);
+    border: 1px solid rgba(124,110,245,0.25);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  /* IO EXAMPLE */
+  .io-grid {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 0;
+    align-items: center;
+    margin-top: 12px;
+  }
+  .io-box {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+  .io-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .io-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--accent);
+  }
+
+  /* BONUS CARDS */
+  .bonus-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .bonus-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .bonus-card h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .bonus-card p { font-size: 12px; color: var(--text2); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Seccion 3 · Clase 3</div>
+      <h2>Primer Flujo Real con n8n</h2>
+      <p>n8n · automatización</p>
+    </div>
+
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="showSection('intro', this)">
+      <span class="nav-num">1</span> Introducción
+    </a>
+    <a class="nav-item" onclick="showSection('conceptos', this)">
+      <span class="nav-num">2</span> Conceptos Clave
+    </a>
+    <a class="nav-item" onclick="showSection('flujo', this)">
+      <span class="nav-num">3</span> Estructura del Flujo
+    </a>
+    <a class="nav-item" onclick="showSection('ejercicio', this)">
+      <span class="nav-num">4</span> Ejercicio Práctico
+    </a>
+    <a class="nav-item" onclick="showSection('pasos', this)">
+      <span class="nav-num">5</span> Paso a Paso
+    </a>
+    <a class="nav-item" onclick="showSection('ejemplo', this)">
+      <span class="nav-num">6</span> Ejemplo Real
+    </a>
+    <a class="nav-item" onclick="showSection('errores', this)">
+      <span class="nav-num">7</span> Errores Comunes
+    </a>
+    <a class="nav-item" onclick="showSection('entregable', this)">
+      <span class="nav-num">8</span> Entregable
+    </a>
+
+    <div class="sidebar-footer">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress" style="width: 12.5%"></div>
+      </div>
+      <div class="progress-text" id="progress-text">Sección 1 de 8</div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ========== SECCIÓN 1: INTRO ========== -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Seccion 3 — Clase 3</div>
+        <h1>Primer Flujo <span>Real con n8n</span></h1>
+        <p>Pasamos de lo básico a lo importante: construir una automatización real que funcione dentro de un contexto de negocio concreto.</p>
+      </div>
+
+      <div class="highlight-box" style="margin-bottom: 20px;">
+        <div class="card-label">🎯 Objetivo de la clase</div>
+        <h3 style="font-size: 18px; font-weight: 700; color: var(--text); margin-top: 8px; margin-bottom: 10px;">Diseñar, construir y ejecutar tu primer workflow funcional en n8n</h3>
+        <p style="font-size: 14px; color: var(--text2); line-height: 1.7;">Conectarás un trigger con acciones reales que resuelvan una necesidad concreta. Al terminar esta clase tendrás una automatización corriendo, no solo en teoría.</p>
+      </div>
+
+      <div class="grid-4" style="margin-bottom: 20px;">
+        <div class="stat-card">
+          <div class="stat-num">3</div>
+          <div class="stat-label">nodos mínimos para un workflow real</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">1</div>
+          <div class="stat-label">trigger que dispara todo el flujo</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">9</div>
+          <div class="stat-label">pasos para construir tu primer flujo</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">∞</div>
+          <div class="stat-label">posibilidades desde este punto</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🧠 Qué vas a aprender en esta clase</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Cómo estructurar un workflow correctamente</strong><br><span style="font-size: 13px;">Los tres bloques fundamentales: trigger, procesamiento y acción. Todos los workflows que construyas de aquí en adelante siguen esta lógica.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Diferencia entre triggers y acciones</strong><br><span style="font-size: 13px;">No son lo mismo. Un trigger <em>escucha</em>, una acción <em>ejecuta</em>. Confundirlos es el error más común al empezar.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Cómo conectar nodos dentro de n8n</strong><br><span style="font-size: 13px;">La interfaz visual de n8n hace esto intuitivo, pero hay reglas importantes que debes conocer antes de ejecutar.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Manejo básico de datos entre pasos</strong><br><span style="font-size: 13px;">Los datos viajan entre nodos en formato JSON. Entender cómo fluyen te permite construir lógica más potente.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Buenas prácticas para automatizaciones reales</strong><br><span style="font-size: 13px;">Workflows simples, bien nombrados, probados por partes. Las reglas que separan lo que funciona de lo que falla en producción.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-primary" onclick="goTo('conceptos')">Siguiente: Conceptos Clave →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 2: CONCEPTOS ========== -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Conceptos <span>Clave</span></h1>
+        <p>Los tres pilares de cualquier automatización en n8n. Entiéndelos bien y el resto es construcción.</p>
+      </div>
+
+      <div class="card accent-border" style="margin-bottom: 20px;">
+        <div class="card-label">🔸 Workflow</div>
+        <h3>Flujo de automatización</h3>
+        <p>Un workflow es el conjunto de nodos conectados que define qué hace tu automatización, en qué orden y con qué datos. Es el mapa completo del proceso automatizado.</p>
+        <div class="code-block" style="margin-top: 16px;">
+<span class="comment">// Un workflow tiene siempre esta estructura</span>
+<span class="key">trigger</span> → <span class="kw">nodo_proceso</span> → <span class="val">acción_final</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card amber-border">
+          <div class="card-label">🔸 Trigger — evento de inicio</div>
+          <h3 style="color: var(--amber);">Dispara el flujo</h3>
+          <p>El trigger es el punto de partida. <strong style="color: var(--text);">Sin trigger no hay automatización.</strong> Escucha eventos y activa el workflow cuando ocurren.</p>
+          <div class="cc-tags" style="margin-top: 16px;">
+            <span class="cc-tag" style="border-color: rgba(240,160,48,0.3); color: var(--amber);">🌐 Webhook</span>
+            <span class="cc-tag" style="border-color: rgba(240,160,48,0.3); color: var(--amber);">⏰ Cron</span>
+            <span class="cc-tag" style="border-color: rgba(240,160,48,0.3); color: var(--amber);">📡 Evento externo</span>
+            <span class="cc-tag" style="border-color: rgba(240,160,48,0.3); color: var(--amber);">▶️ Manual</span>
+          </div>
+        </div>
+
+        <div class="card green-border">
+          <div class="card-label">🔸 Acción — resultado del flujo</div>
+          <h3 style="color: var(--green);">Ejecuta algo real</h3>
+          <p>Las acciones son los nodos que <strong style="color: var(--text);">hacen cosas</strong>: enviar datos, crear registros, notificar a personas o transformar información.</p>
+          <div class="cc-tags" style="margin-top: 16px;">
+            <span class="cc-tag" style="border-color: rgba(34,201,122,0.3); color: var(--green);">📨 Enviar datos</span>
+            <span class="cc-tag" style="border-color: rgba(34,201,122,0.3); color: var(--green);">📝 Crear registros</span>
+            <span class="cc-tag" style="border-color: rgba(34,201,122,0.3); color: var(--green);">🔔 Notificar</span>
+            <span class="cc-tag" style="border-color: rgba(34,201,122,0.3); color: var(--green);">🔄 Transformar</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">⚙️ Nodos de procesamiento — el puente</div>
+        <div class="grid-3" style="margin-top: 12px; margin-bottom: 0;">
+          <div class="concept-card">
+            <div class="cc-icon">🔧</div>
+            <h4>Set</h4>
+            <p>Organiza, renombra o define campos en los datos. Es el nodo más usado en workflows básicos.</p>
+            <div class="cc-tags"><span class="cc-tag">organizar datos</span></div>
+          </div>
+          <div class="concept-card">
+            <div class="cc-icon">⚡</div>
+            <h4>Function</h4>
+            <p>Ejecuta código JavaScript personalizado para transformaciones que Set no puede hacer.</p>
+            <div class="cc-tags"><span class="cc-tag">lógica avanzada</span></div>
+          </div>
+          <div class="concept-card">
+            <div class="cc-icon">🔀</div>
+            <h4>IF / Switch</h4>
+            <p>Lógica condicional. El flujo toma caminos distintos según los datos que recibe.</p>
+            <div class="cc-tags"><span class="cc-tag">condicionales</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('flujo')">Siguiente: Estructura del Flujo →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 3: FLUJO ========== -->
+    <section id="flujo" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Estructura <span>del Flujo</span></h1>
+        <p>Todo workflow real sigue el mismo patrón: trigger → procesamiento → acción. Así se ve en la práctica.</p>
+      </div>
+
+      <div class="card accent-border" style="margin-bottom: 20px;">
+        <div class="card-label">🧩 Flujo básico — 3 nodos</div>
+        <div class="flow-row" style="margin-top: 20px; padding: 8px 0;">
+          <div class="flow-node trigger-node">
+            <div class="fn-icon">🌐</div>
+            <div class="fn-type">Trigger</div>
+            <div class="fn-name">Webhook</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node process-node">
+            <div class="fn-icon">🔧</div>
+            <div class="fn-type">Procesamiento</div>
+            <div class="fn-name">Set</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node action-node">
+            <div class="fn-icon">📨</div>
+            <div class="fn-type">Acción</div>
+            <div class="fn-name">Notificación</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-bottom: 20px;">
+        <div class="card" style="border-color: rgba(240,160,48,0.3);">
+          <div class="card-label" style="color: var(--amber);">① Entrada</div>
+          <h3>Webhook recibe datos</h3>
+          <p>El webhook queda escuchando en una URL. Cuando llega una petición, el workflow se activa automáticamente con los datos recibidos.</p>
+          <div class="code-block" style="font-size: 11px; margin-top: 12px;">
+POST /webhook/mi-flujo
+<span class="str">{
+  "nombre": "Laura",
+  "email": "laura@..."
+}</span>
+          </div>
+        </div>
+
+        <div class="card" style="border-color: rgba(124,110,245,0.3);">
+          <div class="card-label" style="color: var(--accent2);">② Procesamiento</div>
+          <h3>Nodo SET organiza</h3>
+          <p>El nodo Set toma los datos crudos del webhook y los reorganiza, formatea o enriquece para que el siguiente paso los entienda correctamente.</p>
+          <div class="code-block" style="font-size: 11px; margin-top: 12px;">
+<span class="key">mensaje</span> = <span class="str">"Nuevo lead: " + nombre</span>
+<span class="key">destino</span> = <span class="val">email</span>
+<span class="key">timestamp</span> = <span class="kw">Date.now()</span>
+          </div>
+        </div>
+
+        <div class="card" style="border-color: rgba(34,201,122,0.3);">
+          <div class="card-label" style="color: var(--green);">③ Salida</div>
+          <h3>Envío de notificación</h3>
+          <p>El nodo de acción recibe los datos procesados y ejecuta la tarea real: enviar un email, un mensaje de Slack, Telegram, o lo que necesites.</p>
+          <div class="code-block" style="font-size: 11px; margin-top: 12px;">
+<span class="comment">// Canales posibles</span>
+→ <span class="str">Email</span> (Gmail, SMTP)
+→ <span class="str">Slack</span>
+→ <span class="str">Telegram</span>
+→ <span class="str">WhatsApp</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🧩 Flujo avanzado — múltiples acciones</div>
+        <div class="flow-row" style="margin-top: 20px; padding: 8px 0;">
+          <div class="flow-node trigger-node">
+            <div class="fn-icon">🌐</div>
+            <div class="fn-type">Trigger</div>
+            <div class="fn-name">Webhook</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node process-node">
+            <div class="fn-icon">🔧</div>
+            <div class="fn-type">Procesamiento</div>
+            <div class="fn-name">Set</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node process-node">
+            <div class="fn-icon">🔀</div>
+            <div class="fn-type">Condicional</div>
+            <div class="fn-name">IF</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node action-node">
+            <div class="fn-icon">📨</div>
+            <div class="fn-type">Acción A</div>
+            <div class="fn-name">Email</div>
+          </div>
+          <div class="flow-arrow" style="color: var(--border2);">·</div>
+          <div class="flow-node action-node">
+            <div class="fn-icon">💬</div>
+            <div class="fn-type">Acción B</div>
+            <div class="fn-name">Slack</div>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: var(--text3); margin-top: 8px; font-family: 'JetBrains Mono', monospace;">← nivel bonus: con lógica condicional y múltiples salidas →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('ejercicio')">Siguiente: Ejercicio Práctico →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 4: EJERCICIO ========== -->
+    <section id="ejercicio" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 4</div>
+        <h1>Ejercicio <span>Práctico</span></h1>
+        <p>El caso concreto que vas a construir hoy. No es un ejemplo genérico, es un workflow que resuelve un problema real.</p>
+      </div>
+
+      <div class="card accent-border" style="margin-bottom: 20px;">
+        <div class="card-label">🚀 Caso: Notificación automática desde formulario</div>
+        <h3 style="font-size: 20px; margin-bottom: 12px;">Cada vez que llegue información, enviar una notificación automática</h3>
+        <p>Simularemos un formulario que envía datos y dispara una acción automática. Este patrón cubre el 80% de los casos de uso más comunes en negocios reales.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
+          <span class="badge badge-amber">📥 Entrada de datos</span>
+          <span class="badge badge-accent">⚙️ Procesamiento</span>
+          <span class="badge badge-green">📤 Notificación</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 20px;">
+        <div class="card">
+          <div class="card-label">💡 ¿Por qué este caso?</div>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="check">✓</span>Cubre los 3 bloques fundamentales del workflow</li>
+            <li><span class="check">✓</span>Fácil de probar con datos reales en minutos</li>
+            <li><span class="check">✓</span>Se aplica a leads, formularios de contacto, pedidos</li>
+            <li><span class="check">✓</span>Base perfecta para agregar complejidad después</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Aplicaciones en negocio real</div>
+          <ul class="checklist" style="margin-top: 8px;">
+            <li><span class="check">→</span><div>Formulario de contacto → notificación a ventas</div></li>
+            <li><span class="check">→</span><div>Registro de evento → confirmación automática</div></li>
+            <li><span class="check">→</span><div>Nuevo pedido → alerta al equipo de operaciones</div></li>
+            <li><span class="check">→</span><div>Lead de campaña → CRM + Slack automático</div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card green-border">
+        <div class="card-label">🧪 Variantes del ejercicio según tu herramienta</div>
+        <div class="grid-3" style="margin-top: 12px; margin-bottom: 0;">
+          <div class="concept-card">
+            <div class="cc-icon">📧</div>
+            <h4>Email</h4>
+            <p>Webhook → Set → Gmail o SMTP. El camino más universal. Funciona sin necesidad de cuentas adicionales.</p>
+          </div>
+          <div class="concept-card">
+            <div class="cc-icon">💬</div>
+            <h4>Slack</h4>
+            <p>Webhook → Set → Slack. Ideal para equipos. El mensaje llega al canal que elijas en segundos.</p>
+          </div>
+          <div class="concept-card">
+            <div class="cc-icon">✈️</div>
+            <h4>Telegram</h4>
+            <p>Webhook → Set → Telegram Bot. Rápido de configurar, personal o grupal. Muy útil para notificaciones propias.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('flujo')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('pasos')">Siguiente: Paso a Paso →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 5: PASOS ========== -->
+    <section id="pasos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 5</div>
+        <h1>Paso a <span>Paso</span></h1>
+        <p>Los 9 pasos para construir y ejecutar tu primer workflow. Síguelos en orden, uno a la vez.</p>
+      </div>
+
+      <div class="card accent-border" style="margin-bottom: 20px;">
+        <div class="card-label">📌 Construcción del workflow</div>
+        <ul class="step-list" style="margin-top: 12px;">
+          <li class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Crear un nuevo workflow en n8n</h4>
+              <p>Entra a tu instancia de n8n, haz clic en "New Workflow" y dale un nombre descriptivo. Por ejemplo: <strong style="color: var(--accent2);">Notificación - Formulario Lead</strong>. Nombrarlo bien desde el inicio te ahorra confusión después.</p>
+              <span class="step-tag">UI → New Workflow → Nombrar</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Agregar un nodo Webhook</h4>
+              <p>Haz clic en el botón "+" y busca el nodo <strong style="color: var(--amber);">Webhook</strong>. Este será tu trigger: el punto de entrada de los datos al workflow.</p>
+              <span class="step-tag">+ → Buscar "Webhook" → Agregar</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Configurar el trigger</h4>
+              <p>Elige el método HTTP (<strong style="color: var(--text);">POST</strong> en la mayoría de casos). n8n te dará una URL única para tu webhook. Cópiala — la usarás para enviar datos de prueba.</p>
+              <span class="step-tag">Método: POST → Copiar URL del webhook</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>Añadir nodo de procesamiento (Set)</h4>
+              <p>Agrega el nodo <strong style="color: var(--accent2);">Set</strong> después del webhook. Aquí definirás los campos que quieres usar en los siguientes pasos: nombre del mensaje, destinatario, formato, etc.</p>
+              <span class="step-tag">+ → Set → Definir campos de salida</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <h4>Agregar nodo de acción</h4>
+              <p>Conecta el nodo de tu canal elegido: <strong style="color: var(--green);">Gmail, Slack, Telegram</strong> u otro. Configura el destinatario y el contenido del mensaje usando las variables del paso anterior.</p>
+              <span class="step-tag">+ → Gmail / Slack / Telegram → Configurar</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <h4>Conectar todos los nodos</h4>
+              <p>Arrastra desde el punto de salida de cada nodo al punto de entrada del siguiente. El flujo debe ser lineal: Webhook → Set → Acción. Verifica que todas las conexiones estén activas.</p>
+              <span class="step-tag">Arrastrar conexiones → Verificar flujo completo</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">7</div>
+            <div class="step-content">
+              <h4>Ejecutar el flujo</h4>
+              <p>Activa el workflow con el botón <strong style="color: var(--text);">Execute Workflow</strong>. En modo prueba puedes activar primero el webhook y enviar datos manualmente para ver qué pasa.</p>
+              <span class="step-tag">Execute Workflow → Webhook listening...</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">8</div>
+            <div class="step-content">
+              <h4>Probar con datos reales</h4>
+              <p>Usa <strong style="color: var(--text);">Postman, cURL o un formulario</strong> para enviar un POST a la URL de tu webhook. n8n mostrará los datos en tiempo real en cada nodo.</p>
+              <div class="code-block" style="font-size: 11px; margin-top: 8px; margin-bottom: 0;">
+curl -X POST <span class="str">TU_WEBHOOK_URL</span> \
+  -H <span class="val">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"nombre":"Laura","email":"laura@email.com"}'</span>
+              </div>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">9</div>
+            <div class="step-content">
+              <h4>Validar resultados</h4>
+              <p>Confirma que la notificación llegó correctamente. Revisa cada nodo en n8n para ver los datos de entrada y salida. Si algo falla, n8n te muestra exactamente dónde y por qué.</p>
+              <span class="step-tag">Revisar logs → Verificar notificación recibida</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('ejercicio')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('ejemplo')">Siguiente: Ejemplo Real →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 6: EJEMPLO ========== -->
+    <section id="ejemplo" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6</div>
+        <h1>Ejemplo <span>Real</span></h1>
+        <p>Así se ven los datos en cada etapa del workflow. Entrada, procesamiento y salida con datos concretos.</p>
+      </div>
+
+      <div class="card accent-border" style="margin-bottom: 20px;">
+        <div class="card-label">📧 Caso completo: Lead desde formulario → Notificación</div>
+
+        <div class="io-grid" style="margin-top: 16px;">
+          <div>
+            <div class="io-label" style="color: var(--amber);">🔹 Input — webhook recibe</div>
+            <div class="io-box">
+<span class="key">{</span>
+  <span class="key">"nombre"</span>: <span class="str">"Laura"</span>,
+  <span class="key">"email"</span>: <span class="str">"laura@email.com"</span>,
+  <span class="key">"empresa"</span>: <span class="str">"Startup ABC"</span>,
+  <span class="key">"fuente"</span>: <span class="str">"formulario-web"</span>
+<span class="key">}</span>
+            </div>
+          </div>
+          <div class="io-arrow">→</div>
+          <div>
+            <div class="io-label" style="color: var(--green);">🔹 Output — acción envía</div>
+            <div class="io-box">
+<span class="key">{</span>
+  <span class="key">"mensaje"</span>: <span class="str">"Nuevo lead recibido"</span>,
+  <span class="key">"para"</span>: <span class="str">"ventas@empresa.com"</span>,
+  <span class="key">"asunto"</span>: <span class="str">"Lead: Laura - Startup ABC"</span>,
+  <span class="key">"timestamp"</span>: <span class="val">"2025-01-15T10:30:00Z"</span>
+<span class="key">}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-label">⚙️ Transformación en el nodo Set</div>
+        <p style="font-size: 13px; color: var(--text2); margin-bottom: 12px;">Así defines los campos de salida en el nodo Set usando los datos del webhook:</p>
+        <div class="code-block">
+<span class="comment">// Nodo SET — mapeo de campos</span>
+
+<span class="key">mensaje</span>   = <span class="str">"Nuevo lead recibido: "</span> + <span class="kw">{{$json.nombre}}</span>
+<span class="key">asunto</span>    = <span class="str">"Lead: "</span> + <span class="kw">{{$json.nombre}}</span> + <span class="str">" - "</span> + <span class="kw">{{$json.empresa}}</span>
+<span class="key">para</span>      = <span class="val">ventas@empresa.com</span>
+<span class="key">fuente</span>    = <span class="kw">{{$json.fuente}}</span>
+<span class="key">timestamp</span> = <span class="kw">{{$now}}</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 20px;">
+        <div class="card green-border">
+          <div class="card-label">✅ Notificación por Email</div>
+          <div class="code-block" style="font-size: 12px;">
+<span class="comment">// Gmail / SMTP</span>
+<span class="key">Para:</span>     <span class="str">ventas@empresa.com</span>
+<span class="key">Asunto:</span>  <span class="kw">{{asunto}}</span>
+<span class="key">Cuerpo:</span>
+<span class="val">Nombre:</span>  <span class="kw">{{$json.nombre}}</span>
+<span class="val">Email:</span>   <span class="kw">{{$json.email}}</span>
+<span class="val">Empresa:</span> <span class="kw">{{$json.empresa}}</span>
+          </div>
+        </div>
+
+        <div class="card" style="border-color: rgba(32,212,176,0.3);">
+          <div class="card-label">💬 Notificación por Slack</div>
+          <div class="code-block" style="font-size: 12px;">
+<span class="comment">// Slack message</span>
+<span class="key">Canal:</span>    <span class="str">#leads</span>
+<span class="key">Mensaje:</span>
+<span class="val">🔔 Nuevo lead:</span>
+<span class="str">→ Nombre: </span><span class="kw">{{$json.nombre}}</span>
+<span class="str">→ Email: </span><span class="kw">{{$json.email}}</span>
+<span class="str">→ Empresa: </span><span class="kw">{{$json.empresa}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🧪 Buenas prácticas — manejo de datos</div>
+        <div class="grid-2" style="margin-top: 12px; margin-bottom: 0;">
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px;">✅ Hazlo así</h4>
+            <ul class="checklist">
+              <li><span class="check">✓</span>Nombra los nodos con su función real</li>
+              <li><span class="check">✓</span>Prueba cada nodo individualmente</li>
+              <li><span class="check">✓</span>Valida los datos antes de cada acción</li>
+              <li><span class="check">✓</span>Usa datos claros y descriptivos</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px;">❌ Evita esto</h4>
+            <ul class="checklist">
+              <li><span class="cross">✗</span>Dejar nodos con nombre "Set" genérico</li>
+              <li><span class="cross">✗</span>Ejecutar sin probar el trigger primero</li>
+              <li><span class="cross">✗</span>Ignorar el formato de los datos de entrada</li>
+              <li><span class="cross">✗</span>Saltarse el paso de validación</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('pasos')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('errores')">Siguiente: Errores Comunes →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 7: ERRORES ========== -->
+    <section id="errores" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 7</div>
+        <h1>Errores <span>Comunes</span></h1>
+        <p>Los problemas más frecuentes al construir el primer workflow. Conocerlos de antemano te ahorra horas de depuración.</p>
+      </div>
+
+      <div class="card red-border" style="margin-bottom: 16px;">
+        <div class="card-label">🚫 Errores que debes evitar</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">No conectar correctamente los nodos</strong><br><span style="font-size: 13px;">Un nodo desconectado no ejecuta. En n8n cada nodo debe tener una línea de conexión visible desde el nodo anterior. Verifica siempre el grafo completo antes de ejecutar.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">No probar el trigger antes de continuar</strong><br><span style="font-size: 13px;">Si el webhook no recibe datos, el resto del flujo no importa. Activa el modo "Listen for Test Event" y envía un POST antes de configurar el Set o la acción.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">Ignorar el formato de los datos</strong><br><span style="font-size: 13px;">n8n trabaja con JSON. Si envías datos en formato incorrecto, el nodo Set no encontrará los campos y el flujo fallará silenciosamente. Revisa la estructura del payload.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">Automatizar sin entender el flujo primero</strong><br><span style="font-size: 13px;">Antes de abrir n8n, dibuja el flujo en papel. Trigger → qué datos llegan → qué necesito hacer con ellos → qué acción ejecuto. Sin este mapa mental, te perderás entre nodos.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">Activar el workflow sin validar resultados</strong><br><span style="font-size: 13px;">Un workflow activo que falla en silencio es peor que uno inactivo. Siempre confirma que la notificación llegó antes de declarar el workflow como listo.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card green-border" style="margin-bottom: 16px;">
+        <div class="card-label">✅ Buenas prácticas para workflows reales</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Mantener los flujos simples al inicio</strong><br><span style="font-size: 13px;">Un workflow de 3 nodos que funciona vale más que uno de 15 que nadie entiende. Agrega complejidad solo cuando lo simple ya está probado.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Probar cada nodo individualmente</strong><br><span style="font-size: 13px;">n8n te permite ejecutar nodos por separado. Úsalo: prueba el webhook solo, luego el Set, luego la acción. Así identificas exactamente dónde está el problema.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Usar datos reales desde el primer test</strong><br><span style="font-size: 13px;">Los datos ficticios esconden problemas que aparecen en producción. Usa emails reales, nombres reales, formatos reales desde la primera prueba.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Nombrar los nodos correctamente</strong><br><span style="font-size: 13px;">"Webhook - Recibe Lead", "Set - Formatea Mensaje", "Gmail - Notifica Ventas". En 3 Seccions cuando revises el workflow, sabrás exactamente qué hace cada nodo.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🚀 Nivel pro — bonus</div>
+        <div class="grid-2" style="margin-top: 12px; margin-bottom: 0;">
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px;">Agrega estas funciones al workflow</h4>
+            <div class="step-list">
+              <div class="step-item" style="padding: 10px 0;">
+                <div class="num-badge">→</div>
+                <div class="step-content"><h4>Múltiples acciones</h4><p style="font-size: 12px;">Email + Slack al mismo tiempo con un solo trigger.</p></div>
+              </div>
+              <div class="step-item" style="padding: 10px 0;">
+                <div class="num-badge">→</div>
+                <div class="step-content"><h4>Filtrar datos con IF</h4><p style="font-size: 12px;">Solo notificar si el email es corporativo, no genérico.</p></div>
+              </div>
+              <div class="step-item" style="padding: 10px 0; border-bottom: none;">
+                <div class="num-badge">→</div>
+                <div class="step-content"><h4>Conectar con Google Sheets</h4><p style="font-size: 12px;">Registrar cada lead en una hoja automáticamente.</p></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px;">Herramientas que puedes conectar hoy</h4>
+            <div style="margin-top: 8px;">
+              <span class="tool-pill">📊 Google Sheets</span>
+              <span class="tool-pill">📧 Gmail</span>
+              <span class="tool-pill">💬 Slack</span>
+              <span class="tool-pill">✈️ Telegram</span>
+              <span class="tool-pill">📋 Notion</span>
+              <span class="tool-pill">🗃️ Airtable</span>
+              <span class="tool-pill" style="border-color: rgba(124,110,245,0.4); color: var(--accent2);">🔗 Cualquier API REST</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('ejemplo')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 8: ENTREGABLE ========== -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Entregable y <span>Cierre</span></h1>
+        <p>Lo que debes tener funcionando al finalizar esta clase. Este workflow es la base sobre la que construirás automatizaciones más complejas.</p>
+      </div>
+
+      <div class="card accent-border" style="margin-bottom: 16px;">
+        <div class="card-label">📦 Entregable de la Seccion 3</div>
+        <h3 style="margin-bottom: 20px;">Un workflow funcional en n8n</h3>
+
+        <div class="deliverable-item">
+          <div class="d-icon">⚡</div>
+          <div class="d-text">
+            <h4>Se activa automáticamente o manualmente</h4>
+            <p>El workflow debe poder ejecutarse con un trigger real (webhook) o con el botón manual. Ambos deben funcionar correctamente.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">🔧</div>
+          <div class="d-text">
+            <h4>Procesa datos correctamente</h4>
+            <p>El nodo Set debe transformar los datos de entrada en el formato esperado por la acción. Sin datos rotos, sin campos vacíos.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">📤</div>
+          <div class="d-text">
+            <h4>Ejecuta una acción real (notificación o registro)</h4>
+            <p>La notificación debe llegar a destino: un email, mensaje de Slack, Telegram u otro canal. Verificado, no asumido.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">🏷️</div>
+          <div class="d-text">
+            <h4>Nodos correctamente nombrados</h4>
+            <p>Cada nodo con un nombre que describa su función. Nada de "Set 1", "Webhook 2". Nombres claros para flujos mantenibles.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">✅</div>
+          <div class="d-text">
+            <h4>Validado con datos reales de prueba</h4>
+            <p>Al menos una ejecución exitosa con datos reales. El resultado debe estar visible en el historial de ejecuciones de n8n.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green-border" style="margin-bottom: 16px;">
+        <div class="card-label">🚀 Resultado esperado al terminar esta clase</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span>Tu primera automatización real corriendo en n8n</li>
+          <li><span class="check">✓</span>Entendimiento claro de la arquitectura trigger → proceso → acción</li>
+          <li><span class="check">✓</span>Capacidad de leer y depurar datos JSON entre nodos</li>
+          <li><span class="check">✓</span>Base sólida para construir automatizaciones más complejas</li>
+          <li><span class="check">✓</span>Mentalidad de workflows: simple, probado, nombrado, validado</li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(32,212,176,0.06) 100%); border-color: rgba(124,110,245,0.25);">
+        <div style="text-align: center; padding: 16px 0 8px;">
+          <div style="font-size: 40px; margin-bottom: 12px;">⚡</div>
+          <h3 style="font-size: 22px; margin-bottom: 10px;">Seccion 4 — Workflows avanzados y lógica condicional</h3>
+          <p style="color: var(--text2); font-size: 14px; max-width: 480px; margin: 0 auto 20px;">Con tu primer flujo real funcionando, la Seccion 4 damos el salto a workflows con múltiples ramas, condiciones IF, filtros y conexión con herramientas externas como Google Sheets y CRMs.</p>
+          <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <span class="badge badge-accent">🔀 Lógica condicional</span>
+            <span class="badge badge-teal">📊 Google Sheets</span>
+            <span class="badge badge-green">🔗 Integraciones avanzadas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('errores')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('intro')">↺ Reiniciar desde el inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections = ['intro','conceptos','flujo','ejercicio','pasos','ejemplo','errores','entregable'];
+
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goTo(id) {
+    const el = document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+    showSection(id, el);
+  }
+
+  function updateProgress(id) {
+    const idx = sections.indexOf(id);
+    const pct = Math.round(((idx + 1) / sections.length) * 100);
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `Sección ${idx + 1} de ${sections.length}`;
+  }
+</script>
+
+</body>
+</html>

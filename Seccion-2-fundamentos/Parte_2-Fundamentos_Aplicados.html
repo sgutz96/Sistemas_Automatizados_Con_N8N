@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seccion 2 — Fundamentos Aplicados de n8n</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #1f1f28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0eeff;
+    --text2: #9b95b8;
+    --text3: #5c577a;
+    --accent: #7c6ef5;
+    --accent2: #a598ff;
+    --accent-glow: rgba(124,110,245,0.18);
+    --green: #22c97a;
+    --green-bg: rgba(34,201,122,0.1);
+    --red: #f05a5a;
+    --red-bg: rgba(240,90,90,0.1);
+    --amber: #f0a030;
+    --amber-bg: rgba(240,160,48,0.1);
+    --teal: #20d4b0;
+    --teal-bg: rgba(32,212,176,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,110,245,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,110,245,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .week {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .sidebar-logo h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .sidebar-logo p {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .nav-section {
+    padding: 16px 12px 8px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-glow);
+    border-color: rgba(124,110,245,0.3);
+    color: var(--accent2);
+  }
+  .nav-item .nav-num {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    background: var(--bg4);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+  .nav-item.active .nav-num {
+    background: rgba(124,110,245,0.25);
+    color: var(--accent2);
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .progress-bar {
+    background: var(--bg4);
+    border-radius: 4px;
+    height: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--teal));
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 260px;
+    flex: 1;
+    padding: 40px 48px;
+    max-width: calc(100% - 260px);
+  }
+
+  .section { display: none; animation: fadeIn 0.25s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-header { margin-bottom: 36px; }
+  .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .section-tag .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .section-header h1 {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .section-header h1 span { color: var(--accent2); }
+  .section-header p {
+    font-size: 16px;
+    color: var(--text2);
+    line-height: 1.7;
+    max-width: 640px;
+  }
+
+  /* GRIDS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card.accent-border { border-color: rgba(124,110,245,0.3); }
+  .card.green-border { border-color: rgba(34,201,122,0.3); }
+  .card.red-border { border-color: rgba(240,90,90,0.25); }
+  .card.amber-border { border-color: rgba(240,160,48,0.3); }
+  .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+  .card h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  .card p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+
+  /* STAT CARDS */
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 32px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent2);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label { font-size: 12px; color: var(--text2); line-height: 1.4; }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-accent { background: var(--accent-glow); color: var(--accent2); }
+  .badge-teal { background: var(--teal-bg); color: var(--teal); }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    font-size: 14px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check { color: var(--green); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .cross { color: var(--red); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .num-badge {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--accent-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent2);
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* HIGHLIGHT */
+  .highlight {
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,110,245,0.25);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+  .highlight strong { color: var(--accent2); }
+
+  .tip {
+    background: var(--green-bg);
+    border-left: 3px solid var(--green);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+  .tip strong { color: var(--green); }
+
+  .warning {
+    background: var(--red-bg);
+    border-left: 3px solid var(--red);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+  .warning strong { color: var(--red); }
+
+  /* FLOW */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 20px 0;
+  }
+  .flow-node {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flow-node.active-node {
+    background: var(--accent-glow);
+    border-color: rgba(124,110,245,0.4);
+    color: var(--accent2);
+  }
+  .flow-node .node-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .flow-arrow { color: var(--text3); font-size: 18px; font-weight: 300; }
+
+  /* N8N NODES */
+  .n8n-flow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 16px 0;
+  }
+  .n8n-node {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .n8n-node .ndot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ndot-trigger { background: #7c6ef5; box-shadow: 0 0 6px rgba(124,110,245,0.5); }
+  .ndot-action { background: var(--green); box-shadow: 0 0 6px rgba(34,201,122,0.4); }
+  .ndot-condition { background: var(--amber); box-shadow: 0 0 6px rgba(240,160,48,0.4); }
+  .ndot-output { background: var(--teal); box-shadow: 0 0 6px rgba(32,212,176,0.4); }
+
+  /* CONCEPT CARD */
+  .concept-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .concept-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .concept-icon { font-size: 24px; margin-bottom: 10px; }
+  .concept-card h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .concept-card p { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+  /* STEP INDICATOR */
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 32px;
+  }
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text3);
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+  .step-dot.done { background: var(--accent-glow); border-color: rgba(124,110,245,0.5); color: var(--accent2); }
+  .step-line { height: 1px; flex: 1; background: var(--border); }
+  .step-line.done { background: rgba(124,110,245,0.4); }
+
+  /* DELIVERABLE */
+  .deliverable-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .deliverable-item:last-child { border-bottom: none; }
+  .d-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--accent-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .d-text h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .d-text p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+  /* TOOL PILL */
+  .tool-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    margin: 4px;
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+  .code-block .kw { color: var(--accent2); }
+  .code-block .str { color: var(--green); }
+  .code-block .comment { color: var(--text3); }
+  .code-block .key { color: var(--amber); }
+
+  /* BEFORE/AFTER */
+  .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ba-col { border-radius: 12px; padding: 20px; border: 1px solid transparent; }
+  .ba-before { background: rgba(240,90,90,0.05); border-color: rgba(240,90,90,0.2); }
+  .ba-after { background: rgba(34,201,122,0.05); border-color: rgba(34,201,122,0.2); }
+  .ba-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ba-before .ba-header { color: var(--red); }
+  .ba-after .ba-header { color: var(--green); }
+  .ba-step {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 10px;
+    font-size: 13px; color: var(--text2); line-height: 1.5;
+  }
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ba-before .step-num { background: rgba(240,90,90,0.2); color: var(--red); }
+  .ba-after .step-num { background: rgba(34,201,122,0.2); color: var(--green); }
+
+  /* NAV BUTTONS */
+  .nav-btns {
+    display: flex;
+    gap: 12px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+    border: none;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #6b5ee0; transform: translateY(-1px); }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+  .btn-ghost:hover { background: var(--bg4); color: var(--text); }
+
+  /* SEP */
+  .sep { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  /* STEP CARDS for workflow */
+  .workflow-step {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .workflow-step:last-child { border-bottom: none; }
+  .ws-num {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,110,245,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent2);
+    flex-shrink: 0;
+  }
+  .ws-body h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .ws-body p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">// Seccion 02</div>
+      <h2>Automatización con n8n</h2>
+      <p>Fundamentos aplicados</p>
+    </div>
+
+    <div class="nav-section">Contenido</div>
+
+    <a class="nav-item active" onclick="showSection('intro', this)">
+      <div class="nav-num">01</div>
+      Introducción y objetivo
+    </a>
+    <a class="nav-item" onclick="showSection('conceptos', this)">
+      <div class="nav-num">02</div>
+      Conceptos clave
+    </a>
+    <a class="nav-item" onclick="showSection('componentes', this)">
+      <div class="nav-num">03</div>
+      Componentes de n8n
+    </a>
+    <a class="nav-item" onclick="showSection('workflow', this)">
+      <div class="nav-num">04</div>
+      Primer workflow
+    </a>
+    <a class="nav-item" onclick="showSection('casoreal', this)">
+      <div class="nav-num">05</div>
+      Caso práctico real
+    </a>
+    <a class="nav-item" onclick="showSection('implementacion', this)">
+      <div class="nav-num">06</div>
+      Implementación paso a paso
+    </a>
+    <a class="nav-item" onclick="showSection('errores', this)">
+      <div class="nav-num">07</div>
+      Errores comunes
+    </a>
+    <a class="nav-item" onclick="showSection('entregable', this)">
+      <div class="nav-num">08</div>
+      Entregable y cierre
+    </a>
+
+    <div class="sidebar-footer">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress" style="width: 12%"></div>
+      </div>
+      <div class="progress-text" id="progress-text">Sección 1 de 8</div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ========== SECCIÓN 1: INTRO ========== -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Seccion 2 · Fundamentos Aplicados</div>
+        <h1>Tu Primer <span>Workflow</span><br>Funcional en n8n</h1>
+        <p>Construir el primer workflow funcional en n8n, entendiendo la lógica básica de automatización: trigger → procesamiento → acción.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="stat-card">
+          <div class="stat-num">3</div>
+          <div class="stat-label">nodos para construir tu primer workflow real</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">0</div>
+          <div class="stat-label">líneas de código necesarias para comenzar</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">100%</div>
+          <div class="stat-label">funcional y listo para probar hoy mismo</div>
+        </div>
+      </div>
+
+      <div class="card red-border">
+        <div class="card-label">🚨 El problema</div>
+        <h3>¿Por qué la gente no construye nada real?</h3>
+        <div class="grid-3" style="margin-top: 16px; margin-bottom: 0;">
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border);">
+            <div style="font-size: 20px; margin-bottom: 8px;">📺</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Solo ven tutoriales</div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.5;">Consumen contenido sin construir nada propio. Aprenden en modo pasivo, no activo.</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border);">
+            <div style="font-size: 20px; margin-bottom: 8px;">🔌</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px;">No conectan herramientas</div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.5;">No entienden cómo integrar pasos dentro de un mismo flujo de datos.</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border);">
+            <div style="font-size: 20px; margin-bottom: 8px;">🧊</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Se bloquean al empezar</div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.5;">La pantalla en blanco de n8n paraliza. Sin contexto, no saben el primer paso.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight">
+        <strong>👉 Resultado:</strong> nunca pasan de la teoría. Esta Seccion rompemos ese patrón. Aquí no aprendes n8n completo — aprendes lo suficiente para que algo funcione hoy.
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">🎯 Qué vas a aprender esta Seccion</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span> Cómo funciona n8n a nivel práctico</li>
+          <li><span class="check">✓</span> La estructura base de cualquier automatización</li>
+          <li><span class="check">✓</span> Cómo usar triggers, nodos y acciones</li>
+          <li><span class="check">✓</span> Cómo conectar pasos dentro de un workflow</li>
+          <li><span class="check">✓</span> Cómo probar y validar automatizaciones con datos reales</li>
+        </ul>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-primary" onclick="goTo('conceptos')">Siguiente: Conceptos clave →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 2: CONCEPTOS ========== -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Conceptos <span>Clave</span></h1>
+        <p>Antes de tocar n8n, necesitas entender los cuatro bloques de construcción de cualquier automatización.</p>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card" style="border-color: rgba(124,110,245,0.3);">
+          <div class="concept-icon">🔄</div>
+          <h4>Workflow</h4>
+          <p>Flujo de automatización compuesto por nodos conectados. Es el "plano" que define qué pasa, en qué orden y con qué datos en cada etapa.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(240,160,48,0.3);">
+          <div class="concept-icon">⚡</div>
+          <h4>Trigger</h4>
+          <p>Evento que inicia el flujo. Sin trigger, no hay automatización. Puede ser un webhook, un formulario, un nuevo email, o un horario programado.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(32,212,176,0.3);">
+          <div class="concept-icon">🧩</div>
+          <h4>Nodo</h4>
+          <p>Unidad que procesa o transforma datos dentro del flujo. Cada nodo tiene una función específica: filtrar, formatear, enviar, guardar, condicionar.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(34,201,122,0.3);">
+          <div class="concept-icon">🎯</div>
+          <h4>Acción</h4>
+          <p>Resultado ejecutado por el sistema al final del flujo. Es el "qué hace" el workflow: enviar una respuesta, guardar en base de datos, enviar un mensaje.</p>
+        </div>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🧠 Concepto clave — estructura universal</div>
+        <h3 style="margin-bottom: 20px;">Toda automatización sigue esta estructura</h3>
+
+        <div class="flow">
+          <div class="flow-node active-node">
+            <div class="node-dot" style="background: var(--accent); box-shadow: 0 0 6px rgba(124,110,245,0.5);"></div>
+            ⚡ Trigger
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="node-dot" style="background: var(--amber); box-shadow: 0 0 6px rgba(240,160,48,0.4);"></div>
+            🧩 Nodo
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="node-dot" style="background: var(--green); box-shadow: 0 0 6px rgba(34,201,122,0.4);"></div>
+            🎯 Acción
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="border-color: rgba(32,212,176,0.4); color: var(--teal);">
+            <div class="node-dot" style="background: var(--teal); box-shadow: 0 0 6px rgba(32,212,176,0.4);"></div>
+            ✅ Resultado
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <div class="grid-3" style="margin-bottom: 0;">
+          <div style="padding: 12px; background: var(--bg4); border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 8px;">Ejemplo 1</div>
+            <div style="font-size: 13px; color: var(--text2); line-height: 1.8;">
+              ⚡ Llega un lead<br>
+              🧩 Guardar datos<br>
+              🎯 Enviar notificación
+            </div>
+          </div>
+          <div style="padding: 12px; background: var(--bg4); border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 8px;">Ejemplo 2</div>
+            <div style="font-size: 13px; color: var(--text2); line-height: 1.8;">
+              ⚡ Nuevo email<br>
+              🧩 Filtrar urgentes<br>
+              🎯 Crear tarea en Notion
+            </div>
+          </div>
+          <div style="padding: 12px; background: var(--bg4); border-radius: 8px; border: 1px solid var(--border);">
+            <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 8px;">Ejemplo 3</div>
+            <div style="font-size: 13px; color: var(--text2); line-height: 1.8;">
+              ⚡ Formulario enviado<br>
+              🧩 Formatear datos<br>
+              🎯 Guardar en Sheets
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('componentes')">Siguiente: Componentes de n8n →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 3: COMPONENTES ========== -->
+    <section id="componentes" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Componentes <span>de n8n</span></h1>
+        <p>n8n tiene tres tipos de bloques. Entenderlos te da el control total para construir cualquier automatización.</p>
+      </div>
+
+      <!-- TRIGGER -->
+      <div class="card accent-border" style="margin-bottom: 12px;">
+        <div class="card-label">1 — Trigger (disparador)</div>
+        <h3>Inicia el flujo automáticamente</h3>
+        <p>Sin trigger no hay workflow. Es el punto de entrada que activa toda la cadena de automatización.</p>
+
+        <div class="n8n-flow" style="margin-top: 16px;">
+          <div class="n8n-node" style="border-color: rgba(124,110,245,0.4); color: var(--accent2);">
+            <div class="ndot ndot-trigger"></div>Webhook
+          </div>
+          <div class="n8n-node" style="border-color: rgba(124,110,245,0.3); color: var(--accent2);">
+            <div class="ndot ndot-trigger"></div>Formulario
+          </div>
+          <div class="n8n-node" style="border-color: rgba(124,110,245,0.3); color: var(--accent2);">
+            <div class="ndot ndot-trigger"></div>Nuevo email
+          </div>
+          <div class="n8n-node" style="border-color: rgba(124,110,245,0.3); color: var(--accent2);">
+            <div class="ndot ndot-trigger"></div>Schedule
+          </div>
+        </div>
+
+        <div class="tip" style="margin-bottom: 0;">
+          <strong>💡 Esta Seccion:</strong> usaremos el Webhook como trigger. Es el más versátil y el que más vas a usar en proyectos reales.
+        </div>
+      </div>
+
+      <!-- NODOS -->
+      <div class="card amber-border" style="margin-bottom: 12px;">
+        <div class="card-label">2 — Nodos (procesamiento)</div>
+        <h3>Transforman y enrutan los datos</h3>
+        <p>Son el cerebro del workflow. Cada nodo recibe datos de entrada, hace algo con ellos y los pasa al siguiente paso.</p>
+
+        <div class="grid-3" style="margin-top: 16px; margin-bottom: 0;">
+          <div style="background: var(--bg3); border-radius: 8px; padding: 14px; border: 1px solid var(--border);">
+            <div class="n8n-node" style="border-color: rgba(240,160,48,0.4); color: var(--amber); margin-bottom: 10px;">
+              <div class="ndot ndot-condition"></div>SET
+            </div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.6;">Crea o modifica campos en el objeto de datos. Ideal para organizar la información que llega del trigger.</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 14px; border: 1px solid var(--border);">
+            <div class="n8n-node" style="border-color: rgba(240,160,48,0.4); color: var(--amber); margin-bottom: 10px;">
+              <div class="ndot ndot-condition"></div>IF
+            </div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.6;">Evalúa una condición y bifurca el flujo en dos caminos: verdadero o falso. Agrega lógica condicional.</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 14px; border: 1px solid var(--border);">
+            <div class="n8n-node" style="border-color: rgba(240,160,48,0.4); color: var(--amber); margin-bottom: 10px;">
+              <div class="ndot ndot-condition"></div>Function
+            </div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.6;">Permite escribir JavaScript personalizado. Para lógica avanzada que los nodos estándar no cubren.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCIONES -->
+      <div class="card green-border">
+        <div class="card-label">3 — Acciones (salida)</div>
+        <h3>Ejecutan tareas en el mundo real</h3>
+        <p>Son los nodos de salida. Aquí el workflow hace algo concreto: envía datos, guarda información o notifica a alguien.</p>
+
+        <div class="n8n-flow" style="margin-top: 16px;">
+          <div class="n8n-node" style="border-color: rgba(34,201,122,0.4); color: var(--green);">
+            <div class="ndot ndot-action"></div>Enviar email
+          </div>
+          <div class="n8n-node" style="border-color: rgba(34,201,122,0.3); color: var(--green);">
+            <div class="ndot ndot-action"></div>Google Sheets
+          </div>
+          <div class="n8n-node" style="border-color: rgba(34,201,122,0.3); color: var(--green);">
+            <div class="ndot ndot-action"></div>Slack / Telegram
+          </div>
+          <div class="n8n-node" style="border-color: rgba(34,201,122,0.3); color: var(--green);">
+            <div class="ndot ndot-action"></div>Respond Webhook
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('workflow')">Siguiente: Primer workflow →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 4: PRIMER WORKFLOW ========== -->
+    <section id="workflow" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 4</div>
+        <h1>Ejercicio <span>Práctico</span></h1>
+        <p>Crear tu primer workflow funcional. Objetivo: construir un flujo que reciba datos y responda automáticamente.</p>
+      </div>
+
+      <div class="highlight">
+        <strong>🚀 Objetivo:</strong> construir un workflow que reciba un nombre y email vía webhook, procese esa información y devuelva una respuesta automática. Sin código, en menos de 15 minutos.
+      </div>
+
+      <div class="card" style="background: var(--bg3); margin-bottom: 16px;">
+        <div class="card-label">🔗 Arquitectura del workflow</div>
+        <div class="n8n-flow" style="justify-content: center; padding: 24px 0;">
+          <div style="text-align: center;">
+            <div class="n8n-node" style="border-color: rgba(124,110,245,0.5); color: var(--accent2); padding: 12px 20px; font-size: 13px;">
+              <div class="ndot ndot-trigger"></div>⚡ Webhook
+            </div>
+            <div style="font-size: 10px; color: var(--text3); margin-top: 6px; font-family: 'JetBrains Mono', monospace;">TRIGGER</div>
+          </div>
+          <div class="flow-arrow" style="font-size: 24px; margin: 0 4px; padding-bottom: 20px;">→</div>
+          <div style="text-align: center;">
+            <div class="n8n-node" style="border-color: rgba(240,160,48,0.5); color: var(--amber); padding: 12px 20px; font-size: 13px;">
+              <div class="ndot ndot-condition"></div>🧩 SET
+            </div>
+            <div style="font-size: 10px; color: var(--text3); margin-top: 6px; font-family: 'JetBrains Mono', monospace;">PROCESAMIENTO</div>
+          </div>
+          <div class="flow-arrow" style="font-size: 24px; margin: 0 4px; padding-bottom: 20px;">→</div>
+          <div style="text-align: center;">
+            <div class="n8n-node" style="border-color: rgba(34,201,122,0.5); color: var(--green); padding: 12px 20px; font-size: 13px;">
+              <div class="ndot ndot-action"></div>✅ Respuesta
+            </div>
+            <div style="font-size: 10px; color: var(--text3); margin-top: 6px; font-family: 'JetBrains Mono', monospace;">ACCIÓN</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">📋 Instrucciones del ejercicio</div>
+        <h3 style="margin-bottom: 20px;">4 pasos para tu primer workflow</h3>
+
+        <div class="workflow-step">
+          <div class="ws-num">1</div>
+          <div class="ws-body">
+            <h4>Crear un webhook en n8n</h4>
+            <p>Agrega el nodo Webhook, configura el método como POST y activa el workflow para obtener la URL. Esta URL es tu punto de entrada.</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="ws-num">2</div>
+          <div class="ws-body">
+            <h4>Recibir datos — nombre y email</h4>
+            <p>El webhook acepta cualquier cuerpo JSON. En este ejercicio, espera recibir <span style="font-family:'JetBrains Mono',monospace; color: var(--accent2); font-size: 12px;">name</span> y <span style="font-family:'JetBrains Mono',monospace; color: var(--accent2); font-size: 12px;">email</span> en el body de la petición.</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="ws-num">3</div>
+          <div class="ws-body">
+            <h4>Procesar con nodo SET</h4>
+            <p>Agrega el nodo SET para reorganizar y etiquetar los datos. Define los campos <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">name</span> y <span style="font-family:'JetBrains Mono',monospace; color: var(--amber); font-size: 12px;">email</span> tomándolos del input del webhook.</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="ws-num">4</div>
+          <div class="ws-body">
+            <h4>Enviar respuesta automática</h4>
+            <p>Agrega el nodo "Respond to Webhook" con el mensaje <span style="font-family:'JetBrains Mono',monospace; color: var(--green); font-size: 12px;">"Lead recibido correctamente"</span>. Conecta los tres nodos y ejecuta el flujo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('componentes')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('casoreal')">Siguiente: Caso práctico real →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 5: CASO REAL ========== -->
+    <section id="casoreal" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 5</div>
+        <h1>Caso Práctico <span>Real</span></h1>
+        <p>Simular la captura de un lead y procesarlo automáticamente. Un flujo completo de principio a fin.</p>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card" style="background: var(--bg3);">
+            <div class="card-label">🔄 Flujo completo del sistema</div>
+            <div style="margin-top: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border);">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; box-shadow: 0 0 6px rgba(124,110,245,0.5);"></div>
+                <div style="font-size: 13px; color: var(--text2);"><strong style="color: var(--text);">Entrada:</strong> Webhook recibe datos del lead</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border);">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex-shrink: 0; box-shadow: 0 0 6px rgba(240,160,48,0.4);"></div>
+                <div style="font-size: 13px; color: var(--text2);"><strong style="color: var(--text);">Procesamiento:</strong> Nodo SET organiza nombre y email</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; box-shadow: 0 0 6px rgba(34,201,122,0.4);"></div>
+                <div style="font-size: 13px; color: var(--text2);"><strong style="color: var(--text);">Salida:</strong> Respuesta automática al sistema</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card green-border">
+            <div class="card-label">📊 Resultado obtenido</div>
+            <ul class="checklist" style="margin-top: 8px;">
+              <li><span class="check">✓</span>Se elimina el proceso manual de responder</li>
+              <li><span class="check">✓</span>Se valida la lógica de automatización</li>
+              <li><span class="check">✓</span>Base lista para escalar en Seccion 3</li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom: 12px;">
+            <div class="card-label">🔹 Input — datos de entrada</div>
+            <div class="code-block" style="margin-bottom: 0; margin-top: 10px;">
+<span class="comment">// Body de la petición POST</span>
+{
+  <span class="key">"name"</span>: <span class="str">"Carlos"</span>,
+  <span class="key">"email"</span>: <span class="str">"carlos@email.com"</span>
+}
+            </div>
+          </div>
+
+          <div class="card green-border">
+            <div class="card-label">🔹 Output — respuesta automática</div>
+            <div class="code-block" style="margin-bottom: 0; margin-top: 10px;">
+<span class="comment">// Respuesta del webhook</span>
+{
+  <span class="key">"message"</span>: <span class="str">"Lead recibido correctamente"</span>,
+  <span class="key">"status"</span>: <span class="str">"success"</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"name"</span>: <span class="str">"Carlos"</span>,
+    <span class="key">"email"</span>: <span class="str">"carlos@email.com"</span>
+  }
+}
+            </div>
+          </div>
+
+          <div class="card" style="background: var(--bg3);">
+            <div class="card-label">⏱️ Comparativa de tiempo</div>
+            <div class="ba-grid" style="margin-top: 12px;">
+              <div class="ba-col ba-before" style="padding: 16px;">
+                <div class="ba-header" style="font-size: 11px; margin-bottom: 10px;">❌ Manual</div>
+                <div style="font-size: 12px; color: var(--text2); line-height: 1.7;">
+                  Revisar email<br>
+                  Copiar datos<br>
+                  Responder manualmente<br>
+                  <strong style="color: var(--red);">~15 min/lead</strong>
+                </div>
+              </div>
+              <div class="ba-col ba-after" style="padding: 16px;">
+                <div class="ba-header" style="font-size: 11px; margin-bottom: 10px;">✅ Automatizado</div>
+                <div style="font-size: 12px; color: var(--text2); line-height: 1.7;">
+                  Webhook recibe<br>
+                  SET procesa<br>
+                  Responde solo<br>
+                  <strong style="color: var(--green);">~0 seg/lead</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('workflow')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('implementacion')">Siguiente: Implementación paso a paso →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 6: IMPLEMENTACIÓN ========== -->
+    <section id="implementacion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6</div>
+        <h1>Implementación <span>Paso a Paso</span></h1>
+        <p>9 pasos concretos para construir y probar tu primer workflow en n8n. Sigue el orden exacto.</p>
+      </div>
+
+      <div class="step-indicator">
+        <div class="step-dot done">1</div>
+        <div class="step-line done"></div>
+        <div class="step-dot done">2</div>
+        <div class="step-line done"></div>
+        <div class="step-dot done">3</div>
+        <div class="step-line"></div>
+        <div class="step-dot">4</div>
+        <div class="step-line"></div>
+        <div class="step-dot">5</div>
+        <div class="step-line"></div>
+        <div class="step-dot">6</div>
+        <div class="step-line"></div>
+        <div class="step-dot">7</div>
+        <div class="step-line"></div>
+        <div class="step-dot">8</div>
+        <div class="step-line"></div>
+        <div class="step-dot">9</div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card accent-border" style="margin-bottom: 12px;">
+            <div class="card-label">⚡ Paso 1 — Crear Webhook</div>
+            <ul class="checklist" style="margin-top: 8px;">
+              <li><span class="num-badge">1</span>Crear un nuevo workflow en n8n</li>
+              <li><span class="num-badge">2</span>Hacer clic en "Add first step"</li>
+              <li><span class="num-badge">3</span>Buscar y seleccionar nodo <strong style="color: var(--accent2);">Webhook</strong></li>
+              <li><span class="num-badge">4</span>Configurar método: <strong style="color: var(--accent2);">POST</strong></li>
+              <li><span class="num-badge">5</span>Copiar la URL generada por n8n</li>
+            </ul>
+            <div class="code-block" style="margin-top: 12px; margin-bottom: 0;">
+<span class="comment">// URL del webhook (ejemplo)</span>
+<span class="str">https://tu-n8n.com/webhook/lead-capture</span>
+            </div>
+          </div>
+
+          <div class="card amber-border">
+            <div class="card-label">🧩 Paso 2 — Nodo SET</div>
+            <ul class="checklist" style="margin-top: 8px;">
+              <li><span class="num-badge">6</span>Agregar nodo <strong style="color: var(--amber);">SET</strong> al canvas</li>
+              <li><span class="num-badge">7</span>Conectar Webhook → SET</li>
+              <li><span class="num-badge">8</span>Definir campo <strong style="color: var(--amber);">name</strong> con valor del body</li>
+              <li><span class="num-badge">9</span>Definir campo <strong style="color: var(--amber);">email</strong> con valor del body</li>
+            </ul>
+            <div class="code-block" style="margin-top: 12px; margin-bottom: 0;">
+<span class="comment">// Campos en el nodo SET</span>
+name  = <span class="str">{{ $json.body.name }}</span>
+email = <span class="str">{{ $json.body.email }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card green-border" style="margin-bottom: 12px;">
+            <div class="card-label">✅ Paso 3 — Nodo Respuesta</div>
+            <ul class="checklist" style="margin-top: 8px;">
+              <li><span class="num-badge" style="background: var(--green-bg); color: var(--green);">A</span>Agregar nodo <strong style="color: var(--green);">Respond to Webhook</strong></li>
+              <li><span class="num-badge" style="background: var(--green-bg); color: var(--green);">B</span>Conectar SET → Respond to Webhook</li>
+              <li><span class="num-badge" style="background: var(--green-bg); color: var(--green);">C</span>Configurar body de respuesta en JSON</li>
+            </ul>
+            <div class="code-block" style="margin-top: 12px; margin-bottom: 0;">
+<span class="comment">// Respuesta configurada</span>
+{
+  <span class="key">"message"</span>: <span class="str">"Lead recibido correctamente"</span>
+}
+            </div>
+          </div>
+
+          <div class="card" style="background: var(--bg3);">
+            <div class="card-label">🧪 Paso 4 — Probar el workflow</div>
+            <ul class="checklist" style="margin-top: 8px;">
+              <li><span class="num-badge">1</span>Activar el workflow (toggle arriba a la derecha)</li>
+              <li><span class="num-badge">2</span>Abrir Postman o usar cURL</li>
+              <li><span class="num-badge">3</span>Hacer POST a la URL del webhook</li>
+              <li><span class="num-badge">4</span>Verificar respuesta y datos en cada nodo</li>
+            </ul>
+            <div class="code-block" style="margin-top: 12px; margin-bottom: 0;">
+<span class="comment"># Prueba con cURL</span>
+<span class="kw">curl</span> -X POST \
+  <span class="str">https://tu-n8n.com/webhook/lead-capture</span> \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"name":"Carlos","email":"carlos@email.com"}'</span>
+            </div>
+          </div>
+
+          <div class="card" style="background: var(--bg4); border-color: rgba(32,212,176,0.25); margin-bottom: 0;">
+            <div class="card-label">📦 Archivo incluido</div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+              <div style="font-size: 28px;">📄</div>
+              <div>
+                <div style="font-size: 13px; font-weight: 600; color: var(--teal); font-family: 'JetBrains Mono', monospace;">primer-workflow.json</div>
+                <div style="font-size: 12px; color: var(--text3); margin-top: 2px;">Importa directo en n8n → Settings → Import</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('casoreal')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('errores')">Siguiente: Errores comunes →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 7: ERRORES ========== -->
+    <section id="errores" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 7</div>
+        <h1>Errores <span>Comunes</span></h1>
+        <p>Los errores más frecuentes al construir el primer workflow. Conocerlos de antemano te ahorra horas de debugging.</p>
+      </div>
+
+      <div class="card red-border" style="margin-bottom: 12px;">
+        <div class="card-label">🚫 Errores que debes evitar</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">No activar el workflow</strong><br><span style="font-size: 13px;">El webhook no responde si el workflow está en modo "test" solamente. Debes activarlo con el toggle para que funcione en producción.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">No ejecutar el webhook correctamente</strong><br><span style="font-size: 13px;">Usar GET en lugar de POST, o no enviar el Content-Type correcto. Siempre usa POST con <span style="font-family:'JetBrains Mono',monospace; font-size: 11px;">Content-Type: application/json</span>.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">Conexiones incorrectas entre nodos</strong><br><span style="font-size: 13px;">Nodos desconectados o conectados en el orden equivocado. Siempre: Webhook → SET → Respond to Webhook. El orden importa.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">No probar con datos reales</strong><br><span style="font-size: 13px;">Probar sin enviar datos al webhook da errores vacíos. Siempre incluye el body JSON completo al hacer la prueba.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">No entender el flujo de datos</strong><br><span style="font-size: 13px;">Usar variables incorrectas en el nodo SET porque no se verificó qué estructura tiene el JSON que llega del webhook.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card green-border" style="margin-bottom: 12px;">
+        <div class="card-label">✅ Buenas prácticas</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Mantener workflows simples</strong><br><span style="font-size: 13px;">Un workflow hace una cosa bien. No intentes resolver 5 problemas en un solo flujo al inicio.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Nombrar nodos claramente</strong><br><span style="font-size: 13px;">"Webhook Lead Capture", "SET Name Email", "Respond Success". Nombres descriptivos evitan confusión al escalar.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Probar cada nodo individualmente</strong><br><span style="font-size: 13px;">Ejecuta el workflow nodo por nodo en modo test. No asumas que todo funciona sin verificarlo.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Validar datos de entrada</strong><br><span style="font-size: 13px;">Verifica la estructura del JSON que llega antes de referenciar campos en el nodo SET.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Documentar el flujo</strong><br><span style="font-size: 13px;">Agrega notas en n8n a cada nodo. Un workflow sin documentación es difícil de mantener o mejorar en el futuro.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🚀 Nivel pro — bonus</div>
+        <div class="grid-2" style="margin-top: 12px; margin-bottom: 0;">
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px;">🔀 Agregar validación con nodo IF</h4>
+            <div class="code-block" style="margin-bottom: 0;">
+<span class="comment">// Si email está vacío → error</span>
+<span class="kw">IF</span> <span class="str">email</span> <span class="kw">is empty</span>
+  → responder <span class="str">"Email requerido"</span>
+<span class="kw">ELSE</span>
+  → continuar flujo
+            </div>
+          </div>
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px;">🗺️ Qué sigue en Seccion 3</h4>
+            <ul style="list-style: none; font-size: 13px; color: var(--text2); line-height: 2.1;">
+              <li>→ <strong style="color: var(--green);">Guardar leads</strong> en Google Sheets</li>
+              <li>→ <strong style="color: var(--amber);">Enviar email</strong> de confirmación</li>
+              <li>→ <strong style="color: var(--accent2);">Notificación</strong> por Telegram o Slack</li>
+              <li>→ <strong style="color: var(--teal);">Múltiples nodos</strong> en secuencia</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('implementacion')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 8: ENTREGABLE ========== -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Entregable y <span>Cierre</span></h1>
+        <p>Lo que debes tener funcionando al finalizar esta Seccion. Este workflow es la base sobre la que construirás automatizaciones reales.</p>
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">📦 Entregable de la Seccion 2</div>
+        <h3 style="margin-bottom: 20px;">Un workflow funcional en n8n</h3>
+
+        <div class="deliverable-item">
+          <div class="d-icon">⚡</div>
+          <div class="d-text">
+            <h4>Webhook configurado y activo</h4>
+            <p>Método POST, URL generada por n8n, workflow activado en producción. Prueba que responde con Postman o cURL.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">🧩</div>
+          <div class="d-text">
+            <h4>Nodo SET con campos name y email</h4>
+            <p>Variables correctamente referenciadas desde el body del webhook. Datos visibles en el panel de ejecución de n8n.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">✅</div>
+          <div class="d-text">
+            <h4>Respuesta automática funcionando</h4>
+            <p>El nodo "Respond to Webhook" devuelve el mensaje de confirmación. El cliente recibe una respuesta JSON inmediata.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">🧪</div>
+          <div class="d-text">
+            <h4>Workflow probado con datos reales</h4>
+            <p>Al menos una ejecución exitosa con nombre y email reales. El historial de ejecuciones en n8n lo confirma.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">📄</div>
+          <div class="d-text">
+            <h4>Archivo primer-workflow.json exportado</h4>
+            <p>El workflow exportado desde n8n listo para compartir o reimportar. Puedes hacerlo desde el menú ⋯ → Download.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🛠️ Cómo usar el workflow exportado</div>
+        <div style="margin-top: 12px;">
+          <span class="tool-pill">1 Abrir n8n</span>
+          <span class="tool-pill">2 Menú → Import from file</span>
+          <span class="tool-pill">3 Seleccionar .json</span>
+          <span class="tool-pill">4 Activar workflow</span>
+          <span class="tool-pill" style="border-color: rgba(34,201,122,0.4); color: var(--green);">5 Probar con Postman ✓</span>
+        </div>
+      </div>
+
+      <div class="card green-border">
+        <div class="card-label">🚀 Resultado esperado al terminar esta Seccion</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span>Tu primer workflow funcionando en n8n</li>
+          <li><span class="check">✓</span>Entendimiento práctico de triggers, nodos y acciones</li>
+          <li><span class="check">✓</span>Capacidad de leer y depurar el flujo de datos</li>
+          <li><span class="check">✓</span>Base sólida para automatizaciones con integraciones reales</li>
+          <li><span class="check">✓</span>Mentalidad de constructor, no solo consumidor de contenido</li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(32,212,176,0.06) 100%); border-color: rgba(124,110,245,0.25);">
+        <div style="text-align: center; padding: 16px 0 8px;">
+          <div style="font-size: 40px; margin-bottom: 12px;">🚀</div>
+          <h3 style="font-size: 22px; margin-bottom: 10px;">Seccion 3 — Integraciones Reales</h3>
+          <p style="color: var(--text2); font-size: 14px; max-width: 480px; margin: 0 auto 20px;">Con tu primer workflow funcionando, la Seccion 3 conectamos herramientas reales: Google Sheets, Gmail, Telegram. Tu automatización deja de ser un ejercicio y se convierte en un sistema real.</p>
+          <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <span class="badge badge-accent">📊 Google Sheets</span>
+            <span class="badge badge-teal">📧 Gmail integrado</span>
+            <span class="badge badge-green">🔔 Notificaciones reales</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('errores')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('intro')">↺ Reiniciar desde el inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections = ['intro','conceptos','componentes','workflow','casoreal','implementacion','errores','entregable'];
+
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goTo(id) {
+    const el = document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+    showSection(id, el);
+  }
+
+  function updateProgress(id) {
+    const idx = sections.indexOf(id);
+    const pct = Math.round(((idx + 1) / sections.length) * 100);
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `Sección ${idx + 1} de ${sections.length}`;
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semana 3 · Parte 3 — Nodos Principales en n8n</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #1f1f28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0eeff;
+    --text2: #9b95b8;
+    --text3: #5c577a;
+    --accent: #7c6ef5;
+    --accent2: #a598ff;
+    --accent-glow: rgba(124,110,245,0.18);
+    --green: #22c97a;
+    --green-bg: rgba(34,201,122,0.1);
+    --red: #f05a5a;
+    --red-bg: rgba(240,90,90,0.1);
+    --amber: #f0a030;
+    --amber-bg: rgba(240,160,48,0.1);
+    --teal: #20d4b0;
+    --teal-bg: rgba(32,212,176,0.1);
+    --pink: #e879a0;
+    --pink-bg: rgba(232,121,160,0.1);
+    --sky: #38bdf8;
+    --sky-bg: rgba(56,189,248,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(124,110,245,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,110,245,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: 260px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; }
+  .sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo .week { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+  .sidebar-logo h2 { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .sidebar-logo p { font-size: 12px; color: var(--text3); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+  .nav-section { padding: 16px 12px 8px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 2px 8px; border-radius: 8px; cursor: pointer; color: var(--text2); font-size: 13px; font-weight: 500; transition: all 0.15s; border: 1px solid transparent; text-decoration: none; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--accent-glow); border-color: rgba(124,110,245,0.3); color: var(--accent2); }
+  .nav-item .nav-icon { font-size: 14px; flex-shrink: 0; width: 20px; text-align: center; }
+  .nav-item .nav-num { width: 20px; height: 20px; border-radius: 4px; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); flex-shrink: 0; }
+  .nav-item.active .nav-num { background: rgba(124,110,245,0.25); color: var(--accent2); }
+  .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); }
+  .progress-bar { background: var(--bg4); border-radius: 4px; height: 4px; margin-bottom: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--teal)); border-radius: 4px; transition: width 0.4s ease; }
+  .progress-text { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); }
+
+  /* ── MAIN ── */
+  .main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: calc(100% - 260px); }
+  .section { display: none; animation: fadeIn 0.25s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── HEADERS ── */
+  .section-header { margin-bottom: 36px; }
+  .section-tag { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .section-tag .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .section-header h1 { font-size: 36px; font-weight: 800; color: var(--text); line-height: 1.15; margin-bottom: 12px; }
+  .section-header h1 span { color: var(--accent2); }
+  .section-header p { font-size: 16px; color: var(--text2); line-height: 1.7; max-width: 640px; }
+
+  /* ── GRIDS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* ── CARDS ── */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .card.accent-border { border-color: rgba(124,110,245,0.3); }
+  .card.green-border  { border-color: rgba(34,201,122,0.3); }
+  .card.red-border    { border-color: rgba(240,90,90,0.25); }
+  .card.amber-border  { border-color: rgba(240,160,48,0.3); }
+  .card.teal-border   { border-color: rgba(32,212,176,0.3); }
+  .card.pink-border   { border-color: rgba(232,121,160,0.3); }
+  .card.sky-border    { border-color: rgba(56,189,248,0.3); }
+  .card-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 8px; }
+  .card h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  .card p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+
+  /* ── NODE HERO ── */
+  .node-hero { border-radius: 14px; padding: 28px; margin-bottom: 20px; position: relative; overflow: hidden; }
+  .node-hero::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; border-radius: 50%; opacity: 0.07; pointer-events: none; }
+  .nh-set     { background: var(--bg2); border: 1px solid rgba(124,110,245,0.4); }  .nh-set::before { background: var(--accent); }
+  .nh-fn      { background: var(--bg2); border: 1px solid rgba(240,160,48,0.4); }   .nh-fn::before { background: var(--amber); }
+  .nh-if      { background: var(--bg2); border: 1px solid rgba(34,201,122,0.4); }   .nh-if::before { background: var(--green); }
+  .nh-http    { background: var(--bg2); border: 1px solid rgba(32,212,176,0.4); }   .nh-http::before { background: var(--teal); }
+  .nh-merge   { background: var(--bg2); border: 1px solid rgba(232,121,160,0.4); }  .nh-merge::before { background: var(--pink); }
+  .nh-switch  { background: var(--bg2); border: 1px solid rgba(56,189,248,0.4); }   .nh-switch::before { background: var(--sky); }
+  .nh-loop    { background: var(--bg2); border: 1px solid rgba(240,90,90,0.4); }    .nh-loop::before { background: var(--red); }
+
+  .nh-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+  .nh-icon { font-size: 30px; width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .nh-set .nh-icon    { background: rgba(124,110,245,0.12); }
+  .nh-fn .nh-icon     { background: rgba(240,160,48,0.12); }
+  .nh-if .nh-icon     { background: rgba(34,201,122,0.12); }
+  .nh-http .nh-icon   { background: rgba(32,212,176,0.12); }
+  .nh-merge .nh-icon  { background: rgba(232,121,160,0.12); }
+  .nh-switch .nh-icon { background: rgba(56,189,248,0.12); }
+  .nh-loop .nh-icon   { background: rgba(240,90,90,0.12); }
+
+  .nh-type-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px; }
+  .nh-set .nh-type-label    { color: var(--accent); }
+  .nh-fn .nh-type-label     { color: var(--amber); }
+  .nh-if .nh-type-label     { color: var(--green); }
+  .nh-http .nh-type-label   { color: var(--teal); }
+  .nh-merge .nh-type-label  { color: var(--pink); }
+  .nh-switch .nh-type-label { color: var(--sky); }
+  .nh-loop .nh-type-label   { color: var(--red); }
+
+  .nh-title { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .nh-desc  { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .nh-tags  { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .nh-tag   { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 10px; border-radius: 20px; }
+  .nh-set .nh-tag    { background: var(--accent-glow); color: var(--accent2); }
+  .nh-fn .nh-tag     { background: var(--amber-bg); color: var(--amber); }
+  .nh-if .nh-tag     { background: var(--green-bg); color: var(--green); }
+  .nh-http .nh-tag   { background: var(--teal-bg); color: var(--teal); }
+  .nh-merge .nh-tag  { background: var(--pink-bg); color: var(--pink); }
+  .nh-switch .nh-tag { background: var(--sky-bg); color: var(--sky); }
+  .nh-loop .nh-tag   { background: var(--red-bg); color: var(--red); }
+
+  /* ── CODE ── */
+  .code-block { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text2); line-height: 1.9; margin-top: 12px; overflow-x: auto; }
+  .code-block .kw  { color: var(--accent2); }
+  .code-block .str { color: var(--green); }
+  .code-block .cm  { color: var(--text3); }
+  .code-block .key { color: var(--amber); }
+  .code-block .val { color: var(--teal); }
+  .code-block .red { color: var(--red); }
+  .code-block .pk  { color: var(--pink); }
+  .code-block .sky { color: var(--sky); }
+
+  /* ── IO TRANSFORM ── */
+  .io-row { display: grid; grid-template-columns: 1fr 48px 1fr; gap: 0; align-items: center; margin-top: 14px; }
+  .io-box { background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; padding: 14px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text2); line-height: 1.8; }
+  .io-lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .io-arrow { display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--accent); }
+
+  /* ── CHECKLIST ── */
+  .checklist { list-style: none; }
+  .checklist li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; font-size: 14px; color: var(--text2); border-bottom: 1px solid var(--border); line-height: 1.5; }
+  .checklist li:last-child { border-bottom: none; }
+  .check { color: var(--green); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .cross { color: var(--red);   font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+
+  /* ── STAT ── */
+  .stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+  .stat-num  { font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--accent2); line-height: 1; margin-bottom: 6px; }
+  .stat-label{ font-size: 12px; color: var(--text2); line-height: 1.4; }
+
+  /* ── BADGES ── */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-family: 'JetBrains Mono', monospace; }
+  .badge-green  { background: var(--green-bg); color: var(--green); }
+  .badge-amber  { background: var(--amber-bg); color: var(--amber); }
+  .badge-accent { background: var(--accent-glow); color: var(--accent2); }
+  .badge-teal   { background: var(--teal-bg); color: var(--teal); }
+  .badge-pink   { background: var(--pink-bg); color: var(--pink); }
+  .badge-red    { background: var(--red-bg); color: var(--red); }
+  .badge-sky    { background: var(--sky-bg); color: var(--sky); }
+
+  /* ── USE-WHEN ROWS ── */
+  .wtu-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .wtu-row:last-child { border-bottom: none; }
+  .wtu-emoji { font-size: 16px; flex-shrink: 0; width: 24px; text-align: center; margin-top: 1px; }
+  .wtu-text  { font-size: 13px; color: var(--text2); line-height: 1.55; }
+  .wtu-text strong { color: var(--text); }
+
+  /* ── FLOW NODES ── */
+  .flow-row { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; overflow-x: auto; padding: 4px 0; }
+  .flow-node { background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 16px; text-align: center; flex-shrink: 0; min-width: 110px; }
+  .flow-node .fn-icon { font-size: 20px; margin-bottom: 4px; }
+  .flow-node .fn-type { font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 3px; }
+  .flow-node .fn-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .flow-node.t-node  { border-color: rgba(240,160,48,0.4);  background: rgba(240,160,48,0.05); }  .flow-node.t-node .fn-type  { color: var(--amber); }
+  .flow-node.s-node  { border-color: rgba(124,110,245,0.4); background: rgba(124,110,245,0.05); } .flow-node.s-node .fn-type  { color: var(--accent2); }
+  .flow-node.f-node  { border-color: rgba(240,160,48,0.4);  background: rgba(240,160,48,0.05); }  .flow-node.f-node .fn-type  { color: var(--amber); }
+  .flow-node.i-node  { border-color: rgba(34,201,122,0.4);  background: rgba(34,201,122,0.05); }  .flow-node.i-node .fn-type  { color: var(--green); }
+  .flow-node.h-node  { border-color: rgba(32,212,176,0.4);  background: rgba(32,212,176,0.05); }  .flow-node.h-node .fn-type  { color: var(--teal); }
+  .flow-node.a-node  { border-color: rgba(34,201,122,0.4);  background: rgba(34,201,122,0.05); }  .flow-node.a-node .fn-type  { color: var(--green); }
+  .flow-arrow { display: flex; align-items: center; padding: 0 6px; color: var(--text3); font-size: 16px; flex-shrink: 0; }
+  .fork-arrow { display: flex; flex-direction: column; padding: 0 6px; gap: 6px; flex-shrink: 0; }
+  .fork-arrow span { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono',monospace; display:flex; align-items:center; gap:4px; }
+
+  /* ── COMP TABLE ── */
+  .comp-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+  .comp-table th { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border2); }
+  .comp-table td { padding: 12px 14px; font-size: 13px; color: var(--text2); border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .comp-table tr:last-child td { border-bottom: none; }
+  .comp-table td:first-child { font-weight: 600; color: var(--text); white-space: nowrap; }
+
+  /* ── TIPS BOX ── */
+  .tip-box { display: flex; gap: 14px; align-items: flex-start; background: var(--bg3); border-radius: 10px; padding: 16px 18px; margin-bottom: 10px; border: 1px solid var(--border); }
+  .tip-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .tip-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .tip-text strong { color: var(--text); }
+
+  /* ── NAV ── */
+  .nav-btns { display: flex; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: 'Syne', sans-serif; cursor: pointer; transition: all 0.15s; border: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  /* ── HIGHLIGHT ── */
+  .highlight-box { background: linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%); border: 1px solid rgba(124,110,245,0.25); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Semana 3 · Parte 3</div>
+      <h2>Nodos Principales n8n</h2>
+      <p>n8n · automatización</p>
+    </div>
+
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nav-num">1</span> ¿Qué son los nodos?</a>
+    <a class="nav-item" onclick="go('set',this)"><span class="nav-icon">🔧</span> Nodo Set</a>
+    <a class="nav-item" onclick="go('fn',this)"><span class="nav-icon">⚡</span> Nodo Function</a>
+    <a class="nav-item" onclick="go('if',this)"><span class="nav-icon">🔀</span> Nodo IF</a>
+    <a class="nav-item" onclick="go('switch',this)"><span class="nav-icon">🎛️</span> Nodo Switch</a>
+    <a class="nav-item" onclick="go('http',this)"><span class="nav-icon">🌐</span> HTTP Request</a>
+    <a class="nav-item" onclick="go('merge',this)"><span class="nav-icon">🔗</span> Nodo Merge</a>
+    <a class="nav-item" onclick="go('loop',this)"><span class="nav-icon">🔁</span> Loop Over Items</a>
+    <a class="nav-item" onclick="go('combinar',this)"><span class="nav-num">9</span> Combinar nodos</a>
+
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <main class="main">
+
+    <!-- ══════════ 1 · INTRO ══════════ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Semana 3 · Parte 3</div>
+        <h1>Nodos <span>Principales</span> en n8n</h1>
+        <p>Los nodos son las piezas de LEGO de cualquier workflow. Cada uno hace una cosa específica. Encadenados, construyen automatizaciones complejas.</p>
+      </div>
+
+      <div class="highlight-box">
+        <div class="card-label">🧠 La regla fundamental</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">Cada nodo recibe datos → los transforma → los pasa al siguiente</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">No importa qué tan complejo sea el workflow: todos los nodos funcionan bajo esta misma lógica. Entender eso es entender n8n.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+        <div class="stat-card"><div class="stat-num">7</div><div class="stat-label">nodos que cubrimos hoy</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--amber);">90%</div><div class="stat-label">de workflows se construyen con ≤5 tipos de nodo</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--green);">JSON</div><div class="stat-label">formato universal que viaja entre todos los nodos</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--teal);">∞</div><div class="stat-label">combinaciones posibles encadenándolos</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🗺️ Mapa de nodos — de qué trata cada uno</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;">
+          <div style="background:var(--bg3);border:1px solid rgba(124,110,245,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔧</div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent2);">Set</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Organiza y define campos</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,160,48,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">⚡</div>
+            <div style="font-size:12px;font-weight:700;color:var(--amber);">Function</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Código JS personalizado</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(34,201,122,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔀</div>
+            <div style="font-size:12px;font-weight:700;color:var(--green);">IF</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Bifurcación condicional</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🎛️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--sky);">Switch</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Múltiples rutas</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(32,212,176,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🌐</div>
+            <div style="font-size:12px;font-weight:700;color:var(--teal);">HTTP Request</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Llama APIs externas</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(232,121,160,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔗</div>
+            <div style="font-size:12px;font-weight:700;color:var(--pink);">Merge</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Une flujos paralelos</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,90,90,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔁</div>
+            <div style="font-size:12px;font-weight:700;color:var(--red);">Loop Over Items</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Repite por cada dato</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;opacity:0.5;">
+            <div style="font-size:22px;margin-bottom:6px;">🧩</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);">Combinar</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Flows completos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">💡 Cómo fluyen los datos entre nodos</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="flow-node t-node"><div class="fn-icon">🌐</div><div class="fn-type">Trigger</div><div class="fn-name">Webhook</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node s-node"><div class="fn-icon">🔧</div><div class="fn-type">Proceso</div><div class="fn-name">Set</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node i-node"><div class="fn-icon">🔀</div><div class="fn-type">Lógica</div><div class="fn-name">IF</div></div>
+          <div class="fork-arrow">
+            <span style="color:var(--green);">→ <span style="color:var(--green);">true</span></span>
+            <span style="color:var(--red);">→ <span style="color:var(--red);">false</span></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+            <div class="flow-node a-node" style="min-width:90px;"><div class="fn-icon">📧</div><div class="fn-type">Acción A</div><div class="fn-name">Email</div></div>
+            <div class="flow-node" style="min-width:90px;border-color:rgba(240,90,90,0.3);background:rgba(240,90,90,0.04);"><div class="fn-icon">💬</div><div class="fn-type" style="color:var(--red);">Acción B</div><div class="fn-name">Slack</div></div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">Cada nodo recibe el JSON del anterior y pasa su propio JSON al siguiente →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-primary" onclick="goTo('set')">Siguiente: Nodo Set →</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 2 · SET ══════════ -->
+    <section id="set" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Nodo 1 de 7</div>
+        <h1>Nodo <span>Set</span></h1>
+        <p>El nodo más usado en n8n. Define, renombra, elimina o fija valores en los datos que pasan por el workflow.</p>
+      </div>
+
+      <div class="node-hero nh-set">
+        <div class="nh-top">
+          <div class="nh-icon">🔧</div>
+          <div>
+            <div class="nh-type-label">Set · Transformación de datos</div>
+            <div class="nh-title">Reorganiza y define campos</div>
+            <div class="nh-desc">Toma los datos que llegan y los reescribe como tú necesitas. Puedes crear campos nuevos, renombrar existentes, fijar valores estáticos o construir cadenas combinando múltiples campos. Sin código, con interfaz visual.</div>
+          </div>
+        </div>
+        <div class="nh-tags">
+          <span class="nh-tag">📝 Crear campos</span>
+          <span class="nh-tag">✏️ Renombrar</span>
+          <span class="nh-tag">🗑️ Eliminar campos</span>
+          <span class="nh-tag">🔗 Combinar valores</span>
+          <span class="nh-tag">🔢 Valores estáticos</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card accent-border">
+          <div class="card-label">⚙️ Cómo funciona — entrada vs salida</div>
+          <div class="io-row">
+            <div>
+              <div class="io-lbl" style="color:var(--amber);">📥 Llega del webhook</div>
+              <div class="io-box">
+<span class="key">{</span>
+  <span class="key">"nombre"</span>: <span class="str">"Laura"</span>,
+  <span class="key">"email"</span>: <span class="str">"laura@x.com"</span>,
+  <span class="key">"telefono"</span>: <span class="str">"3001234567"</span>,
+  <span class="key">"fuente"</span>: <span class="str">"web"</span>
+<span class="key">}</span>
+              </div>
+            </div>
+            <div class="io-arrow">→</div>
+            <div>
+              <div class="io-lbl" style="color:var(--accent2);">📤 Sale del Set</div>
+              <div class="io-box">
+<span class="key">{</span>
+  <span class="key">"mensaje"</span>: <span class="str">"Nuevo lead: Laura"</span>,
+  <span class="key">"contacto"</span>: <span class="str">"laura@x.com"</span>,
+  <span class="key">"origen"</span>: <span class="str">"Formulario web"</span>
+<span class="key">}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo usar Set</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-emoji">✅</span><div class="wtu-text"><strong>Formatear datos</strong> antes de enviarlos a otro nodo</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">✅</span><div class="wtu-text"><strong>Construir mensajes</strong> combinando varios campos en uno</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">✅</span><div class="wtu-text"><strong>Añadir metadatos</strong> como timestamp, estado, origen</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">✅</span><div class="wtu-text"><strong>Limpiar datos</strong> eliminando campos innecesarios</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">❌</span><div class="wtu-text"><strong>No usar</strong> para lógica compleja — para eso está Function</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">⚙️ Ejemplos de expresiones en Set</div>
+        <div class="code-block">
+<span class="cm">// Campo simple — tomar valor del nodo anterior</span>
+<span class="key">nombre</span>  →  <span class="kw">{{$json.nombre}}</span>
+
+<span class="cm">// Combinar varios campos en un string</span>
+<span class="key">mensaje</span> →  <span class="str">"Hola "</span> + <span class="kw">{{$json.nombre}}</span> + <span class="str">", tu pedido llegará en 3 días"</span>
+
+<span class="cm">// Valor estático (siempre el mismo)</span>
+<span class="key">estado</span>  →  <span class="str">"pendiente"</span>
+
+<span class="cm">// Timestamp actual</span>
+<span class="key">fecha</span>   →  <span class="kw">{{$now}}</span>
+
+<span class="cm">// Transformar a mayúsculas</span>
+<span class="key">pais</span>    →  <span class="kw">{{$json.pais.toUpperCase()}}</span>
+
+<span class="cm">// Acceder a dato anidado</span>
+<span class="key">ciudad</span>  →  <span class="kw">{{$json.direccion.ciudad}}</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="tip-box"><span class="tip-icon">💡</span><div class="tip-text"><strong>Tip pro:</strong> activa "Keep Only Set" para que el nodo elimine todos los campos originales y solo pase los que tú defines. Mantiene el JSON limpio.</div></div>
+        <div class="tip-box"><span class="tip-icon">⚠️</span><div class="tip-text"><strong>Error común:</strong> olvidar el prefijo <code style="color:var(--accent2);">$json.</code> al referenciar campos. Si el campo dice "nombre" debes escribir <code style="color:var(--accent2);">{{$json.nombre}}</code>.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('fn')">Siguiente: Nodo Function →</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 3 · FUNCTION ══════════ -->
+    <section id="fn" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Nodo 2 de 7</div>
+        <h1>Nodo <span>Function</span></h1>
+        <p>Cuando Set no es suficiente. Escribe JavaScript puro para transformar, filtrar, calcular o generar cualquier dato que necesites.</p>
+      </div>
+
+      <div class="node-hero nh-fn">
+        <div class="nh-top">
+          <div class="nh-icon">⚡</div>
+          <div>
+            <div class="nh-type-label">Function · Código JavaScript</div>
+            <div class="nh-title">Lógica personalizada sin límites</div>
+            <div class="nh-desc">El nodo Function te da acceso completo a JavaScript dentro del workflow. Puedes manipular arrays, hacer cálculos, filtrar elementos, formatear fechas, generar IDs únicos, construir estructuras complejas o cualquier transformación que imagines.</div>
+          </div>
+        </div>
+        <div class="nh-tags">
+          <span class="nh-tag">💻 JavaScript</span>
+          <span class="nh-tag">🧮 Cálculos</span>
+          <span class="nh-tag">📋 Manipular arrays</span>
+          <span class="nh-tag">🔄 Transformar</span>
+          <span class="nh-tag">🎯 Filtrar items</span>
+        </div>
+      </div>
+
+      <div class="card amber-border" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Estructura básica del Function</div>
+        <div class="code-block">
+<span class="cm">// Los items llegan como array</span>
+<span class="cm">// Debes retornar siempre un array</span>
+
+<span class="kw">const</span> items = $input.all();
+<span class="kw">const</span> result = [];
+
+<span class="kw">for</span> (<span class="kw">const</span> item <span class="kw">of</span> items) {
+  <span class="kw">const</span> data = item.json;
+
+  result.push({
+    json: {
+      <span class="key">nombre</span>:    data.nombre,
+      <span class="key">email</span>:     data.email.toLowerCase(),
+      <span class="key">mensaje</span>:   <span class="str">`Hola ${data.nombre}, bienvenido`</span>,
+      <span class="key">timestamp</span>: <span class="kw">new</span> Date().toISOString(),
+      <span class="key">id</span>:        Math.random().toString(<span class="val">36</span>).slice(<span class="val">2</span>)
+    }
+  });
+}
+
+<span class="kw">return</span> result;
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-label">🧪 Casos de uso reales</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// 1. Calcular descuento según monto</span>
+<span class="kw">const</span> monto = data.total;
+<span class="kw">const</span> descuento = monto > <span class="val">500000</span>
+  ? monto * <span class="val">0.15</span>
+  : monto * <span class="val">0.05</span>;
+
+<span class="cm">// 2. Formatear fecha en español</span>
+<span class="kw">const</span> fecha = <span class="kw">new</span> Date(data.fecha)
+  .toLocaleDateString(<span class="str">'es-CO'</span>);
+
+<span class="cm">// 3. Filtrar solo leads válidos</span>
+<span class="kw">if</span> (!data.email.includes(<span class="str">'@'</span>)) {
+  <span class="kw">return</span> []; <span class="cm">// descarta el item</span>
+}
+
+<span class="cm">// 4. Construir payload para API</span>
+<span class="kw">const</span> payload = {
+  <span class="key">to</span>: data.email,
+  <span class="key">subject</span>: <span class="str">`Pedido #${data.id}`</span>,
+  <span class="key">body</span>: data.mensaje
+};
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Set vs Function — ¿cuándo usar cada uno?</div>
+          <table class="comp-table" style="margin-top:8px;">
+            <thead><tr><th>Situación</th><th>Usar</th></tr></thead>
+            <tbody>
+              <tr><td>Renombrar campos</td><td><span class="badge badge-accent">Set</span></td></tr>
+              <tr><td>Combinar 2-3 campos en texto</td><td><span class="badge badge-accent">Set</span></td></tr>
+              <tr><td>Valor fijo siempre igual</td><td><span class="badge badge-accent">Set</span></td></tr>
+              <tr><td>Cálculos matemáticos</td><td><span class="badge badge-amber">Function</span></td></tr>
+              <tr><td>Lógica condicional en datos</td><td><span class="badge badge-amber">Function</span></td></tr>
+              <tr><td>Manipular arrays / listas</td><td><span class="badge badge-amber">Function</span></td></tr>
+              <tr><td>Generar IDs / hashes</td><td><span class="badge badge-amber">Function</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="tip-box"><span class="tip-icon">💡</span><div class="tip-text"><strong>Acceso a datos:</strong> usa <code style="color:var(--amber);">$input.all()</code> para todos los items, <code style="color:var(--amber);">$input.first()</code> para el primero, o <code style="color:var(--amber);">$input.item.json</code> dentro del loop.</div></div>
+        <div class="tip-box"><span class="tip-icon">⚠️</span><div class="tip-text"><strong>Siempre retorna array:</strong> aunque sea un solo objeto, debe ir dentro de <code style="color:var(--amber);">[ { json: {...} } ]</code>. Si retornas vacío <code style="color:var(--amber);">[]</code>, el workflow se detiene.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('set')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('if')">Siguiente: Nodo IF →</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 4 · IF ══════════ -->
+    <section id="if" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Nodo 3 de 7</div>
+        <h1>Nodo <span>IF</span></h1>
+        <p>El nodo que le da inteligencia al workflow. Evalúa una condición y divide el flujo en dos caminos: verdadero o falso.</p>
+      </div>
+
+      <div class="node-hero nh-if">
+        <div class="nh-top">
+          <div class="nh-icon">🔀</div>
+          <div>
+            <div class="nh-type-label">IF · Lógica condicional</div>
+            <div class="nh-title">Dos caminos según una condición</div>
+            <div class="nh-desc">El nodo IF evalúa si una condición es verdadera o falsa, y manda los datos por el camino correspondiente. Es el "si esto, entonces aquello" de tus workflows. Sin IF, todos los datos siguen el mismo camino siempre.</div>
+          </div>
+        </div>
+        <div class="nh-tags">
+          <span class="nh-tag">✅ Rama true</span>
+          <span class="nh-tag">❌ Rama false</span>
+          <span class="nh-tag">🔢 Comparar números</span>
+          <span class="nh-tag">📝 Comparar texto</span>
+          <span class="nh-tag">📋 Comparar listas</span>
+        </div>
+      </div>
+
+      <div class="card green-border" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Cómo funciona visualmente</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="flow-node s-node"><div class="fn-icon">🔧</div><div class="fn-type">Anterior</div><div class="fn-name">Set</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node i-node" style="min-width:140px;"><div class="fn-icon">🔀</div><div class="fn-type">Condicional</div><div class="fn-name">IF: ¿monto > 500k?</div></div>
+          <div class="fork-arrow" style="margin-left:6px;">
+            <span style="color:var(--green);">→ <strong>TRUE</strong></span>
+            <span style="color:var(--red);">→ <strong>FALSE</strong></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+            <div class="flow-node a-node" style="min-width:120px;"><div class="fn-icon">🏆</div><div class="fn-type" style="color:var(--green);">si true</div><div class="fn-name">Descuento 15%</div></div>
+            <div class="flow-node" style="min-width:120px;border-color:rgba(240,90,90,0.3);background:rgba(240,90,90,0.04);"><div class="fn-icon">💰</div><div class="fn-type" style="color:var(--red);">si false</div><div class="fn-name">Descuento 5%</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-label">📋 Operadores disponibles</div>
+          <table class="comp-table" style="margin-top:8px;">
+            <thead><tr><th>Operador</th><th>Ejemplo de uso</th></tr></thead>
+            <tbody>
+              <tr><td>igual a</td><td>estado == "activo"</td></tr>
+              <tr><td>no igual a</td><td>pais != "CO"</td></tr>
+              <tr><td>mayor que</td><td>monto > 1000000</td></tr>
+              <tr><td>menor que</td><td>edad &lt; 18</td></tr>
+              <tr><td>contiene</td><td>email contiene "@gmail"</td></tr>
+              <tr><td>no contiene</td><td>email no contiene "test"</td></tr>
+              <tr><td>está vacío</td><td>telefono está vacío</td></tr>
+              <tr><td>es verdadero</td><td>activo === true</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos de uso reales</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-emoji">🛍️</span><div class="wtu-text"><strong>E-commerce:</strong> ¿es cliente VIP? → notificación prioritaria vs normal</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">📧</span><div class="wtu-text"><strong>Email válido:</strong> ¿contiene @? → procesar vs descartar y alertar</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">📦</span><div class="wtu-text"><strong>Stock:</strong> ¿unidades &lt; 10? → alerta urgente vs nada</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">💳</span><div class="wtu-text"><strong>Pago:</strong> ¿estado == "aprobado"? → activar acceso vs email de falla</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">🌍</span><div class="wtu-text"><strong>País:</strong> ¿pais == "CO"? → flujo local vs flujo internacional</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);">
+        <div class="card-label">🔗 Múltiples condiciones — AND / OR</div>
+        <div class="code-block">
+<span class="cm">// AND: ambas condiciones deben cumplirse</span>
+monto > <span class="val">500000</span>  <span class="kw">AND</span>  estado == <span class="str">"aprobado"</span>
+<span class="cm">→ true solo si el monto ES mayor Y el estado ES aprobado</span>
+
+<span class="cm">// OR: basta con que una se cumpla</span>
+pais == <span class="str">"CO"</span>  <span class="kw">OR</span>  pais == <span class="str">"MX"</span>
+<span class="cm">→ true si es de Colombia O de México</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('fn')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('switch')">Siguiente: Nodo Switch →</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 5 · SWITCH ══════════ -->
+    <section id="switch" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Nodo 4 de 7</div>
+        <h1>Nodo <span>Switch</span></h1>
+        <p>El IF con superpoderes. Cuando necesitas más de dos caminos, Switch crea tantas rutas como necesites según el valor de un campo.</p>
+      </div>
+
+      <div class="node-hero nh-switch">
+        <div class="nh-top">
+          <div class="nh-icon">🎛️</div>
+          <div>
+            <div class="nh-type-label">Switch · Enrutamiento múltiple</div>
+            <div class="nh-title">Múltiples rutas según un valor</div>
+            <div class="nh-desc">Evalúa el valor de un campo y dirige los datos por la salida correspondiente. En vez de anidar muchos IFs, Switch lo resuelve en un solo nodo. Perfecto para enrutar por tipo de producto, país, estado, categoría o cualquier campo discreto.</div>
+          </div>
+        </div>
+        <div class="nh-tags">
+          <span class="nh-tag">🛣️ N rutas</span>
+          <span class="nh-tag">📋 Por valor exacto</span>
+          <span class="nh-tag">🏷️ Por categoría</span>
+          <span class="nh-tag">🌍 Por país / región</span>
+          <span class="nh-tag">📦 Por tipo</span>
+        </div>
+      </div>
+
+      <div class="card sky-border" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ IF vs Switch — el mismo problema, distinta escala</div>
+        <div class="grid-2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px;">❌ Con IF anidados (difícil de mantener)</div>
+            <div class="code-block" style="font-size:11px;">
+IF pais == <span class="str">"CO"</span>
+  → flujo Colombia
+ELSE
+  IF pais == <span class="str">"MX"</span>
+    → flujo México
+  ELSE
+    IF pais == <span class="str">"AR"</span>
+      → flujo Argentina
+    ELSE
+      → flujo genérico
+<span class="cm">// 3 nodos IF encadenados = pesadilla</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px;">✅ Con Switch (limpio y escalable)</div>
+            <div class="code-block" style="font-size:11px;">
+<span class="sky">SWITCH</span> pais:
+  <span class="str">"CO"</span>  → salida 1 → flujo Colombia
+  <span class="str">"MX"</span>  → salida 2 → flujo México
+  <span class="str">"AR"</span>  → salida 3 → flujo Argentina
+  <span class="cm">otros</span> → salida 4 → flujo genérico
+
+<span class="cm">// 1 solo nodo, fácil de leer y editar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-label">🏢 Casos reales con Switch</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-emoji">📦</span><div class="wtu-text"><strong>Tipo de pedido:</strong> "normal" / "express" / "internacional" → cada uno con su flujo de envío distinto</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">🎫</span><div class="wtu-text"><strong>Categoría de ticket:</strong> "facturación" / "soporte técnico" / "ventas" → asignar al equipo correcto</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">💼</span><div class="wtu-text"><strong>Plan de suscripción:</strong> "free" / "pro" / "enterprise" → activar funciones distintas</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">🌎</span><div class="wtu-text"><strong>Región:</strong> "LATAM" / "US" / "EU" → precios, idioma y condiciones distintas</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 ¿IF o Switch?</div>
+          <table class="comp-table" style="margin-top:8px;">
+            <thead><tr><th>Situación</th><th>Usar</th></tr></thead>
+            <tbody>
+              <tr><td>2 caminos (sí/no)</td><td><span class="badge badge-green">IF</span></td></tr>
+              <tr><td>Condición numérica</td><td><span class="badge badge-green">IF</span></td></tr>
+              <tr><td>3 o más caminos</td><td><span class="badge badge-sky">Switch</span></td></tr>
+              <tr><td>Enrutar por categoría</td><td><span class="badge badge-sky">Switch</span></td></tr>
+              <tr><td>Reemplazar IFs anidados</td><td><span class="badge badge-sky">Switch</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('if')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('http')">Siguiente: HTTP Request →</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 6 · HTTP REQUEST ══════════ -->
+    <section id="http" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Nodo 5 de 7</div>
+        <h1>HTTP <span>Request</span></h1>
+        <p>El nodo que conecta n8n con cualquier API del mundo. Si tiene una URL y acepta HTTP, puedes integrarlo en tu workflow.</p>
+      </div>
+
+      <div class="node-hero nh-http">
+        <div class="nh-top">
+          <div class="nh-icon">🌐</div>
+          <div>
+            <div class="nh-type-label">HTTP Request · Integración con APIs externas</div>
+            <div class="nh-title">Llama a cualquier API desde el workflow</div>
+            <div class="nh-desc">HTTP Request hace peticiones GET, POST, PUT, DELETE a cualquier endpoint. Puedes enviar datos, recibir respuestas y usarlas en los siguientes nodos. Es el puente entre n8n y cualquier servicio externo que tenga API REST.</div>
+          </div>
+        </div>
+        <div class="nh-tags">
+          <span class="nh-tag">📡 GET / POST / PUT</span>
+          <span class="nh-tag">🔑 Auth: Bearer / API Key</span>
+          <span class="nh-tag">📦 Body JSON</span>
+          <span class="nh-tag">📥 Procesa respuesta</span>
+          <span class="nh-tag">🔗 Cualquier REST API</span>
+        </div>
+      </div>
+
+      <div class="card teal-border" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Configuración del nodo</div>
+        <div class="code-block">
+<span class="cm">// Configuración básica</span>
+<span class="key">Método:</span>    <span class="kw">POST</span>
+<span class="key">URL:</span>       <span class="val">https://api.ejemplo.com/clientes</span>
+<span class="key">Auth:</span>      Bearer Token  →  <span class="str">{{$env.API_KEY}}</span>
+
+<span class="cm">// Body (lo que envías)</span>
+<span class="key">Content-Type:</span> <span class="str">application/json</span>
+{
+  <span class="key">"nombre"</span>:  <span class="str">"{{$json.nombre}}"</span>,
+  <span class="key">"email"</span>:   <span class="str">"{{$json.email}}"</span>,
+  <span class="key">"origen"</span>:  <span class="str">"n8n-workflow"</span>
+}
+
+<span class="cm">// Respuesta que llega al nodo siguiente</span>
+{
+  <span class="key">"id"</span>:     <span class="str">"clt_8f3a9b"</span>,
+  <span class="key">"status"</span>: <span class="str">"created"</span>
+}
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-label">🏢 Ejemplos de integraciones reales</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-emoji">🤖</span><div class="wtu-text"><strong>OpenAI / Claude:</strong> enviar texto → recibir respuesta generada por IA dentro del workflow</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">💳</span><div class="wtu-text"><strong>Wompi / Stripe:</strong> consultar estado de pago por ID de transacción</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">📍</span><div class="wtu-text"><strong>Google Maps:</strong> geocodificar una dirección y obtener coordenadas</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">📱</span><div class="wtu-text"><strong>WhatsApp Business:</strong> enviar mensaje al número del cliente via API de Meta</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">🏦</span><div class="wtu-text"><strong>API del banco:</strong> consultar saldo o registrar movimiento contable</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🔑 Tipos de autenticación soportados</div>
+          <table class="comp-table" style="margin-top:8px;">
+            <thead><tr><th>Tipo</th><th>Cuándo usarlo</th></tr></thead>
+            <tbody>
+              <tr><td>Sin auth</td><td>APIs públicas (clima, divisas)</td></tr>
+              <tr><td>API Key en header</td><td>La mayoría de SaaS modernos</td></tr>
+              <tr><td>Bearer Token</td><td>OAuth2, JWT, APIs modernas</td></tr>
+              <tr><td>Basic Auth</td><td>Sistemas legacy, ERPs</td></tr>
+              <tr><td>OAuth2</td><td>Google, Microsoft, Salesforce</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tip-box"><span class="tip-icon">🔒</span><div class="tip-text"><strong>Buena práctica:</strong> nunca pongas API keys directamente en el nodo. Usa las <strong>credenciales de n8n</strong> o variables de entorno (<code style="color:var(--teal);">$env.MI_API_KEY</code>). Así el key no queda expuesto en el workflow.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('switch')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('merge')">Siguiente: Nodo Merge →</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 7 · MERGE ══════════ -->
+    <section id="merge" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Nodo 6 de 7</div>
+        <h1>Nodo <span>Merge</span></h1>
+        <p>Une dos ramas del workflow en una sola. Indispensable cuando divides el flujo con un IF o Switch y necesitas reunirlo después.</p>
+      </div>
+
+      <div class="node-hero nh-merge">
+        <div class="nh-top">
+          <div class="nh-icon">🔗</div>
+          <div>
+            <div class="nh-type-label">Merge · Unión de flujos</div>
+            <div class="nh-title">Junta múltiples ramas en una</div>
+            <div class="nh-desc">Cuando el flujo se divide (por un IF, Switch o ramas paralelas), Merge lo vuelve a unir. Puede combinar datos de ambas ramas, esperar a que lleguen todos los items, o simplemente pasar los datos de la primera rama que llegue.</div>
+          </div>
+        </div>
+        <div class="nh-tags">
+          <span class="nh-tag">🔀 Une ramas</span>
+          <span class="nh-tag">⏳ Espera ambas</span>
+          <span class="nh-tag">📋 Combina datos</span>
+          <span class="nh-tag">🏁 Sincroniza</span>
+        </div>
+      </div>
+
+      <div class="card pink-border" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Modos del nodo Merge</div>
+        <div class="grid-3" style="margin-top:12px;margin-bottom:0;">
+          <div style="background:var(--bg3);border-radius:10px;padding:16px;border:1px solid var(--border);">
+            <div style="font-size:16px;margin-bottom:6px;">🚦</div>
+            <div style="font-size:12px;font-weight:700;color:var(--pink);margin-bottom:4px;">Append</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.5;">Agrega todos los items de ambas ramas en una lista combinada. El más común.</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:16px;border:1px solid var(--border);">
+            <div style="font-size:16px;margin-bottom:6px;">🔀</div>
+            <div style="font-size:12px;font-weight:700;color:var(--pink);margin-bottom:4px;">Merge By Index</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.5;">Une item #1 de rama A con item #1 de rama B, item #2 con #2, etc.</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:16px;border:1px solid var(--border);">
+            <div style="font-size:16px;margin-bottom:6px;">⏳</div>
+            <div style="font-size:12px;font-weight:700;color:var(--pink);margin-bottom:4px;">Wait</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.5;">Espera a que AMBAS ramas lleguen antes de continuar. Para sincronizar procesos paralelos.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">🏢 Ejemplo: flujo paralelo + merge</div>
+        <div class="flow-row" style="margin-top:14px;">
+          <div class="flow-node t-node" style="min-width:100px;"><div class="fn-icon">🌐</div><div class="fn-type">Trigger</div><div class="fn-name">Webhook</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node i-node" style="min-width:80px;"><div class="fn-icon">🔀</div><div class="fn-type">Lógica</div><div class="fn-name">IF</div></div>
+          <div class="fork-arrow">
+            <span style="color:var(--green);">→ VIP</span>
+            <span style="color:var(--red);">→ Normal</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+            <div class="flow-node a-node" style="min-width:110px;"><div class="fn-icon">🏆</div><div class="fn-type" style="color:var(--green);">Acción A</div><div class="fn-name">Email VIP</div></div>
+            <div class="flow-node" style="min-width:110px;border-color:rgba(124,110,245,0.3);background:rgba(124,110,245,0.04);"><div class="fn-icon">📧</div><div class="fn-type" style="color:var(--accent2);">Acción B</div><div class="fn-name">Email normal</div></div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="min-width:100px;border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.05);"><div class="fn-icon">🔗</div><div class="fn-type" style="color:var(--pink);">Merge</div><div class="fn-name">Append</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node a-node" style="min-width:110px;"><div class="fn-icon">📊</div><div class="fn-type">Registro</div><div class="fn-name">Google Sheets</div></div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">Ambas ramas (VIP y normal) se unen en Merge antes de registrar en Sheets →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('http')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('loop')">Siguiente: Loop Over Items →</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 8 · LOOP ══════════ -->
+    <section id="loop" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Nodo 7 de 7</div>
+        <h1>Loop <span>Over Items</span></h1>
+        <p>Procesa cada elemento de una lista por separado. Cuando tienes 10, 100 o 1000 registros y necesitas ejecutar una acción por cada uno.</p>
+      </div>
+
+      <div class="node-hero nh-loop">
+        <div class="nh-top">
+          <div class="nh-icon">🔁</div>
+          <div>
+            <div class="nh-type-label">Loop Over Items · Iteración</div>
+            <div class="nh-title">Repite la acción por cada elemento</div>
+            <div class="nh-desc">Imagina que tienes una lista de 50 clientes y necesitas enviarle un email personalizado a cada uno. Loop Over Items itera sobre cada registro y ejecuta los nodos siguientes una vez por cada elemento. Sin Loop, tendrías que hacerlo manualmente.</div>
+          </div>
+        </div>
+        <div class="nh-tags">
+          <span class="nh-tag">🔁 Itera lista</span>
+          <span class="nh-tag">📦 Procesa 1 a 1</span>
+          <span class="nh-tag">⏱️ Control de ritmo</span>
+          <span class="nh-tag">📋 Batch size</span>
+        </div>
+      </div>
+
+      <div class="card red-border" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Cómo funciona el Loop</div>
+        <div class="code-block">
+<span class="cm">// Llegan 3 clientes del nodo anterior</span>
+[
+  { <span class="key">"nombre"</span>: <span class="str">"Laura"</span>,  <span class="key">"email"</span>: <span class="str">"laura@x.com"</span> },
+  { <span class="key">"nombre"</span>: <span class="str">"Carlos"</span>, <span class="key">"email"</span>: <span class="str">"carlos@x.com"</span> },
+  { <span class="key">"nombre"</span>: <span class="str">"Ana"</span>,    <span class="key">"email"</span>: <span class="str">"ana@x.com"</span> }
+]
+
+<span class="cm">// Loop Over Items los procesa así:</span>
+<span class="kw">Vuelta 1</span> → procesa Laura  → envía email a laura@x.com
+<span class="kw">Vuelta 2</span> → procesa Carlos → envía email a carlos@x.com
+<span class="kw">Vuelta 3</span> → procesa Ana    → envía email a ana@x.com
+<span class="cm">// = 3 emails enviados, 1 por 1</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-label">🏢 Casos reales</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-emoji">📧</span><div class="wtu-text"><strong>Email masivo personalizado:</strong> 500 clientes, 1 email único por persona con su nombre y datos</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">📊</span><div class="wtu-text"><strong>Registrar en Sheets:</strong> lista de pedidos del día → cada uno en su propia fila</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">🤖</span><div class="wtu-text"><strong>Procesar con IA:</strong> 20 reseñas de clientes → analizar sentimiento de cada una</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">🔄</span><div class="wtu-text"><strong>Actualizar CRM:</strong> lista de contactos importados → crear registro por cada uno</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">⚠️ Consideraciones importantes</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-emoji">⏱️</span><div class="wtu-text"><strong>Velocidad:</strong> 1000 items × 1 seg/item = ~17 min. Considera el tiempo de ejecución</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">📦</span><div class="wtu-text"><strong>Batch size:</strong> puedes configurar cuántos items procesar por lote (ej: 10 a la vez)</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">🚦</span><div class="wtu-text"><strong>Rate limits:</strong> si llamas una API en el loop, respeta sus límites de peticiones por minuto</div></div>
+            <div class="wtu-row"><span class="wtu-emoji">💡</span><div class="wtu-text"><strong>Sin loop a veces:</strong> algunos nodos (Gmail, Sheets) ya procesan múltiples items solos</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('merge')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('combinar')">Siguiente: Combinar nodos →</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 9 · COMBINAR ══════════ -->
+    <section id="combinar" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Combinar <span>Nodos</span></h1>
+        <p>La magia no está en los nodos individuales — está en cómo los encadenas. Tres workflows reales de principio a fin.</p>
+      </div>
+
+      <!-- WORKFLOW 1 -->
+      <div class="card accent-border" style="margin-bottom:16px;">
+        <div class="card-label">🛍️ Workflow 1 — Procesamiento de pedido con validación</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:16px;">Webhook recibe pedido → valida → procesa según tipo → notifica → registra</div>
+        <div class="flow-row">
+          <div class="flow-node t-node"><div class="fn-icon">🌐</div><div class="fn-type">Trigger</div><div class="fn-name">Webhook</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node s-node"><div class="fn-icon">🔧</div><div class="fn-type">Set</div><div class="fn-name">Formatear</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node i-node"><div class="fn-icon">🔀</div><div class="fn-type">IF</div><div class="fn-name">¿email válido?</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="border-color:rgba(56,189,248,0.3);background:rgba(56,189,248,0.04);"><div class="fn-icon">🎛️</div><div class="fn-type" style="color:var(--sky);">Switch</div><div class="fn-name">Tipo pedido</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node h-node"><div class="fn-icon">🌐</div><div class="fn-type">HTTP</div><div class="fn-name">API logística</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node a-node"><div class="fn-icon">📧</div><div class="fn-type">Acción</div><div class="fn-name">Email cliente</div></div>
+        </div>
+        <div class="code-block" style="font-size:12px;margin-top:12px;">
+<span class="cm">Webhook</span> → <span class="kw">Set</span> (limpiar campos) → <span class="kw">IF</span> email válido
+  → <span class="val">true:</span>  <span class="kw">Switch</span> por tipo → "express"/"normal"/"internacional"
+              → <span class="kw">HTTP</span> API logística → <span class="kw">Email</span> confirmación al cliente
+  → <span class="red">false:</span> <span class="kw">Email</span> alerta interna "datos incorrectos"
+        </div>
+      </div>
+
+      <!-- WORKFLOW 2 -->
+      <div class="card amber-border" style="margin-bottom:16px;">
+        <div class="card-label">📊 Workflow 2 — Reporte semanal automático con IA</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:16px;">Schedule lunes 8am → extrae datos → resume con IA → envía por email</div>
+        <div class="flow-row">
+          <div class="flow-node t-node"><div class="fn-icon">⏰</div><div class="fn-type">Schedule</div><div class="fn-name">Lunes 8am</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node h-node"><div class="fn-icon">🌐</div><div class="fn-type">HTTP</div><div class="fn-name">GET Analytics</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);"><div class="fn-icon">⚡</div><div class="fn-type" style="color:var(--amber);">Function</div><div class="fn-name">Calcular KPIs</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node h-node"><div class="fn-icon">🤖</div><div class="fn-type">HTTP</div><div class="fn-name">API IA</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node s-node"><div class="fn-icon">🔧</div><div class="fn-type">Set</div><div class="fn-name">Armar email</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node a-node"><div class="fn-icon">📧</div><div class="fn-type">Acción</div><div class="fn-name">Gmail</div></div>
+        </div>
+      </div>
+
+      <!-- WORKFLOW 3 -->
+      <div class="card green-border" style="margin-bottom:20px;">
+        <div class="card-label">👥 Workflow 3 — Onboarding masivo de nuevos clientes</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:16px;">Sheets con lista → loop → email personalizado a cada uno → registro de confirmación</div>
+        <div class="flow-row">
+          <div class="flow-node t-node"><div class="fn-icon">⏰</div><div class="fn-type">Schedule</div><div class="fn-name">Cada día</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node h-node"><div class="fn-icon">📊</div><div class="fn-type">HTTP</div><div class="fn-name">Leer Sheets</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node i-node"><div class="fn-icon">🔀</div><div class="fn-type">IF</div><div class="fn-name">¿sin onboarding?</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="border-color:rgba(240,90,90,0.3);background:rgba(240,90,90,0.04);"><div class="fn-icon">🔁</div><div class="fn-type" style="color:var(--red);">Loop</div><div class="fn-name">Por cliente</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node s-node"><div class="fn-icon">🔧</div><div class="fn-type">Set</div><div class="fn-name">Personalizar</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node a-node"><div class="fn-icon">📧</div><div class="fn-type">Acción</div><div class="fn-name">Email bienvenida</div></div>
+        </div>
+      </div>
+
+      <!-- RESUMEN FINAL -->
+      <div class="card">
+        <div class="card-label">📋 Resumen — cuándo usar cada nodo</div>
+        <table class="comp-table" style="margin-top:10px;">
+          <thead><tr><th>Nodo</th><th>Lo usas cuando necesitas…</th><th>Frecuencia</th></tr></thead>
+          <tbody>
+            <tr><td>🔧 Set</td><td>Reorganizar, renombrar o construir campos de datos</td><td><span class="badge badge-accent">Siempre</span></td></tr>
+            <tr><td>⚡ Function</td><td>Lógica, cálculos, manipulación de arrays con código</td><td><span class="badge badge-amber">Frecuente</span></td></tr>
+            <tr><td>🔀 IF</td><td>Dividir el flujo según una condición verdadero/falso</td><td><span class="badge badge-green">Frecuente</span></td></tr>
+            <tr><td>🎛️ Switch</td><td>Enrutar por 3 o más categorías o valores distintos</td><td><span class="badge badge-sky">Moderado</span></td></tr>
+            <tr><td>🌐 HTTP Request</td><td>Llamar cualquier API externa o recibir su respuesta</td><td><span class="badge badge-teal">Frecuente</span></td></tr>
+            <tr><td>🔗 Merge</td><td>Reunir dos ramas del flujo después de un IF/Switch</td><td><span class="badge badge-pink">Moderado</span></td></tr>
+            <tr><td>🔁 Loop</td><td>Procesar cada elemento de una lista por separado</td><td><span class="badge badge-red">Moderado</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:40px;margin-bottom:12px;">⚡</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Siguiente — Parte 4: Integraciones reales</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:480px;margin:0 auto 20px;">Con los nodos dominados, la Parte 4 conecta todo con herramientas del mundo real: Google Sheets, Gmail, Slack, Airtable, Notion y CRMs, con workflows completos listos para producción.</p>
+          <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+            <span class="badge badge-accent">📊 Google Sheets</span>
+            <span class="badge badge-green">💬 Slack</span>
+            <span class="badge badge-teal">🗃️ Airtable</span>
+            <span class="badge badge-amber">📋 Notion</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('loop')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections = ['intro','set','fn','if','switch','http','merge','loop','combinar'];
+
+  function go(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goTo(id) {
+    const el = document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+    go(id, el);
+  }
+
+  function updateProgress(id) {
+    const idx = sections.indexOf(id);
+    const pct = Math.round(((idx + 1) / sections.length) * 100);
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `Sección ${idx + 1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>

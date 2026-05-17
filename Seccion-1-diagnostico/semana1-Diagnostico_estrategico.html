@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seccion 1 — Diagnóstico de Automatización · n8n</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #1f1f28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0eeff;
+    --text2: #9b95b8;
+    --text3: #5c577a;
+    --accent: #7c6ef5;
+    --accent2: #a598ff;
+    --accent-glow: rgba(124,110,245,0.18);
+    --green: #22c97a;
+    --green-bg: rgba(34,201,122,0.1);
+    --red: #f05a5a;
+    --red-bg: rgba(240,90,90,0.1);
+    --amber: #f0a030;
+    --amber-bg: rgba(240,160,48,0.1);
+    --teal: #20d4b0;
+    --teal-bg: rgba(32,212,176,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,110,245,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,110,245,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .week {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .sidebar-logo h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .sidebar-logo p {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .nav-section {
+    padding: 16px 12px 8px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    text-decoration: none;
+  }
+  .nav-item:hover {
+    background: var(--bg3);
+    color: var(--text);
+  }
+  .nav-item.active {
+    background: var(--accent-glow);
+    border-color: rgba(124,110,245,0.3);
+    color: var(--accent2);
+  }
+  .nav-item .nav-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: var(--bg4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+  .nav-item.active .nav-num {
+    background: rgba(124,110,245,0.25);
+    color: var(--accent2);
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .progress-bar {
+    background: var(--bg4);
+    border-radius: 4px;
+    height: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--teal));
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 260px;
+    flex: 1;
+    padding: 40px 48px;
+    max-width: calc(100% - 260px);
+  }
+
+  .section { display: none; animation: fadeIn 0.25s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* SECTION HEADER */
+  .section-header {
+    margin-bottom: 36px;
+  }
+  .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .section-tag .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .section-header h1 {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .section-header h1 span { color: var(--accent2); }
+  .section-header p {
+    font-size: 16px;
+    color: var(--text2);
+    line-height: 1.7;
+    max-width: 640px;
+  }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-sm { padding: 18px; }
+  .card.accent-border { border-color: rgba(124,110,245,0.3); }
+  .card.green-border { border-color: rgba(34,201,122,0.3); }
+  .card.red-border { border-color: rgba(240,90,90,0.25); }
+  .card.amber-border { border-color: rgba(240,160,48,0.3); }
+
+  .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+  .card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .card p {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+
+  /* STAT CARDS */
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 32px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent2);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  /* BADGE */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-accent { background: var(--accent-glow); color: var(--accent2); }
+  .badge-teal { background: var(--teal-bg); color: var(--teal); }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    font-size: 14px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check { color: var(--green); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .cross { color: var(--red); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .num-badge {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--accent-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent2);
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* HIGHLIGHT BOX */
+  .highlight {
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,110,245,0.25);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+  .highlight strong { color: var(--accent2); }
+
+  .tip {
+    background: var(--green-bg);
+    border-left: 3px solid var(--green);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+  .tip strong { color: var(--green); }
+
+  .warning {
+    background: var(--red-bg);
+    border-left: 3px solid var(--red);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+  .warning strong { color: var(--red); }
+
+  /* FLOW */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 20px 0;
+  }
+  .flow-node {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flow-node.active-node {
+    background: var(--accent-glow);
+    border-color: rgba(124,110,245,0.4);
+    color: var(--accent2);
+  }
+  .flow-node .node-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    color: var(--text3);
+    font-size: 18px;
+    font-weight: 300;
+  }
+
+  /* MATRIX */
+  .matrix-wrap {
+    position: relative;
+    margin: 8px 0 24px;
+  }
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    margin-left: 52px;
+    margin-bottom: 40px;
+  }
+  .quadrant {
+    border-radius: 10px;
+    padding: 20px;
+    min-height: 130px;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .q1 { background: rgba(34,201,122,0.06); border-color: rgba(34,201,122,0.2); }
+  .q2 { background: rgba(240,160,48,0.06); border-color: rgba(240,160,48,0.15); }
+  .q3 { background: rgba(124,110,245,0.05); border-color: rgba(124,110,245,0.15); }
+  .q4 { background: rgba(240,90,90,0.05); border-color: rgba(240,90,90,0.12); }
+  .q-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .q1 .q-title { color: var(--green); }
+  .q2 .q-title { color: var(--amber); }
+  .q3 .q-title { color: var(--accent2); }
+  .q4 .q-title { color: var(--red); }
+  .q-icon { font-size: 24px; margin-bottom: 8px; }
+  .q-desc { font-size: 12px; color: var(--text3); line-height: 1.6; }
+  .q-examples { font-size: 12px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
+
+  .axis-y-wrap {
+    position: absolute;
+    left: 0; top: 0;
+    bottom: 40px;
+    width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+  }
+  .axis-x-wrap {
+    position: absolute;
+    left: 52px; right: 0; bottom: 0;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+  }
+  .axis-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .axis-v {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .data-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg3); }
+
+  /* BEFORE AFTER */
+  .ba-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .ba-col {
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid transparent;
+  }
+  .ba-before {
+    background: rgba(240,90,90,0.05);
+    border-color: rgba(240,90,90,0.2);
+  }
+  .ba-after {
+    background: rgba(34,201,122,0.05);
+    border-color: rgba(34,201,122,0.2);
+  }
+  .ba-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ba-before .ba-header { color: var(--red); }
+  .ba-after .ba-header { color: var(--green); }
+  .ba-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ba-before .step-num { background: rgba(240,90,90,0.2); color: var(--red); }
+  .ba-after .step-num { background: rgba(34,201,122,0.2); color: var(--green); }
+
+  /* N8N NODES */
+  .n8n-flow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 16px 0;
+  }
+  .n8n-node {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .n8n-node .ndot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ndot-trigger { background: #7c6ef5; box-shadow: 0 0 6px rgba(124,110,245,0.5); }
+  .ndot-action { background: var(--green); box-shadow: 0 0 6px rgba(34,201,122,0.4); }
+  .ndot-condition { background: var(--amber); box-shadow: 0 0 6px rgba(240,160,48,0.4); }
+
+  /* CONCEPT CARD */
+  .concept-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .concept-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .concept-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  .concept-card h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .concept-card p {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  /* NAV BUTTONS */
+  .nav-btns {
+    display: flex;
+    gap: 12px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #6b5ee0; transform: translateY(-1px); }
+  .btn-ghost {
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { background: var(--bg4); color: var(--text); }
+
+  /* STEP INDICATOR */
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 32px;
+  }
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text3);
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+  .step-dot.done { background: var(--accent-glow); border-color: rgba(124,110,245,0.5); color: var(--accent2); }
+  .step-line {
+    height: 1px;
+    flex: 1;
+    background: var(--border);
+  }
+  .step-line.done { background: rgba(124,110,245,0.4); }
+
+  /* DELIVERABLE */
+  .deliverable-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .deliverable-item:last-child { border-bottom: none; }
+  .d-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--accent-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .d-text h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .d-text p {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  /* TOOL CARD */
+  .tool-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    margin: 4px;
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+  .code-block .kw { color: var(--accent2); }
+  .code-block .str { color: var(--green); }
+  .code-block .comment { color: var(--text3); }
+
+  /* SEPARATOR */
+  .sep {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">// Seccion 01</div>
+      <h2>Automatización con n8n</h2>
+      <p>Diagnóstico estratégico</p>
+    </div>
+
+    <div class="nav-section">Contenido</div>
+
+    <a class="nav-item active" onclick="showSection('intro', this)">
+      <div class="nav-num">01</div>
+      Introducción y problema
+    </a>
+    <a class="nav-item" onclick="showSection('conceptos', this)">
+      <div class="nav-num">02</div>
+      Conceptos clave
+    </a>
+    <a class="nav-item" onclick="showSection('framework', this)">
+      <div class="nav-num">03</div>
+      Framework diagnóstico
+    </a>
+    <a class="nav-item" onclick="showSection('matriz', this)">
+      <div class="nav-num">04</div>
+      Matriz impacto vs esfuerzo
+    </a>
+    <a class="nav-item" onclick="showSection('casoreal', this)">
+      <div class="nav-num">05</div>
+      Caso real
+    </a>
+    <a class="nav-item" onclick="showSection('ejercicio', this)">
+      <div class="nav-num">06</div>
+      Ejercicio práctico
+    </a>
+    <a class="nav-item" onclick="showSection('errores', this)">
+      <div class="nav-num">07</div>
+      Errores comunes
+    </a>
+    <a class="nav-item" onclick="showSection('entregable', this)">
+      <div class="nav-num">08</div>
+      Entregable y cierre
+    </a>
+
+    <div class="sidebar-footer">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress" style="width: 12%"></div>
+      </div>
+      <div class="progress-text" id="progress-text">Sección 1 de 8</div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ========== SECCIÓN 1: INTRO ========== -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Seccion 1 · Diagnóstico</div>
+        <h1>Diagnóstico <span>Estratégico</span><br>de Automatización</h1>
+        <p>Antes de automatizar cualquier cosa, necesitas pensar como sistema. Esta Seccion te dará el mapa para identificar, priorizar e implementar las automatizaciones con mayor impacto real.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="stat-card">
+          <div class="stat-num">40%</div>
+          <div class="stat-label">del tiempo laboral es en tareas manuales repetitivas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">3×</div>
+          <div class="stat-label">más rápido con automatización bien implementada</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">90%</div>
+          <div class="stat-label">de automatizaciones fallan por falta de diagnóstico</div>
+        </div>
+      </div>
+
+      <div class="card red-border">
+        <div class="card-label">🚨 El problema real</div>
+        <h3>¿Por qué fallan las automatizaciones?</h3>
+        <div class="grid-3" style="margin-top: 16px; margin-bottom: 0;">
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border);">
+            <div style="font-size: 20px; margin-bottom: 8px;">⏳</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Tiempo perdido</div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.5;">Tareas manuales repetitivas que consumen horas cada Seccion sin valor real</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border);">
+            <div style="font-size: 20px; margin-bottom: 8px;">🌫️</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Sin claridad</div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.5;">No saben qué automatizar, por dónde empezar ni cómo medir resultados</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border);">
+            <div style="font-size: 20px; margin-bottom: 8px;">🎯</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Sin impacto</div>
+            <div style="font-size: 12px; color: var(--text2); line-height: 1.5;">Automatizan cosas irrelevantes mientras los procesos críticos siguen siendo manuales</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight">
+        <strong>👉 Resultado:</strong> pérdida de tiempo, dinero y oportunidades. La automatización sin estrategia genera más caos, no menos. El diagnóstico es el paso que más se omite y el más importante.
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">🎯 Qué vas a aprender esta Seccion</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span> Identificar procesos automatizables dentro de cualquier negocio</li>
+          <li><span class="check">✓</span> Pensamiento sistémico aplicado a automatización real</li>
+          <li><span class="check">✓</span> Cómo detectar cuellos de botella con preguntas clave</li>
+          <li><span class="check">✓</span> Priorizar con la matriz impacto vs esfuerzo</li>
+          <li><span class="check">✓</span> Crear un diagnóstico antes de tocar ninguna herramienta</li>
+          <li><span class="check">✓</span> Bases para construir tu primer workflow en n8n (Seccion 2)</li>
+        </ul>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-primary" onclick="goTo('conceptos')">Siguiente: Conceptos clave →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 2: CONCEPTOS ========== -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Conceptos <span>Clave</span></h1>
+        <p>Antes de hacer el diagnóstico, necesitas un vocabulario común. Estos son los cuatro conceptos fundamentales de esta Seccion.</p>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card" style="border-color: rgba(124,110,245,0.3);">
+          <div class="concept-icon">⚡</div>
+          <h4>Automatización estratégica</h4>
+          <p>No es automatizar por automatizar. Es identificar y automatizar los procesos que generan impacto real y medible en el negocio. Calidad sobre cantidad.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(240,90,90,0.25);">
+          <div class="concept-icon">🚧</div>
+          <h4>Cuello de botella</h4>
+          <p>Punto donde el proceso se ralentiza, acumula errores o depende de la intervención manual de una persona específica. Es el lugar donde automatizar genera mayor alivio.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(240,160,48,0.3);">
+          <div class="concept-icon">⚖️</div>
+          <h4>Impacto vs esfuerzo</h4>
+          <p>Método de priorización. Mide cuánto impacto genera automatizar un proceso versus cuánto esfuerzo requiere implementarlo. El cuadrante ideal: alto impacto, bajo esfuerzo.</p>
+        </div>
+        <div class="concept-card" style="border-color: rgba(34,201,122,0.3);">
+          <div class="concept-icon">🔁</div>
+          <h4>Proceso repetitivo</h4>
+          <p>Tarea que ocurre frecuentemente (diario, Seccionl) y sigue una estructura similar cada vez. Estos son los candidatos perfectos para automatización con n8n.</p>
+        </div>
+      </div>
+
+      <hr class="sep">
+
+      <div class="card">
+        <div class="card-label">🔌 ¿Qué es n8n?</div>
+        <h3>La herramienta que usaremos</h3>
+        <p style="margin-bottom: 16px;">n8n es una plataforma de automatización de workflows de código abierto. Permite conectar apps, servicios y APIs mediante nodos visuales, sin necesidad de escribir código complejo.</p>
+
+        <div class="n8n-flow">
+          <div class="n8n-node"><div class="ndot ndot-trigger"></div>Trigger (inicio)</div>
+          <div class="flow-arrow">→</div>
+          <div class="n8n-node"><div class="ndot ndot-condition"></div>Condición (if)</div>
+          <div class="flow-arrow">→</div>
+          <div class="n8n-node"><div class="ndot ndot-action"></div>Acción (enviar, guardar)</div>
+          <div class="flow-arrow">→</div>
+          <div class="n8n-node"><div class="ndot ndot-action"></div>Notificación</div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 8px; margin-bottom: 0;">
+          <div style="text-align: center; padding: 12px;">
+            <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 4px; color: var(--accent2);"><div style="width:10px; height:10px; border-radius:50%; background:#7c6ef5;"></div> Trigger</div>
+            <div style="font-size: 11px; color: var(--text3);">Dispara el flujo automáticamente</div>
+          </div>
+          <div style="text-align: center; padding: 12px;">
+            <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 4px; color: var(--amber);"><div style="width:10px; height:10px; border-radius:50%; background: var(--amber);"></div> Condición</div>
+            <div style="font-size: 11px; color: var(--text3);">Evalúa y bifurca el camino</div>
+          </div>
+          <div style="text-align: center; padding: 12px;">
+            <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 4px; color: var(--green);"><div style="width:10px; height:10px; border-radius:50%; background: var(--green);"></div> Acción</div>
+            <div style="font-size: 11px; color: var(--text3);">Ejecuta la tarea automatizada</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('framework')">Siguiente: Framework →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 3: FRAMEWORK ========== -->
+    <section id="framework" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Framework de <span>Diagnóstico</span></h1>
+        <p>Un proceso de 4 pasos para identificar qué automatizar, en qué orden, y por qué. Aplica a cualquier negocio antes de abrir n8n.</p>
+      </div>
+
+      <div class="step-indicator">
+        <div class="step-dot done">1</div>
+        <div class="step-line done"></div>
+        <div class="step-dot done">2</div>
+        <div class="step-line done"></div>
+        <div class="step-dot done">3</div>
+        <div class="step-line done"></div>
+        <div class="step-dot done">4</div>
+      </div>
+
+      <!-- PASO 1 -->
+      <div class="card accent-border" style="margin-bottom: 12px;">
+        <div style="display: flex; align-items: flex-start; gap: 16px;">
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--accent-glow); border: 1px solid rgba(124,110,245,0.4); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--accent2); flex-shrink: 0;">01</div>
+          <div style="flex: 1;">
+            <h3 style="margin-bottom: 10px;">Identificación de procesos</h3>
+            <p style="margin-bottom: 14px;">Busca tareas dentro del negocio que cumplan al menos una de estas condiciones:</p>
+            <ul class="checklist">
+              <li><span class="check">✓</span> Se repiten diariamente o múltiples veces por Seccion</li>
+              <li><span class="check">✓</span> Requieren copiar y pegar información entre herramientas</li>
+              <li><span class="check">✓</span> Involucran múltiples apps o sistemas conectados manualmente</li>
+              <li><span class="check">✓</span> Dependen 100% de la intervención de una persona</li>
+              <li><span class="check">✓</span> Generan errores frecuentes por ser procesos manuales</li>
+            </ul>
+            <div class="tip" style="margin-top: 14px; margin-bottom: 0;">
+              <strong>📌 Ejemplos típicos:</strong> responder leads desde formularios, pasar datos a CRM manualmente, enviar reportes por correo, confirmar citas, actualizar hojas de cálculo, notificar al equipo de nuevos pedidos.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 2 -->
+      <div class="card" style="border-color: rgba(240,90,90,0.25); margin-bottom: 12px;">
+        <div style="display: flex; align-items: flex-start; gap: 16px;">
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--red-bg); border: 1px solid rgba(240,90,90,0.3); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--red); flex-shrink: 0;">02</div>
+          <div style="flex: 1;">
+            <h3 style="margin-bottom: 10px;">Detección de cuellos de botella</h3>
+            <p style="margin-bottom: 14px;">Entrevista al equipo o analiza el negocio con estas preguntas clave:</p>
+            <ul class="checklist">
+              <li><span style="font-size:16px;">❓</span> ¿Dónde se pierde más tiempo en el día a día?</li>
+              <li><span style="font-size:16px;">❓</span> ¿Dónde se generan más errores o confusiones?</li>
+              <li><span style="font-size:16px;">❓</span> ¿Qué tareas dependen de una sola persona para ejecutarse?</li>
+              <li><span style="font-size:16px;">❓</span> ¿Qué pasa cuando esa persona no está disponible?</li>
+              <li><span style="font-size:16px;">❓</span> ¿Qué proceso frena a otros procesos o personas?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 3 -->
+      <div class="card" style="border-color: rgba(240,160,48,0.3); margin-bottom: 12px;">
+        <div style="display: flex; align-items: flex-start; gap: 16px;">
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--amber-bg); border: 1px solid rgba(240,160,48,0.4); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--amber); flex-shrink: 0;">03</div>
+          <div style="flex: 1;">
+            <h3 style="margin-bottom: 10px;">Matriz impacto vs esfuerzo</h3>
+            <p>Clasifica cada proceso identificado usando dos variables: qué tanto impacto genera automatizarlo y cuánto esfuerzo requiere implementarlo. El objetivo es priorizar el cuadrante <strong style="color: var(--green);">alto impacto + bajo esfuerzo</strong> primero. Ver detalle en la sección siguiente.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 4 -->
+      <div class="card green-border">
+        <div style="display: flex; align-items: flex-start; gap: 16px;">
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--green-bg); border: 1px solid rgba(34,201,122,0.4); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--green); flex-shrink: 0;">04</div>
+          <div style="flex: 1;">
+            <h3 style="margin-bottom: 10px;">Definición de oportunidades</h3>
+            <p style="margin-bottom: 14px;">Del análisis anterior, selecciona las 1 a 3 automatizaciones que implementarás primero. Para cada una define:</p>
+            <div class="grid-3" style="margin-bottom: 0;">
+              <div style="background: var(--bg3); border-radius: 8px; padding: 14px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px;">🎯 El trigger</div>
+                <div style="font-size: 11px; color: var(--text2);">¿Qué evento inicia el proceso?</div>
+              </div>
+              <div style="background: var(--bg3); border-radius: 8px; padding: 14px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px;">⚙️ La lógica</div>
+                <div style="font-size: 11px; color: var(--text2);">¿Qué pasos sigue el proceso?</div>
+              </div>
+              <div style="background: var(--bg3); border-radius: 8px; padding: 14px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px;">✅ La salida</div>
+                <div style="font-size: 11px; color: var(--text2);">¿Cuál es el resultado esperado?</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('matriz')">Siguiente: Matriz →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 4: MATRIZ ========== -->
+    <section id="matriz" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 4</div>
+        <h1>Matriz <span>Impacto vs Esfuerzo</span></h1>
+        <p>La herramienta central del diagnóstico. Ubica cada proceso identificado en uno de los cuatro cuadrantes para saber exactamente en qué orden atacar las automatizaciones.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="matrix-wrap">
+          <div class="axis-y-wrap">
+            <span class="axis-label axis-v">Impacto alto</span>
+            <span class="axis-label axis-v">Impacto bajo</span>
+          </div>
+          <div class="matrix-grid">
+            <!-- Q1: Alto impacto, Bajo esfuerzo -->
+            <div class="quadrant q1">
+              <div class="q-icon">🔥</div>
+              <div class="q-title">Prioridad máxima</div>
+              <div class="q-desc">Alto impacto · Bajo esfuerzo</div>
+              <div class="q-examples">→ Captura de leads<br>→ Respuestas automáticas<br>→ Notificaciones de ventas</div>
+            </div>
+            <!-- Q2: Alto impacto, Alto esfuerzo -->
+            <div class="quadrant q2">
+              <div class="q-icon">📋</div>
+              <div class="q-title">Planificar</div>
+              <div class="q-desc">Alto impacto · Alto esfuerzo</div>
+              <div class="q-examples">→ CRM completo<br>→ Facturación automatizada<br>→ Integraciones complejas</div>
+            </div>
+            <!-- Q3: Bajo impacto, Bajo esfuerzo -->
+            <div class="quadrant q3">
+              <div class="q-icon">✅</div>
+              <div class="q-title">Fáciles rápidos</div>
+              <div class="q-desc">Bajo impacto · Bajo esfuerzo</div>
+              <div class="q-examples">→ Reportes simples<br>→ Alertas menores<br>→ Recordatorios internos</div>
+            </div>
+            <!-- Q4: Bajo impacto, Alto esfuerzo -->
+            <div class="quadrant q4">
+              <div class="q-icon">🚫</div>
+              <div class="q-title">Evitar por ahora</div>
+              <div class="q-desc">Bajo impacto · Alto esfuerzo</div>
+              <div class="q-examples">→ Integraciones muy complejas con bajo valor<br>→ Procesos rarísimos</div>
+            </div>
+          </div>
+          <div class="axis-x-wrap">
+            <span class="axis-label">Esfuerzo bajo</span>
+            <span class="axis-label">Esfuerzo alto</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">📊 Ejemplo de procesos clasificados</div>
+        <h3 style="margin-bottom: 16px;">Empresa de servicios — diagnóstico aplicado</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Proceso</th>
+              <th>Frecuencia</th>
+              <th>Impacto</th>
+              <th>Esfuerzo</th>
+              <th>Prioridad</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color: var(--text); font-weight: 500;">Captura y respuesta de leads</td>
+              <td>Diaria</td>
+              <td><span class="badge badge-green">Alto</span></td>
+              <td><span class="badge badge-green">Bajo</span></td>
+              <td><span class="badge badge-green">🔥 Máxima</span></td>
+            </tr>
+            <tr>
+              <td style="color: var(--text); font-weight: 500;">Confirmación automática de citas</td>
+              <td>Diaria</td>
+              <td><span class="badge badge-green">Alto</span></td>
+              <td><span class="badge badge-green">Bajo</span></td>
+              <td><span class="badge badge-green">🔥 Máxima</span></td>
+            </tr>
+            <tr>
+              <td style="color: var(--text); font-weight: 500;">Reportes Seccionles por email</td>
+              <td>Seccionl</td>
+              <td><span class="badge badge-accent">Medio</span></td>
+              <td><span class="badge badge-green">Bajo</span></td>
+              <td><span class="badge badge-accent">Media</span></td>
+            </tr>
+            <tr>
+              <td style="color: var(--text); font-weight: 500;">Seguimiento post-venta</td>
+              <td>Variable</td>
+              <td><span class="badge badge-green">Alto</span></td>
+              <td><span class="badge badge-accent">Medio</span></td>
+              <td><span class="badge badge-accent">Media</span></td>
+            </tr>
+            <tr>
+              <td style="color: var(--text); font-weight: 500;">Facturación y contabilidad</td>
+              <td>Mensual</td>
+              <td><span class="badge badge-green">Alto</span></td>
+              <td><span class="badge badge-red">Alto</span></td>
+              <td><span class="badge badge-amber">Planificar</span></td>
+            </tr>
+            <tr>
+              <td style="color: var(--text); font-weight: 500;">Integración redes sociales complejas</td>
+              <td>Raramente</td>
+              <td><span class="badge badge-accent">Bajo</span></td>
+              <td><span class="badge badge-red">Alto</span></td>
+              <td><span class="badge badge-red">🚫 Evitar</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="highlight">
+        <strong>Regla de oro:</strong> Siempre empieza por el cuadrante 🔥 — alto impacto, bajo esfuerzo. Gana confianza, muestra resultados rápido y luego avanza hacia los procesos más complejos. El éxito temprano genera adopción.
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('framework')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('casoreal')">Siguiente: Caso real →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 5: CASO REAL ========== -->
+    <section id="casoreal" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 5</div>
+        <h1>Caso Real — <span>Empresa de Servicios</span></h1>
+        <p>Aplicamos el framework completo a una empresa real que recibe leads desde múltiples canales y los gestiona de forma 100% manual.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-label">🏢 Contexto del negocio</div>
+        <h3 style="margin-bottom: 16px;">Una empresa de servicios con leads desde 3 canales</h3>
+        <div class="grid-3" style="margin-bottom: 0;">
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border); text-align: center;">
+            <div style="font-size: 28px; margin-bottom: 8px;">🌐</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text);">Formulario web</div>
+            <div style="font-size: 11px; color: var(--text3); margin-top: 4px;">Typeform / Google Forms</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border); text-align: center;">
+            <div style="font-size: 28px; margin-bottom: 8px;">💬</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text);">WhatsApp Business</div>
+            <div style="font-size: 11px; color: var(--text3); margin-top: 4px;">Mensajes directos de clientes</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 16px; border: 1px solid var(--border); text-align: center;">
+            <div style="font-size: 28px; margin-bottom: 8px;">📸</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text);">Instagram DMs</div>
+            <div style="font-size: 11px; color: var(--text3); margin-top: 4px;">Mensajes directos en redes</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ba-grid" style="margin-bottom: 16px;">
+        <div class="ba-col ba-before">
+          <div class="ba-header">❌ Antes — proceso manual</div>
+          <div class="ba-step"><div class="step-num">1</div><span>Cliente llena formulario o escribe por WhatsApp/Instagram</span></div>
+          <div class="ba-step"><div class="step-num">2</div><span>El equipo revisa correo, WhatsApp e Instagram por separado</span></div>
+          <div class="ba-step"><div class="step-num">3</div><span>Copia datos manualmente a una hoja de Excel o Google Sheets</span></div>
+          <div class="ba-step"><div class="step-num">4</div><span>Responde el lead horas después (si no se olvidó)</span></div>
+          <div class="ba-step"><div class="step-num">5</div><span>Sin seguimiento → lead se enfría → se pierde la venta</span></div>
+        </div>
+        <div class="ba-col ba-after">
+          <div class="ba-header">✅ Después — automatizado con n8n</div>
+          <div class="ba-step"><div class="step-num">1</div><span>Formulario o mensaje activa un trigger en n8n automáticamente</span></div>
+          <div class="ba-step"><div class="step-num">2</div><span>Datos guardados al instante en CRM o Google Sheets</span></div>
+          <div class="ba-step"><div class="step-num">3</div><span>Respuesta automática enviada en segundos al lead</span></div>
+          <div class="ba-step"><div class="step-num">4</div><span>Lead clasificado y asignado al vendedor correcto</span></div>
+          <div class="ba-step"><div class="step-num">5</div><span>Seguimiento programado automáticamente a las 24h</span></div>
+        </div>
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">🔌 Vista previa del workflow en n8n (Seccion 2)</div>
+        <h3 style="margin-bottom: 16px;">Captura automática de leads</h3>
+        <div class="n8n-flow">
+          <div class="n8n-node"><div class="ndot ndot-trigger"></div>Webhook · Form</div>
+          <div class="flow-arrow">→</div>
+          <div class="n8n-node"><div class="ndot ndot-condition"></div>If: canal?</div>
+          <div class="flow-arrow">→</div>
+          <div class="n8n-node"><div class="ndot ndot-action"></div>Google Sheets</div>
+          <div class="flow-arrow">→</div>
+          <div class="n8n-node"><div class="ndot ndot-action"></div>Email / WhatsApp</div>
+          <div class="flow-arrow">→</div>
+          <div class="n8n-node"><div class="ndot ndot-action"></div>Slack team</div>
+        </div>
+        <div style="display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--text3); font-family: 'JetBrains Mono', monospace;">
+          <span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#7c6ef5; margin-right:5px;"></span>Trigger</span>
+          <span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background: var(--amber); margin-right:5px;"></span>Condición</span>
+          <span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background: var(--green); margin-right:5px;"></span>Acción</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="stat-card">
+          <div class="stat-num" style="color: var(--green);">~3h</div>
+          <div class="stat-label">ahorradas por día en gestión manual de leads</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color: var(--teal);">&lt;30s</div>
+          <div class="stat-label">tiempo de respuesta al lead vs horas antes</div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('matriz')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('ejercicio')">Siguiente: Ejercicio →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 6: EJERCICIO ========== -->
+    <section id="ejercicio" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6</div>
+        <h1>Ejercicio <span>Práctico</span></h1>
+        <p>Aplicarás el framework completo a un negocio real o propio. El objetivo es tener un diagnóstico concreto al finalizar esta sesión.</p>
+      </div>
+
+      <div class="highlight" style="margin-bottom: 20px;">
+        <strong>🎯 Objetivo del ejercicio:</strong> Identificar oportunidades reales de automatización en un negocio específico, priorizarlas con la matriz y definir las 3 primeras que implementarás en n8n.
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">📋 Pasos del ejercicio</div>
+        <h3 style="margin-bottom: 16px;">Sigue este proceso de 7 pasos</h3>
+        <ul class="checklist">
+          <li><div class="num-badge">1</div><div><strong style="color: var(--text);">Elige un negocio</strong> — puede ser el tuyo, de un familiar, o uno que conozcas bien. Mientras más contexto tengas, mejor diagnóstico podrás hacer.</div></li>
+          <li><div class="num-badge">2</div><div><strong style="color: var(--text);">Lista mínimo 5 procesos</strong> — no filtres todavía, solo anota todo lo que el negocio hace de forma recurrente. Usa la plantilla de la sección de entregable.</div></li>
+          <li><div class="num-badge">3</div><div><strong style="color: var(--text);">Marca los repetitivos</strong> — identifica cuáles se repiten diario o varias veces por Seccion con estructura similar.</div></li>
+          <li><div class="num-badge">4</div><div><strong style="color: var(--text);">Detecta la fricción</strong> — ¿cuáles generan errores? ¿Cuáles dependen de una persona? ¿Cuáles frenan otros procesos?</div></li>
+          <li><div class="num-badge">5</div><div><strong style="color: var(--text);">Clasifica en la matriz</strong> — ubica cada proceso en el cuadrante de impacto vs esfuerzo que corresponde.</div></li>
+          <li><div class="num-badge">6</div><div><strong style="color: var(--text);">Selecciona 3 prioritarios</strong> — enfócate en los del cuadrante 🔥 primero. Define trigger, lógica y salida esperada de cada uno.</div></li>
+          <li><div class="num-badge">7</div><div><strong style="color: var(--text);">Documenta el diagnóstico</strong> — usa Notion, Google Sheets o cualquier herramienta. Este documento será tu mapa para la Seccion 2.</div></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-label">⏱️ Tiempo estimado del ejercicio</div>
+        <div class="grid-4" style="margin-top: 12px; margin-bottom: 0;">
+          <div style="background: var(--bg3); border-radius: 8px; padding: 14px; text-align: center; border: 1px solid var(--border);">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent2); margin-bottom: 4px;">5'</div>
+            <div style="font-size: 11px; color: var(--text3);">Elegir negocio y listar procesos</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 14px; text-align: center; border: 1px solid var(--border);">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent2); margin-bottom: 4px;">10'</div>
+            <div style="font-size: 11px; color: var(--text3);">Detectar repetitivos y fricción</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 14px; text-align: center; border: 1px solid var(--border);">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent2); margin-bottom: 4px;">10'</div>
+            <div style="font-size: 11px; color: var(--text3);">Clasificar en la matriz</div>
+          </div>
+          <div style="background: var(--bg3); border-radius: 8px; padding: 14px; text-align: center; border: 1px solid var(--border);">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent2); margin-bottom: 4px;">5'</div>
+            <div style="font-size: 11px; color: var(--text3);">Seleccionar y documentar los 3</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">📝 Plantilla de diagnóstico</div>
+        <h3 style="margin-bottom: 16px;">Columnas recomendadas para tu documento</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Proceso</th>
+              <th>Descripción</th>
+              <th>Frecuencia</th>
+              <th>Tiempo actual</th>
+              <th>Impacto</th>
+              <th>Esfuerzo</th>
+              <th>Prioridad</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color: var(--text2);">Ejemplo: responder leads</td>
+              <td>Revisar correo y WA, copiar datos</td>
+              <td>Diaria</td>
+              <td>2–3h/día</td>
+              <td><span class="badge badge-green">Alto</span></td>
+              <td><span class="badge badge-green">Bajo</span></td>
+              <td><span class="badge badge-green">🔥 Max</span></td>
+            </tr>
+            <tr style="opacity: 0.4;">
+              <td colspan="7" style="text-align: center; font-size: 12px; color: var(--text3); font-family: 'JetBrains Mono', monospace;">← agrega tus procesos aquí →</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('casoreal')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('errores')">Siguiente: Errores comunes →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 7: ERRORES ========== -->
+    <section id="errores" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 7</div>
+        <h1>Errores <span>Comunes</span></h1>
+        <p>Los errores más frecuentes al comenzar con automatización. Conocerlos de antemano te ahorra Seccions de frustración.</p>
+      </div>
+
+      <div class="card red-border" style="margin-bottom: 12px;">
+        <div class="card-label">🚫 Errores que debes evitar</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">Automatizar sin diagnóstico previo</strong><br><span style="font-size: 13px;">El peor error. Sin entender el negocio primero, terminas automatizando procesos que no importan o creando flujos que nadie usa.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">Elegir los procesos más complejos primero</strong><br><span style="font-size: 13px;">La complejidad al inicio genera frustración. Empieza siempre por lo fácil que muestre resultados rápidos. Las victorias tempranas impulsan la adopción.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">No medir el impacto antes ni después</strong><br><span style="font-size: 13px;">Sin métricas no sabes si funcionó. Registra el tiempo actual antes de automatizar para poder comparar después y justificar la inversión.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">Querer automatizar todo al mismo tiempo</strong><br><span style="font-size: 13px;">La automatización es un proceso incremental. 1 workflow bien hecho vale más que 10 a medias. Prioriza, itera, mejora.</span></div></li>
+          <li><span class="cross">✗</span><div><strong style="color: var(--text);">Pensar en herramientas antes que en procesos</strong><br><span style="font-size: 13px;">"¿Cómo uso n8n?" es la pregunta equivocada. La correcta es: "¿Qué proceso debo mejorar?" La herramienta viene después del diagnóstico.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card green-border">
+        <div class="card-label">✅ Buenas prácticas</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Pensar siempre en procesos, no en herramientas</strong><br><span style="font-size: 13px;">El diagnóstico define la herramienta, no al revés.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Priorizar por impacto real, no por preferencia</strong><br><span style="font-size: 13px;">Lo que a ti te parece interesante puede no ser lo que más le duele al negocio.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Mantener el análisis simple al inicio</strong><br><span style="font-size: 13px;">Un diagnóstico en una hoja de cálculo es mejor que ningún diagnóstico.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Documentar todo desde el primer día</strong><br><span style="font-size: 13px;">Los workflows no documentados son imposibles de mantener o mejorar.</span></div></li>
+          <li><span class="check">✓</span><div><strong style="color: var(--text);">Validar con casos y datos reales</strong><br><span style="font-size: 13px;">No asumas, mide. El negocio tiene datos que confirman o desmienten tus hipótesis.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: var(--bg3);">
+        <div class="card-label">🚀 Nivel pro — bonus</div>
+        <div class="grid-2" style="margin-top: 12px; margin-bottom: 0;">
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px;">📊 Calcular tiempo ahorrado</h4>
+            <div class="code-block" style="margin-bottom: 0;">
+<span class="comment">// Fórmula simple de ROI</span>
+tiempo_actual = <span class="str">2h/día × 22 días</span>
+tiempo_auto = <span class="str">5 min setup</span>
+ahorro = <span class="kw">tiempo_actual - tiempo_auto</span>
+ROI = ahorro × <span class="str">costo_hora</span>
+            </div>
+          </div>
+          <div>
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px;">🗺️ Crear roadmap por fases</h4>
+            <ul style="list-style: none; font-size: 13px; color: var(--text2); line-height: 2;">
+              <li>→ <strong style="color: var(--green);">Fase 1</strong> (Seccion 1–2): Diagnóstico + Setup</li>
+              <li>→ <strong style="color: var(--amber);">Fase 2</strong> (Seccion 3–4): Workflows básicos</li>
+              <li>→ <strong style="color: var(--accent2);">Fase 3</strong> (mes 2): Workflows avanzados</li>
+              <li>→ <strong style="color: var(--teal);">Fase 4</strong> (mes 3+): Optimización y escala</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('ejercicio')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ========== SECCIÓN 8: ENTREGABLE ========== -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Entregable y <span>Cierre</span></h1>
+        <p>Lo que debes tener documentado al finalizar esta Seccion. Este entregable es la base sobre la que construirás tus primeros workflows en n8n.</p>
+      </div>
+
+      <div class="card accent-border">
+        <div class="card-label">📦 Entregable de la Seccion 1</div>
+        <h3 style="margin-bottom: 20px;">Documento o tablero con diagnóstico completo</h3>
+
+        <div class="deliverable-item">
+          <div class="d-icon">📋</div>
+          <div class="d-text">
+            <h4>Lista de procesos del negocio</h4>
+            <p>Mínimo 5 procesos documentados con descripción, frecuencia y tiempo invertido actualmente. Sin filtrar todavía.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">🚧</div>
+          <div class="d-text">
+            <h4>Cuellos de botella identificados</h4>
+            <p>Los puntos de fricción principales con evidencia real: ¿quién lo dice?, ¿cuánto tiempo pierde?, ¿qué errores genera?</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">⚖️</div>
+          <div class="d-text">
+            <h4>Matriz impacto vs esfuerzo completada</h4>
+            <p>Cada proceso ubicado en el cuadrante correspondiente. Puede ser en Google Sheets, Notion o Miro.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">🎯</div>
+          <div class="d-text">
+            <h4>3 automatizaciones priorizadas</h4>
+            <p>Las 3 del cuadrante 🔥 con trigger, lógica y resultado esperado definidos para cada una.</p>
+          </div>
+        </div>
+        <div class="deliverable-item">
+          <div class="d-icon">📊</div>
+          <div class="d-text">
+            <h4>Estimación de tiempo ahorrado</h4>
+            <p>Cuántas horas por Seccion ahorrarías al implementar las 3 automatizaciones priorizadas.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🛠️ Herramientas para el diagnóstico</div>
+        <div style="margin-top: 12px;">
+          <span class="tool-pill">📝 Notion</span>
+          <span class="tool-pill">📊 Google Sheets</span>
+          <span class="tool-pill">🗺️ Miro</span>
+          <span class="tool-pill">🎨 FigJam</span>
+          <span class="tool-pill" style="border-color: rgba(124,110,245,0.4); color: var(--accent2);">⚡ n8n (desde Seccion 2)</span>
+        </div>
+      </div>
+
+      <div class="card green-border">
+        <div class="card-label">🚀 Resultado esperado al terminar esta Seccion</div>
+        <ul class="checklist" style="margin-top: 12px;">
+          <li><span class="check">✓</span>Diagnóstico claro de un negocio real o propio</li>
+          <li><span class="check">✓</span>Procesos priorizados listos para implementar en n8n</li>
+          <li><span class="check">✓</span>Base sólida para construir los primeros workflows</li>
+          <li><span class="check">✓</span>Mentalidad estratégica de automatización instalada</li>
+          <li><span class="check">✓</span>Estimación del tiempo y valor que ganarás</li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(32,212,176,0.06) 100%); border-color: rgba(124,110,245,0.25);">
+        <div style="text-align: center; padding: 16px 0 8px;">
+          <div style="font-size: 40px; margin-bottom: 12px;">⚡</div>
+          <h3 style="font-size: 22px; margin-bottom: 10px;">Seccion 2 — Instalación y primeros workflows</h3>
+          <p style="color: var(--text2); font-size: 14px; max-width: 480px; margin: 0 auto 20px;">Con tu diagnóstico en mano, la Seccion 2 arrancamos directamente en n8n: instalación, configuración, y tu primer workflow en producción.</p>
+          <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <span class="badge badge-accent">⚡ n8n local y cloud</span>
+            <span class="badge badge-teal">🔌 Primeras conexiones</span>
+            <span class="badge badge-green">🚀 Primer workflow real</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('errores')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('intro')">↺ Reiniciar desde el inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections = ['intro','conceptos','framework','matriz','casoreal','ejercicio','errores','entregable'];
+
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goTo(id) {
+    const el = document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+    showSection(id, el);
+  }
+
+  function updateProgress(id) {
+    const idx = sections.indexOf(id);
+    const pct = Math.round(((idx + 1) / sections.length) * 100);
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `Sección ${idx + 1} de ${sections.length}`;
+  }
+</script>
+
+</body>
+</html>
