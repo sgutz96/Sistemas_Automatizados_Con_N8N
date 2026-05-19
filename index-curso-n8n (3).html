@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Índice — Automatización con n8n</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:    #0a0a0f;
+    --bg2:   #111118;
+    --bg3:   #18181f;
+    --bg4:   #1f1f28;
+    --border:  rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text:  #f0eeff;
+    --text2: #9b95b8;
+    --text3: #5c577a;
+    --accent:  #7c6ef5;
+    --accent2: #a598ff;
+    --green:   #22c97a;
+    --gbg:     rgba(34,201,122,0.09);
+    --amber:   #f0a030;
+    --abg:     rgba(240,160,48,0.09);
+    --teal:    #20d4b0;
+    --tbg:     rgba(32,212,176,0.09);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(124,110,245,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,110,245,0.025) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 780px; margin: 0 auto;
+    padding: 56px 24px 90px;
+  }
+
+  /* HERO */
+  .hero { margin-bottom: 48px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: .13em;
+    margin-bottom: 12px;
+  }
+  .ldot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 7px var(--green);
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .hero h1 {
+    font-size: clamp(26px, 4vw, 40px);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -.02em; margin-bottom: 8px;
+  }
+  .hero h1 .dim { color: var(--text3); }
+  .hero h1 .hi  { color: var(--accent2); }
+  .hero p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+
+  /* ══════════════════════
+     SECCIÓN
+  ══════════════════════ */
+  .seccion {
+    margin-bottom: 32px;
+  }
+
+  /* Cabecera de la sección */
+  .sec-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .sec-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    padding: 3px 10px; border-radius: 20px;
+    flex-shrink: 0;
+  }
+  .sn-g { background: var(--gbg);  color: var(--green);  border: 1px solid rgba(34,201,122,.25); }
+  .sn-x { background: var(--bg4);  color: var(--text3);  border: 1px solid var(--border2); }
+
+  .sec-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .sec-x .sec-title { color: var(--text3); }
+
+  .sec-badge {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .bd { width: 5px; height: 5px; border-radius: 50%; }
+  .b-done { background: var(--gbg);  color: var(--green); }
+  .b-done .bd { background: var(--green); }
+  .b-wip  { background: var(--abg);  color: var(--amber); }
+  .b-wip .bd  { background: var(--amber); animation: blink 1.2s infinite; }
+  .b-soon { background: var(--bg4);  color: var(--text3); border: 1px solid var(--border2); }
+  .b-soon .bd { background: var(--text3); }
+
+  /* ══════════════════════
+     PARTES — flex column
+  ══════════════════════ */
+  .partes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* CARTA de cada parte */
+  .carta {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color .15s, transform .15s;
+  }
+  .carta.activa { cursor: default; }
+  .carta.activa:hover { border-color: var(--border2); transform: translateX(3px); }
+  .carta.pronto   { opacity: .65; }
+  .carta.bloqueada { opacity: .35; }
+
+  /* Left accent line */
+  .carta-line {
+    width: 3px; height: 100%;
+    min-height: 40px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    align-self: stretch;
+  }
+  .cl-v  { background: var(--accent2); }
+  .cl-g  { background: var(--green); }
+  .cl-t  { background: var(--teal); }
+  .cl-am { background: var(--amber); }
+  .cl-x  { background: var(--text3); }
+
+  /* Icon */
+  .carta-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    width: 36px; text-align: center;
+  }
+
+  /* Body */
+  .carta-body { flex: 1; min-width: 0; }
+  .carta-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    margin-bottom: 2px;
+  }
+  .ct-v  { color: var(--accent2); }
+  .ct-g  { color: var(--green); }
+  .ct-t  { color: var(--teal); }
+  .ct-am { color: var(--amber); }
+  .ct-x  { color: var(--text3); }
+
+  .carta-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .carta-desc  { font-size: 11.5px; color: var(--text2); line-height: 1.5; margin-top: 2px; }
+  .bloqueada .carta-title { color: var(--text3); }
+  .bloqueada .carta-desc  { color: var(--text3); }
+
+  /* Right meta */
+  .carta-meta {
+    flex-shrink: 0;
+    display: flex; flex-direction: column;
+    align-items: flex-end; gap: 5px;
+  }
+  .carta-dur {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--text3);
+    white-space: nowrap;
+  }
+
+  /* Separator between sections */
+  .sep {
+    height: 1px; background: var(--border);
+    margin: 8px 0 32px;
+  }
+
+  /* LEGEND */
+  .legend {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin-top: 40px; padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .leg { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="eyebrow"><div class="ldot"></div>Curso activo · n8n</div>
+    <h1><span class="dim">Índice</span> del Curso<br><span class="hi">Automatización</span> <span class="dim">con n8n</span></h1>
+    <p>Secciones 1 a 3 disponibles. Sigue el orden para construir tu stack de automatización.</p>
+  </div>
+
+  <!-- ══════════ SECCIÓN 1 ══════════ -->
+  <div class="seccion">
+    <div class="sec-label">
+      <span class="sec-num sn-g">Sección 1</span>
+      <span class="sec-title">Diagnóstico estratégico</span>
+      <span class="sec-badge b-done"><span class="bd"></span>Publicado</span>
+    </div>
+
+    <div class="partes">
+
+      <div class="carta activa">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">🧭</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Unidad 1.1</div>
+          <div class="carta-title">Diagnóstico Estratégico de Automatización</div>
+          <div class="carta-desc">Framework de impacto vs esfuerzo para identificar qué automatizar primero en tu negocio.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">45 min</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 2 ══════════ -->
+  <div class="seccion">
+    <div class="sec-label">
+      <span class="sec-num sn-g">Sección 2</span>
+      <span class="sec-title">Fundamentos de n8n</span>
+      <span class="sec-badge b-done"><span class="bd"></span>Publicado</span>
+    </div>
+
+    <div class="partes">
+
+      <div class="carta activa">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">⚙️</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Parte 1 · Unidad 2.1</div>
+          <div class="carta-title">Fundamentos Aplicados de n8n</div>
+          <div class="carta-desc">Tu primer workflow funcional: trigger → procesamiento → acción, sin código.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">50 min</span>
+        </div>
+      </div>
+
+      <div class="carta activa">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">🖥️</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Parte 2 · Unidad 2.2</div>
+          <div class="carta-title">Instalación de n8n</div>
+          <div class="carta-desc">Cloud para empezar rápido. Docker y npm para control total en local o servidor.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">60 min</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 3 ══════════ -->
+  <div class="seccion">
+    <div class="sec-label">
+      <span class="sec-num sn-g">Sección 3</span>
+      <span class="sec-title">Núcleo de n8n</span>
+      <span class="sec-badge b-wip"><span class="bd"></span>En desarrollo</span>
+    </div>
+
+    <div class="partes">
+
+      <div class="carta activa">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">⚡</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Módulo A · Unidad 3.1</div>
+          <div class="carta-title">Triggers</div>
+          <div class="carta-desc">Webhook, Schedule, Form y Event. Cuándo y por qué usar cada disparador.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">—</span>
+        </div>
+      </div>
+
+      <div class="carta activa">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">🧩</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Módulo B · Unidad 3.2</div>
+          <div class="carta-title">Nodos</div>
+          <div class="carta-desc">SET, HTTP Request, Code, Merge y Split. El flujo de datos entre cada paso.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">—</span>
+        </div>
+      </div>
+
+      <div class="carta activa">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">🧠</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Módulo C · Unidad 3.3</div>
+          <div class="carta-title">Lógica y condicionales</div>
+          <div class="carta-desc">IF, Switch, Error Trigger, Wait y loops. Workflows que toman decisiones.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">—</span>
+        </div>
+      </div>
+
+      <div class="carta activa">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">🎯</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Módulo D · Unidad 3.4</div>
+          <div class="carta-title">Acciones y resultados</div>
+          <div class="carta-desc">Email, bases de datos, notificaciones y respuestas automáticas al exterior.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">—</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 4 ══════════ -->
+  <div class="seccion sec-x">
+    <div class="sec-label">
+      <span class="sec-num sn-x">Sección 4</span>
+      <span class="sec-title" style="color:var(--text3);">Integraciones Reales</span>
+      <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+    </div>
+    <div class="partes">
+      <div class="carta pronto">
+        <div class="carta-line cl-am"></div>
+        <div class="carta-icon">🔌</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-am">Unidad 4.1</div>
+          <div class="carta-title">Google Workspace en n8n</div>
+          <div class="carta-desc">Gmail, Sheets, Drive y Calendar en workflows de producción.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+        </div>
+      </div>
+      <div class="carta pronto">
+        <div class="carta-line cl-am"></div>
+        <div class="carta-icon">🔗</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-am">Unidad 4.2</div>
+          <div class="carta-title">CRMs y APIs Externas</div>
+          <div class="carta-desc">HubSpot, Notion, Airtable y cualquier API REST desde n8n.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 5 ══════════ -->
+  <div class="seccion sec-x">
+    <div class="sec-label">
+      <span class="sec-num sn-x">Sección 5</span>
+      <span class="sec-title" style="color:var(--text3);">IA en tus Workflows</span>
+      <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+    </div>
+    <div class="partes">
+      <div class="carta pronto">
+        <div class="carta-line cl-am"></div>
+        <div class="carta-icon">🤖</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-am">Unidad 5.1</div>
+          <div class="carta-title">LLMs en n8n</div>
+          <div class="carta-desc">OpenAI y Claude integrados en tus automatizaciones.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+        </div>
+      </div>
+      <div class="carta pronto">
+        <div class="carta-line cl-am"></div>
+        <div class="carta-icon">🧬</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-am">Unidad 5.2</div>
+          <div class="carta-title">Agentes Inteligentes</div>
+          <div class="carta-desc">Agentes autónomos que toman decisiones dentro de n8n.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 6 ══════════ -->
+  <div class="seccion sec-x">
+    <div class="sec-label">
+      <span class="sec-num sn-x">Sección 6</span>
+      <span class="sec-title" style="color:var(--text3);">n8n en Producción</span>
+      <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+    </div>
+    <div class="partes">
+      <div class="carta pronto">
+        <div class="carta-line cl-am"></div>
+        <div class="carta-icon">🚀</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-am">Unidad 6.1</div>
+          <div class="carta-title">Despliegue y Monitoreo</div>
+          <div class="carta-desc">Servidor, SSL, monitoreo de workflows y alertas en producción.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+        </div>
+      </div>
+      <div class="carta pronto">
+        <div class="carta-line cl-am"></div>
+        <div class="carta-icon">🔒</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-am">Unidad 6.2</div>
+          <div class="carta-title">Seguridad y Escalado</div>
+          <div class="carta-desc">Autenticación, backups, actualizaciones y mantenimiento de instancias reales.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 7 ══════════ -->
+  <div class="seccion sec-x">
+    <div class="sec-label">
+      <span class="sec-num sn-x">Sección 7</span>
+      <span class="sec-title" style="color:var(--text3);">Automatización Avanzada</span>
+      <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+    </div>
+    <div class="partes">
+      <div class="carta bloqueada">
+        <div class="carta-line cl-x"></div>
+        <div class="carta-icon">⚡</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-x">Unidad 7.1</div>
+          <div class="carta-title">Workflows complejos y subworkflows</div>
+          <div class="carta-desc">Divide y reutiliza lógica con subworkflows y workflows anidados.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+        </div>
+      </div>
+      <div class="carta bloqueada">
+        <div class="carta-line cl-x"></div>
+        <div class="carta-icon">🔄</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-x">Unidad 7.2</div>
+          <div class="carta-title">Patrones de automatización a escala</div>
+          <div class="carta-desc">Colas, reintentos, paginación y manejo de volúmenes grandes de datos.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 8 ══════════ -->
+  <div class="seccion sec-x">
+    <div class="sec-label">
+      <span class="sec-num sn-x">Sección 8</span>
+      <span class="sec-title" style="color:var(--text3);">Proyectos Reales</span>
+      <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+    </div>
+    <div class="partes">
+      <div class="carta bloqueada">
+        <div class="carta-line cl-x"></div>
+        <div class="carta-icon">🏗️</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-x">Unidad 8.1</div>
+          <div class="carta-title">Sistema de captación de leads</div>
+          <div class="carta-desc">Workflow completo: formulario → CRM → email → notificación.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+        </div>
+      </div>
+      <div class="carta bloqueada">
+        <div class="carta-line cl-x"></div>
+        <div class="carta-icon">📊</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-x">Unidad 8.2</div>
+          <div class="carta-title">Reportes automáticos semanales</div>
+          <div class="carta-desc">Recopila datos, genera el informe y lo envía por email cada semana sin intervención.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 9 ══════════ -->
+  <div class="seccion sec-x">
+    <div class="sec-label">
+      <span class="sec-num sn-x">Sección 9</span>
+      <span class="sec-title" style="color:var(--text3);">Monetización con n8n</span>
+      <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+    </div>
+    <div class="partes">
+      <div class="carta bloqueada">
+        <div class="carta-line cl-x"></div>
+        <div class="carta-icon">💼</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-x">Unidad 9.1</div>
+          <div class="carta-title">Vender servicios de automatización</div>
+          <div class="carta-desc">Cómo empaquetar y cobrar por workflows como servicio a clientes.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+        </div>
+      </div>
+      <div class="carta bloqueada">
+        <div class="carta-line cl-x"></div>
+        <div class="carta-icon">💰</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-x">Unidad 9.2</div>
+          <div class="carta-title">Construir un negocio de automatización</div>
+          <div class="carta-desc">Modelo de negocio, pricing, captación de clientes y entrega de proyectos.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ══════════ SECCIÓN 10 ══════════ -->
+  <div class="seccion sec-x">
+    <div class="sec-label">
+      <span class="sec-num sn-x">Sección 10</span>
+      <span class="sec-title" style="color:var(--text3);">Cierre y Siguientes Pasos</span>
+      <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+    </div>
+    <div class="partes">
+      <div class="carta bloqueada">
+        <div class="carta-line cl-x"></div>
+        <div class="carta-icon">🗺️</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-x">Unidad 10.1</div>
+          <div class="carta-title">Roadmap personal de automatización</div>
+          <div class="carta-desc">Define tu plan de acción: qué automatizar primero en tu negocio o el de tus clientes.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+        </div>
+      </div>
+      <div class="carta bloqueada">
+        <div class="carta-line cl-x"></div>
+        <div class="carta-icon">🎓</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-x">Unidad 10.2</div>
+          <div class="carta-title">Comunidad y recursos continuos</div>
+          <div class="carta-desc">Acceso a la comunidad, plantillas, actualizaciones del curso y soporte.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="leg"><span class="sec-badge b-done"><span class="bd"></span>Publicado</span> — Disponible ahora</div>
+    <div class="leg"><span class="sec-badge b-wip"><span class="bd"></span>En desarrollo / Pronto</span> — En construcción</div>
+    <div class="leg"><span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span> — No disponible aún</div>
+  </div>
+
+</div>
+</body>
+</html>

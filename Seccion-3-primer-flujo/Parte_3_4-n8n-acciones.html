@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semana 3 · Parte 4 — Acciones en n8n</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+    --oro:#f59e0b;   --oro-bg:rgba(245,158,11,0.1);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .nav-icon{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nav-num{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nav-num{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .card.ab{border-color:rgba(124,110,245,0.3);}
+  .card.gb{border-color:rgba(34,201,122,0.3);}
+  .card.rb{border-color:rgba(240,90,90,0.25);}
+  .card.amb{border-color:rgba(240,160,48,0.3);}
+  .card.tb{border-color:rgba(32,212,176,0.3);}
+  .card.pb{border-color:rgba(232,121,160,0.3);}
+  .card.sb{border-color:rgba(56,189,248,0.3);}
+  .card.lb{border-color:rgba(132,204,22,0.3);}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* ACTION HERO */
+  .action-hero{border-radius:14px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .action-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;opacity:0.07;pointer-events:none;}
+  .ah-email  {background:var(--bg2);border:1px solid rgba(124,110,245,0.4);} .ah-email::before{background:var(--accent);}
+  .ah-sheets {background:var(--bg2);border:1px solid rgba(34,201,122,0.4);}  .ah-sheets::before{background:var(--green);}
+  .ah-slack  {background:var(--bg2);border:1px solid rgba(240,160,48,0.4);}  .ah-slack::before{background:var(--amber);}
+  .ah-tg     {background:var(--bg2);border:1px solid rgba(56,189,248,0.4);}  .ah-tg::before{background:var(--sky);}
+  .ah-notion {background:var(--bg2);border:1px solid rgba(232,121,160,0.4);}  .ah-notion::before{background:var(--pink);}
+  .ah-wa     {background:var(--bg2);border:1px solid rgba(132,204,22,0.4);}  .ah-wa::before{background:var(--lime);}
+  .ah-db     {background:var(--bg2);border:1px solid rgba(32,212,176,0.4);}  .ah-db::before{background:var(--teal);}
+
+  .ah-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;}
+  .ah-icon{font-size:30px;width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .ah-email  .ah-icon{background:rgba(124,110,245,0.12);}
+  .ah-sheets .ah-icon{background:rgba(34,201,122,0.12);}
+  .ah-slack  .ah-icon{background:rgba(240,160,48,0.12);}
+  .ah-tg     .ah-icon{background:rgba(56,189,248,0.12);}
+  .ah-notion .ah-icon{background:rgba(232,121,160,0.12);}
+  .ah-wa     .ah-icon{background:rgba(132,204,22,0.12);}
+  .ah-db     .ah-icon{background:rgba(32,212,176,0.12);}
+
+  .ah-type{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;}
+  .ah-email  .ah-type{color:var(--accent);}
+  .ah-sheets .ah-type{color:var(--green);}
+  .ah-slack  .ah-type{color:var(--amber);}
+  .ah-tg     .ah-type{color:var(--sky);}
+  .ah-notion .ah-type{color:var(--pink);}
+  .ah-wa     .ah-type{color:var(--lime);}
+  .ah-db     .ah-type{color:var(--teal);}
+
+  .ah-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .ah-desc{font-size:14px;color:var(--text2);line-height:1.6;}
+  .ah-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .ah-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;}
+  .ah-email  .ah-tag{background:var(--accent-glow);color:var(--accent2);}
+  .ah-sheets .ah-tag{background:var(--green-bg);color:var(--green);}
+  .ah-slack  .ah-tag{background:var(--amber-bg);color:var(--amber);}
+  .ah-tg     .ah-tag{background:var(--sky-bg);color:var(--sky);}
+  .ah-notion .ah-tag{background:var(--pink-bg);color:var(--pink);}
+  .ah-wa     .ah-tag{background:var(--lime-bg);color:var(--lime);}
+  .ah-db     .ah-tag{background:var(--teal-bg);color:var(--teal);}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);} .key{color:var(--amber);} .val{color:var(--teal);} .red{color:var(--red);} .pk{color:var(--pink);} .sky{color:var(--sky);} .lm{color:var(--lime);}
+
+  /* CHECKLIST */
+  .checklist{list-style:none;}
+  .checklist li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .checklist li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu-row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu-row:last-child{border-bottom:none;}
+  .wtu-e{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wtu-t{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wtu-t strong{color:var(--text);}
+
+  /* STAT */
+  .stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .stat-num{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .stat-label{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .b-green{background:var(--green-bg);color:var(--green);}
+  .b-amber{background:var(--amber-bg);color:var(--amber);}
+  .b-acc{background:var(--accent-glow);color:var(--accent2);}
+  .b-teal{background:var(--teal-bg);color:var(--teal);}
+  .b-pink{background:var(--pink-bg);color:var(--pink);}
+  .b-red{background:var(--red-bg);color:var(--red);}
+  .b-sky{background:var(--sky-bg);color:var(--sky);}
+  .b-lime{background:var(--lime-bg);color:var(--lime);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:4px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;text-align:center;flex-shrink:0;min-width:100px;}
+  .fn .fi{font-size:18px;margin-bottom:4px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:2px;}
+  .fn .fn2{font-size:11px;font-weight:600;color:var(--text);}
+  .fn.trigger{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);}  .fn.trigger .ft{color:var(--amber);}
+  .fn.process{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.process .ft{color:var(--accent2);}
+  .fn.action {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.action .ft{color:var(--green);}
+  .fn.http   {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.http .ft{color:var(--teal);}
+  .farrow{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* TABLE */
+  .comp-table{width:100%;border-collapse:collapse;margin-top:12px;}
+  .comp-table th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .comp-table td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .comp-table tr:last-child td{border-bottom:none;}
+  .comp-table td:first-child{font-weight:600;color:var(--text);white-space:nowrap;}
+
+  /* TIP */
+  .tip-box{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .tip-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tip-text{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tip-text strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* IO */
+  .io-row{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;align-items:center;margin-top:14px;}
+  .io-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8;}
+  .io-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+  .io-arr{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);}
+
+  /* HIGHLIGHT */
+  .highlight-box{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* INDUSTRY GRID */
+  .ind-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+  .ind-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .ind-sec{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:6px;}
+  .ind-case{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
+  .ind-flow{font-size:12px;color:var(--text2);line-height:1.5;}
+  .ind-arrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);margin-top:8px;}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-primary{background:var(--accent);color:white;} .btn-primary:hover{background:var(--accent2);}
+  .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-ghost:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Semana 3 · Parte 4</div>
+      <h2>Acciones en n8n</h2>
+      <p>n8n · automatización</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nav-num">1</span> ¿Qué son las acciones?</a>
+    <a class="nav-item" onclick="go('email',this)"><span class="nav-icon">📧</span> Email (Gmail / SMTP)</a>
+    <a class="nav-item" onclick="go('sheets',this)"><span class="nav-icon">📊</span> Google Sheets</a>
+    <a class="nav-item" onclick="go('slack',this)"><span class="nav-icon">💬</span> Slack</a>
+    <a class="nav-item" onclick="go('telegram',this)"><span class="nav-icon">✈️</span> Telegram</a>
+    <a class="nav-item" onclick="go('wa',this)"><span class="nav-icon">📱</span> WhatsApp</a>
+    <a class="nav-item" onclick="go('notion',this)"><span class="nav-icon">📋</span> Notion / Airtable</a>
+    <a class="nav-item" onclick="go('db',this)"><span class="nav-icon">🗄️</span> Bases de datos</a>
+    <a class="nav-item" onclick="go('elegir',this)"><span class="nav-num">9</span> ¿Cuál acción usar?</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══════ 1 · INTRO ══════ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Semana 3 · Parte 4</div>
+        <h1>Acciones <span>en n8n</span></h1>
+        <p>Las acciones son el resultado visible de tu automatización. Todo lo que ocurre "hacia afuera": notificaciones, registros, mensajes, actualizaciones.</p>
+      </div>
+
+      <div class="highlight-box">
+        <div class="card-label">🎯 El principio de las acciones</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">Un workflow sin acción no hace nada útil en el mundo real</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">El trigger dispara, los nodos transforman, pero la <strong style="color:var(--text);">acción es lo que el mundo ve</strong>. Un email que llega, un registro que aparece en Sheets, un mensaje en Slack, una fila nueva en la base de datos. Sin acción, la automatización existe solo dentro de n8n.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+        <div class="stat-card"><div class="stat-num">7</div><div class="stat-label">categorías de acciones que verás hoy</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--green);">400+</div><div class="stat-label">integraciones disponibles en n8n</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--amber);">CRUD</div><div class="stat-label">crear, leer, actualizar, eliminar</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--teal);">∞</div><div class="stat-label">combinaciones en un solo workflow</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🗺️ Las 7 acciones de hoy</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;">
+          <div style="background:var(--bg3);border:1px solid rgba(124,110,245,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📧</div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent2);">Email</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Gmail · SMTP</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(34,201,122,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📊</div>
+            <div style="font-size:12px;font-weight:700;color:var(--green);">Google Sheets</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Leer · Escribir · Actualizar</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,160,48,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">💬</div>
+            <div style="font-size:12px;font-weight:700;color:var(--amber);">Slack</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Mensajes · Canales</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">✈️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--sky);">Telegram</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Bot · Grupos</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(132,204,22,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📱</div>
+            <div style="font-size:12px;font-weight:700;color:var(--lime);">WhatsApp</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Business API</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(232,121,160,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📋</div>
+            <div style="font-size:12px;font-weight:700;color:var(--pink);">Notion / Airtable</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Bases de conocimiento</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(32,212,176,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🗄️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--teal);">Bases de datos</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">MySQL · Postgres · Supabase</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;opacity:0.5;">
+            <div style="font-size:22px;margin-bottom:6px;">🎯</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);">¿Cuál usar?</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Guía de decisión</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🔄 Posición de la acción en el workflow</div>
+        <div class="flow-row" style="margin-top:14px;">
+          <div class="fn trigger"><div class="fi">⚡</div><div class="ft">Trigger</div><div class="fn2">Webhook / Cron</div></div>
+          <div class="farrow">→</div>
+          <div class="fn process"><div class="fi">🔧</div><div class="ft">Proceso</div><div class="fn2">Set / Function</div></div>
+          <div class="farrow">→</div>
+          <div class="fn process"><div class="fi">🔀</div><div class="ft">Lógica</div><div class="fn2">IF / Switch</div></div>
+          <div class="farrow">→</div>
+          <div class="fn action" style="min-width:120px;box-shadow:0 0 16px rgba(34,201,122,0.15);"><div class="fi">🎯</div><div class="ft">ACCIÓN</div><div class="fn2">El resultado real</div></div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">La acción siempre va al final — es el impacto visible del workflow en el mundo →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-primary" onclick="goTo('email')">Siguiente: Email →</button>
+      </div>
+    </section>
+
+    <!-- ══════ 2 · EMAIL ══════ -->
+    <section id="email" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Acción 1 de 7</div>
+        <h1>Email — <span>Gmail / SMTP</span></h1>
+        <p>La acción más universal. Envía emails automatizados, personalizados, con adjuntos o en HTML. Si el mundo usa email, tu workflow puede hablarle por ahí.</p>
+      </div>
+
+      <div class="action-hero ah-email">
+        <div class="ah-top">
+          <div class="ah-icon">📧</div>
+          <div>
+            <div class="ah-type">Gmail · SMTP · Email personalizado</div>
+            <div class="ah-title">Envía emails desde tu workflow</div>
+            <div class="ah-desc">n8n puede enviar emails a través de Gmail (con OAuth2), cualquier servidor SMTP, o servicios como SendGrid y Mailgun. Cada email puede estar completamente personalizado usando datos del workflow: nombre, pedido, fecha, monto, lo que necesites.</div>
+          </div>
+        </div>
+        <div class="ah-tags">
+          <span class="ah-tag">✉️ Personalizado por destinatario</span>
+          <span class="ah-tag">🎨 HTML o texto plano</span>
+          <span class="ah-tag">📎 Con adjuntos</span>
+          <span class="ah-tag">👥 CC / BCC</span>
+          <span class="ah-tag">🔁 Masivo con Loop</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card ab">
+          <div class="card-label">⚙️ Configuración básica</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Gmail o Send Email</span>
+
+<span class="key">Para:</span>     <span class="kw">{{$json.email}}</span>
+<span class="key">Asunto:</span>   <span class="str">"Tu pedido #{{$json.id}} fue confirmado"</span>
+<span class="key">Cuerpo:</span>
+<span class="str">Hola {{$json.nombre}},</span>
+
+<span class="str">Tu pedido por ${{$json.monto}} COP</span>
+<span class="str">llegará el {{$json.fecha_entrega}}.</span>
+
+<span class="str">Equipo de Logística</span>
+
+<span class="cm">// Opcional</span>
+<span class="key">CC:</span>       ventas@empresa.com
+<span class="key">Adjunto:</span>  {{$binary.factura}}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo usar Email</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Confirmaciones</strong> — pedidos, registros, citas, pagos</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Alertas internas</strong> — notificar al equipo de eventos críticos</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Onboarding</strong> — bienvenida automática a nuevos clientes o usuarios</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Reportes</strong> — enviar resumen semanal con datos del período</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Seguimiento</strong> — recordatorios a leads sin respuesta en X días</div></div>
+            <div class="wtu-row"><span class="wtu-e">❌</span><div class="wtu-t"><strong>No usar</strong> para notificaciones urgentes o tiempo real — Slack/Telegram son más rápidos</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ind-grid">
+        <div class="ind-item">
+          <div class="ind-sec">E-commerce</div>
+          <div class="ind-case">🛍️ Confirmación de compra</div>
+          <div class="ind-flow">Pago aprobado en Stripe → n8n genera email personalizado con resumen del pedido, total y fecha de entrega estimada → envío automático</div>
+          <div class="ind-arrow">Stripe → <span style="color:var(--accent2);">Gmail</span> → cliente</div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">SaaS / Producto</div>
+          <div class="ind-case">👋 Email de bienvenida con onboarding</div>
+          <div class="ind-flow">Usuario se registra → webhook → Set construye email con nombre, plan y pasos de inicio → Gmail envía con adjunto de guía rápida en PDF</div>
+          <div class="ind-arrow">Registro → <span style="color:var(--accent2);">Gmail + PDF</span> → usuario</div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Agencias</div>
+          <div class="ind-case">📊 Reporte semanal al cliente</div>
+          <div class="ind-flow">Cron lunes 8am → extrae métricas → Function construye resumen HTML con tablas y números → Gmail envía reporte con diseño profesional</div>
+          <div class="ind-arrow">Schedule → <span style="color:var(--accent2);">Gmail HTML</span> → cliente</div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Ventas / CRM</div>
+          <div class="ind-case">🔔 Seguimiento a leads fríos</div>
+          <div class="ind-flow">Cron diario → CRM → filtra leads sin contacto en 5 días → Loop → Gmail envía recordatorio personalizado a cada vendedor con su lista</div>
+          <div class="ind-arrow">Loop → <span style="color:var(--accent2);">Gmail x vendedor</span></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:16px;">
+        <div class="tip-box"><span class="tip-icon">💡</span><div class="tip-text"><strong>HTML en el cuerpo:</strong> usa el modo "HTML" del nodo Gmail para enviar emails con diseño: colores, tablas, botones. Mucho más profesional que texto plano.</div></div>
+        <div class="tip-box"><span class="tip-icon">⚠️</span><div class="tip-text"><strong>Límites de Gmail:</strong> Gmail tiene límite de ~500 emails/día en cuentas personales. Para envíos masivos usa SendGrid, Mailgun o AWS SES vía HTTP Request.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('sheets')">Siguiente: Google Sheets →</button>
+      </div>
+    </section>
+
+    <!-- ══════ 3 · SHEETS ══════ -->
+    <section id="sheets" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Acción 2 de 7</div>
+        <h1>Google <span>Sheets</span></h1>
+        <p>La base de datos del equipo no técnico. Con n8n puedes leer, escribir, actualizar y buscar filas automáticamente en cualquier hoja de cálculo.</p>
+      </div>
+
+      <div class="action-hero ah-sheets">
+        <div class="ah-top">
+          <div class="ah-icon">📊</div>
+          <div>
+            <div class="ah-type">Google Sheets · Leer · Escribir · Actualizar</div>
+            <div class="ah-title">Tu base de datos sin código</div>
+            <div class="ah-desc">Google Sheets actúa como una base de datos ligera y visual que todos en el equipo pueden ver y editar. Con n8n puedes escribir filas nuevas automáticamente, leer datos para procesarlos, actualizar celdas específicas o buscar registros por cualquier columna.</div>
+          </div>
+        </div>
+        <div class="ah-tags">
+          <span class="ah-tag">➕ Agregar fila</span>
+          <span class="ah-tag">📖 Leer filas</span>
+          <span class="ah-tag">✏️ Actualizar celda</span>
+          <span class="ah-tag">🔍 Buscar registro</span>
+          <span class="ah-tag">🗑️ Eliminar fila</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card gb">
+          <div class="card-label">⚙️ Operaciones principales</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// APPEND — agregar fila nueva</span>
+<span class="key">Hoja:</span>    <span class="str">"Leads 2025"</span>
+<span class="key">Valores:</span>
+  A: <span class="kw">{{$json.nombre}}</span>
+  B: <span class="kw">{{$json.email}}</span>
+  C: <span class="kw">{{$json.telefono}}</span>
+  D: <span class="kw">{{$now}}</span>
+  E: <span class="str">"pendiente"</span>
+
+<span class="cm">// READ — leer todas las filas</span>
+<span class="key">Hoja:</span>    <span class="str">"Clientes"</span>
+<span class="key">Retorna:</span> array de objetos JSON
+
+<span class="cm">// UPDATE — actualizar celda</span>
+<span class="key">Fila:</span>    <span class="kw">{{$json.rowIndex}}</span>
+<span class="key">Columna:</span> E
+<span class="key">Valor:</span>   <span class="str">"enviado"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo usar Sheets</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Registrar eventos</strong> — leads, pedidos, inscripciones, logs de actividad</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Panel visible para el equipo</strong> — todos pueden ver los datos sin entrar a n8n</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Fuente de datos</strong> — leer lista de clientes para enviar emails masivos</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Dashboard manual</strong> — actualizar estado de procesos en tiempo real</div></div>
+            <div class="wtu-row"><span class="wtu-e">❌</span><div class="wtu-t"><strong>No usar</strong> para datos críticos con millones de registros — usa DB real</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">🏢 Flujo completo: Formulario → Sheets → Notificación</div>
+        <div class="flow-row" style="margin-top:12px;">
+          <div class="fn trigger"><div class="fi">🌐</div><div class="ft">Trigger</div><div class="fn2">Typeform</div></div>
+          <div class="farrow">→</div>
+          <div class="fn process"><div class="fi">🔧</div><div class="ft">Set</div><div class="fn2">Formatear datos</div></div>
+          <div class="farrow">→</div>
+          <div class="fn action" style="border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);"><div class="fi">📊</div><div class="ft" style="color:var(--green);">Sheets</div><div class="fn2">Agregar fila</div></div>
+          <div class="farrow">→</div>
+          <div class="fn action"><div class="fi">💬</div><div class="ft">Acción</div><div class="fn2">Slack alerta</div></div>
+        </div>
+      </div>
+
+      <div class="ind-grid">
+        <div class="ind-item">
+          <div class="ind-sec">Marketing / Captación</div>
+          <div class="ind-case">📋 Registro de leads en tiempo real</div>
+          <div class="ind-flow">Formulario enviado → datos van a Sheets automáticamente con fecha, fuente, nombre y email → equipo ve el lead al instante sin revisar bandejas</div>
+          <div class="ind-arrow">Webhook → <span style="color:var(--green);">Sheets append</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Operaciones</div>
+          <div class="ind-case">📦 Control de inventario en hoja</div>
+          <div class="ind-flow">Pedido nuevo → n8n busca el producto en Sheets → actualiza columna "stock" restando unidades → si stock &lt; mínimo, envía alerta</div>
+          <div class="ind-arrow"><span style="color:var(--green);">Sheets read+update</span> → alerta</div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">RRHH / Gestión</div>
+          <div class="ind-case">✅ Tracker de onboarding de empleados</div>
+          <div class="ind-flow">Empleado nuevo en sistema HR → n8n crea fila en Sheets con nombre, área, fecha y checklist → actualiza estado a medida que completa cada etapa</div>
+          <div class="ind-arrow">HR → <span style="color:var(--green);">Sheets registro</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Finanzas</div>
+          <div class="ind-case">💰 Log de pagos recibidos</div>
+          <div class="ind-flow">Pago confirmado en pasarela → n8n registra en Sheets: cliente, monto, método, fecha → el equipo de finanzas tiene su ledger siempre actualizado</div>
+          <div class="ind-arrow">Pasarela → <span style="color:var(--green);">Sheets log</span></div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('email')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('slack')">Siguiente: Slack →</button>
+      </div>
+    </section>
+
+    <!-- ══════ 4 · SLACK ══════ -->
+    <section id="slack" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Acción 3 de 7</div>
+        <h1>Slack</h1>
+        <p>Notificaciones instantáneas para equipos. El canal donde tu workflow habla directamente con las personas que necesitan actuar.</p>
+      </div>
+
+      <div class="action-hero ah-slack">
+        <div class="ah-top">
+          <div class="ah-icon">💬</div>
+          <div>
+            <div class="ah-type">Slack · Mensajes · Canales · DMs</div>
+            <div class="ah-title">Tu workflow habla con tu equipo al instante</div>
+            <div class="ah-desc">Slack es el canal de notificación más adoptado en empresas tech y startups. n8n puede enviar mensajes a canales, DMs a personas específicas, mensajes formateados con bloques, o incluso crear threads. Ideal para alertas que requieren acción humana inmediata.</div>
+          </div>
+        </div>
+        <div class="ah-tags">
+          <span class="ah-tag">📢 Canal público</span>
+          <span class="ah-tag">🔒 Canal privado</span>
+          <span class="ah-tag">💬 DM directo</span>
+          <span class="ah-tag">🎨 Bloques con formato</span>
+          <span class="ah-tag">🧵 Thread</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card amb">
+          <div class="card-label">⚙️ Mensajes con formato Block Kit</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Mensaje simple</span>
+<span class="key">Canal:</span>   <span class="str">#alertas-operaciones</span>
+<span class="key">Texto:</span>   <span class="str">"🔴 Stock bajo: {{$json.producto}}"</span>
+
+<span class="cm">// Mensaje enriquecido (Block Kit)</span>
+[{
+  <span class="key">"type"</span>: <span class="str">"section"</span>,
+  <span class="key">"text"</span>: {
+    <span class="key">"type"</span>: <span class="str">"mrkdwn"</span>,
+    <span class="key">"text"</span>: <span class="str">"*🔔 Nuevo lead*\n
+      Nombre: {{$json.nombre}}\n
+      Email: {{$json.email}}\n
+      Fuente: {{$json.fuente}}"</span>
+  }
+}]
+
+<span class="cm">// DM a persona específica</span>
+<span class="key">Usuario:</span> <span class="str">@juan.perez</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo usar Slack</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Alertas urgentes</strong> — errores en producción, stock agotado, pagos fallidos</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Notificar al equipo</strong> — nuevo lead, nuevo cliente, hito alcanzado</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Asignación automática</strong> — DM al responsable con la tarea que le toca</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Resúmenes diarios</strong> — métricas del día a las 6pm en canal de resultados</div></div>
+            <div class="wtu-row"><span class="wtu-e">❌</span><div class="wtu-t"><strong>No usar</strong> para comunicaciones con clientes externos — es canal interno</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ind-grid">
+        <div class="ind-item">
+          <div class="ind-sec">Desarrollo / DevOps</div>
+          <div class="ind-case">🚨 Alerta de error en producción</div>
+          <div class="ind-flow">Sistema detecta error → webhook a n8n → analiza severidad → IF crítico: DM al dev de guardia + mensaje en #incidentes con stack trace</div>
+          <div class="ind-arrow">App error → <span style="color:var(--amber);">Slack #incidentes + DM</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Ventas</div>
+          <div class="ind-case">🏆 Notificación de deal cerrado</div>
+          <div class="ind-flow">CRM registra deal ganado → n8n envía mensaje a #ventas con nombre del cliente, monto, vendedor responsable y emoji de celebración 🎉</div>
+          <div class="ind-arrow">CRM → <span style="color:var(--amber);">Slack #ventas</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Operaciones</div>
+          <div class="ind-case">📦 Pedido listo para despacho</div>
+          <div class="ind-flow">ERP marca pedido como preparado → n8n notifica en #logística con número de guía, cliente y dirección → operario ve la tarea sin abrir el ERP</div>
+          <div class="ind-arrow">ERP → <span style="color:var(--amber);">Slack #logística</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Marketing</div>
+          <div class="ind-case">📈 Resumen diario de métricas</div>
+          <div class="ind-flow">Cron 6pm → extrae datos de Ads + Analytics → Function calcula variación vs ayer → Slack envía resumen formateado al canal de marketing</div>
+          <div class="ind-arrow">Schedule → <span style="color:var(--amber);">Slack #marketing</span></div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('sheets')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('telegram')">Siguiente: Telegram →</button>
+      </div>
+    </section>
+
+    <!-- ══════ 5 · TELEGRAM ══════ -->
+    <section id="telegram" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Acción 4 de 7</div>
+        <h1>Telegram <span>Bot</span></h1>
+        <p>El canal de notificación más rápido y fácil de configurar. Un bot de Telegram conectado a n8n puede llegar a ti, a tu equipo o a tus clientes en segundos.</p>
+      </div>
+
+      <div class="action-hero ah-tg">
+        <div class="ah-top">
+          <div class="ah-icon">✈️</div>
+          <div>
+            <div class="ah-type">Telegram Bot · Personal · Grupal · Canal</div>
+            <div class="ah-title">Notificaciones al instante, sin costo</div>
+            <div class="ah-desc">Crear un bot de Telegram y conectarlo a n8n toma menos de 10 minutos. A partir de ahí, tu workflow puede enviarte mensajes, imágenes, archivos o alertas a ti, a tu equipo en un grupo, o broadcast a miles de suscriptores en un canal. Sin costo extra.</div>
+          </div>
+        </div>
+        <div class="ah-tags">
+          <span class="ah-tag">💬 Mensaje de texto</span>
+          <span class="ah-tag">🖼️ Imagen / archivo</span>
+          <span class="ah-tag">👥 Grupo de equipo</span>
+          <span class="ah-tag">📢 Canal broadcast</span>
+          <span class="ah-tag">🆓 Sin costo</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card sb">
+          <div class="card-label">⚙️ Configuración en 3 pasos</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Paso 1: Crear el bot</span>
+Abrir <span class="sky">@BotFather</span> en Telegram
+Escribir <span class="str">/newbot</span>
+Guardar el <span class="key">TOKEN</span> que te da
+
+<span class="cm">// Paso 2: En n8n</span>
+Credenciales → Telegram
+Pegar el <span class="key">TOKEN</span> del bot
+
+<span class="cm">// Paso 3: Configurar nodo</span>
+<span class="key">Chat ID:</span>  <span class="str">tu_chat_id o @nombre_canal</span>
+<span class="key">Texto:</span>    <span class="str">"🔔 Nuevo lead: {{$json.nombre}}"</span>
+
+<span class="cm">// Para grupos: agrega el bot</span>
+<span class="cm">// y obtén el chat_id del grupo</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo usar Telegram</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Notificaciones personales</strong> — alertas que solo tú necesitas ver al instante</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Equipos pequeños</strong> — grupo de Telegram del equipo como canal de alertas</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Sin Slack</strong> — alternativa gratuita cuando el equipo no usa Slack</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Clientes en canal</strong> — actualizaciones broadcast a clientes suscritos</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Monitoreo 24/7</strong> — alertas de sistema que necesitas ver en el celular de noche</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ind-grid">
+        <div class="ind-item">
+          <div class="ind-sec">Freelancers / Fundadores</div>
+          <div class="ind-case">💰 Alerta de pago recibido</div>
+          <div class="ind-flow">Pago confirmado en Wompi/Stripe → n8n envía Telegram al fundador: "💰 Pago de $350.000 COP de Laura García recibido" — al instante, donde esté</div>
+          <div class="ind-arrow">Pago → <span style="color:var(--sky);">Telegram personal</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">E-commerce</div>
+          <div class="ind-case">📦 Pedido nuevo en tienda</div>
+          <div class="ind-flow">Nuevo pedido en Shopify → webhook → n8n envía a grupo de Telegram del equipo: producto, cliente, dirección y monto. Todos ven el pedido de inmediato</div>
+          <div class="ind-arrow">Shopify → <span style="color:var(--sky);">Telegram grupo</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Comunidades / Cursos</div>
+          <div class="ind-case">📢 Novedades del curso</div>
+          <div class="ind-flow">Publicación de nuevo módulo → n8n envía mensaje al canal de Telegram del curso: "🎓 Nueva clase disponible: Parte 4 - Acciones". Broadcast a todos los alumnos</div>
+          <div class="ind-arrow">CMS → <span style="color:var(--sky);">Telegram canal</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">DevOps / Monitoreo</div>
+          <div class="ind-case">🔴 Caída de servidor</div>
+          <div class="ind-flow">Monitor detecta downtime → webhook → n8n clasifica severidad → Telegram al responsable de turno: "🚨 Servidor API caído. Tiempo: 2 min. Acción requerida."</div>
+          <div class="ind-arrow">Monitor → <span style="color:var(--sky);">Telegram DM urgente</span></div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('slack')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('wa')">Siguiente: WhatsApp →</button>
+      </div>
+    </section>
+
+    <!-- ══════ 6 · WHATSAPP ══════ -->
+    <section id="wa" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Acción 5 de 7</div>
+        <h1>WhatsApp <span>Business</span></h1>
+        <p>El canal donde están tus clientes. Con la API de WhatsApp Business, n8n puede enviar mensajes automatizados, confirmaciones y notificaciones directamente al celular del cliente.</p>
+      </div>
+
+      <div class="action-hero ah-wa">
+        <div class="ah-top">
+          <div class="ah-icon">📱</div>
+          <div>
+            <div class="ah-type">WhatsApp Business API · Meta Cloud API</div>
+            <div class="ah-title">Llega al celular de tu cliente</div>
+            <div class="ah-desc">WhatsApp tiene las tasas de apertura más altas de todos los canales: más del 90% de los mensajes son leídos en los primeros 5 minutos. n8n se conecta vía Meta Cloud API (gratuita hasta cierto volumen) o proveedores como Twilio y 360dialog para enviar mensajes con plantillas aprobadas.</div>
+          </div>
+        </div>
+        <div class="ah-tags">
+          <span class="ah-tag">📤 Plantillas aprobadas</span>
+          <span class="ah-tag">🖼️ Imagen + texto</span>
+          <span class="ah-tag">📎 Documentos</span>
+          <span class="ah-tag">90% apertura</span>
+          <span class="ah-tag">🌍 API de Meta</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card lb">
+          <div class="card-label">⚙️ Envío via HTTP Request a Meta API</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// HTTP Request → Meta Cloud API</span>
+<span class="key">URL:</span>    https://graph.facebook.com/v18.0/
+        <span class="lm">{{PHONE_NUMBER_ID}}</span>/messages
+<span class="key">Método:</span> POST
+<span class="key">Auth:</span>   Bearer <span class="lm">{{ACCESS_TOKEN}}</span>
+
+<span class="key">Body:</span>
+{
+  <span class="key">"to"</span>: <span class="str">"{{$json.telefono}}"</span>,
+  <span class="key">"type"</span>: <span class="str">"template"</span>,
+  <span class="key">"template"</span>: {
+    <span class="key">"name"</span>: <span class="str">"confirmacion_pedido"</span>,
+    <span class="key">"language"</span>: { <span class="key">"code"</span>: <span class="str">"es"</span> },
+    <span class="key">"components"</span>: [{
+      <span class="key">"type"</span>: <span class="str">"body"</span>,
+      <span class="key">"parameters"</span>: [
+        { <span class="key">"text"</span>: <span class="str">"{{$json.nombre}}"</span> },
+        { <span class="key">"text"</span>: <span class="str">"{{$json.num_pedido}}"</span> }
+      ]
+    }]
+  }
+}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Consideraciones clave</div>
+          <div style="margin-top:8px;">
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Confirmaciones transaccionales</strong> — pedidos, citas, pagos, envíos</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Recordatorios</strong> — citas médicas, renovaciones, vencimientos</div></div>
+            <div class="wtu-row"><span class="wtu-e">✅</span><div class="wtu-t"><strong>Seguimiento de envíos</strong> — número de guía, estado del pedido</div></div>
+            <div class="wtu-row"><span class="wtu-e">⚠️</span><div class="wtu-t"><strong>Plantillas:</strong> Meta debe aprobar los mensajes antes de enviarlos — no puedes enviar texto libre sin plantilla aprobada</div></div>
+            <div class="wtu-row"><span class="wtu-e">⚠️</span><div class="wtu-t"><strong>Opt-in requerido:</strong> el cliente debe haber aceptado recibir mensajes de tu empresa para cumplir políticas de Meta</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ind-grid">
+        <div class="ind-item">
+          <div class="ind-sec">Salud / Clínicas</div>
+          <div class="ind-case">🏥 Recordatorio de cita médica</div>
+          <div class="ind-flow">24h antes de la cita → Cron → consulta agenda → Loop por cada paciente → WhatsApp: "Hola Carlos, te recordamos tu cita mañana a las 10am con el Dr. López"</div>
+          <div class="ind-arrow">Schedule → <span style="color:var(--lime);">WhatsApp recordatorio</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Restaurantes / Delivery</div>
+          <div class="ind-case">🍕 Confirmación de pedido</div>
+          <div class="ind-flow">Pedido recibido en sistema → n8n envía WhatsApp al cliente con resumen del pedido, tiempo estimado y link de seguimiento en tiempo real</div>
+          <div class="ind-arrow">POS → <span style="color:var(--lime);">WhatsApp cliente</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Retail / E-commerce</div>
+          <div class="ind-case">🚚 Notificación de despacho</div>
+          <div class="ind-flow">Pedido despachado en logística → n8n envía WhatsApp con número de guía de la transportadora y enlace de rastreo personalizado</div>
+          <div class="ind-arrow">ERP → <span style="color:var(--lime);">WhatsApp + guía</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Finanzas / Seguros</div>
+          <div class="ind-case">💳 Alerta de vencimiento</div>
+          <div class="ind-flow">7 días antes del vencimiento de póliza → Cron → Loop clientes → WhatsApp personalizado con fecha, monto y link de renovación</div>
+          <div class="ind-arrow">Schedule → <span style="color:var(--lime);">WhatsApp renovación</span></div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('telegram')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('notion')">Siguiente: Notion / Airtable →</button>
+      </div>
+    </section>
+
+    <!-- ══════ 7 · NOTION / AIRTABLE ══════ -->
+    <section id="notion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Acción 6 de 7</div>
+        <h1>Notion <span>/ Airtable</span></h1>
+        <p>Bases de datos visuales para equipos. n8n puede crear páginas, registros, actualizar propiedades y leer datos de ambas plataformas automáticamente.</p>
+      </div>
+
+      <div class="action-hero ah-notion">
+        <div class="ah-top">
+          <div class="ah-icon">📋</div>
+          <div>
+            <div class="ah-type">Notion · Airtable · Bases de conocimiento</div>
+            <div class="ah-title">Tu workspace conectado al workflow</div>
+            <div class="ah-desc">Notion y Airtable son el cerebro operativo de muchos equipos modernos. Con n8n puedes crear páginas de Notion automáticamente, agregar registros a bases de Airtable, actualizar propiedades, leer datos para procesarlos y sincronizar información entre múltiples plataformas.</div>
+          </div>
+        </div>
+        <div class="ah-tags">
+          <span class="ah-tag">📄 Crear página/registro</span>
+          <span class="ah-tag">✏️ Actualizar propiedad</span>
+          <span class="ah-tag">🔍 Buscar registros</span>
+          <span class="ah-tag">📖 Leer base de datos</span>
+          <span class="ah-tag">🔗 Sincronizar plataformas</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card pb">
+          <div class="card-label">⚙️ Notion — Crear página en base de datos</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Notion → Create a page</span>
+<span class="key">Base de datos:</span> <span class="str">"CRM Clientes"</span>
+
+<span class="key">Propiedades:</span>
+  Nombre:    <span class="kw">{{$json.nombre}}</span>
+  Email:     <span class="kw">{{$json.email}}</span>
+  Estado:    <span class="str">"Lead nuevo"</span>
+  Fuente:    <span class="kw">{{$json.origen}}</span>
+  Fecha:     <span class="kw">{{$now}}</span>
+  Asignado:  <span class="str">"Sin asignar"</span>
+
+<span class="cm">// Airtable — Crear registro</span>
+<span class="key">Base:</span>   <span class="str">"appXXXXXXXXXXXX"</span>
+<span class="key">Tabla:</span>  <span class="str">"Leads"</span>
+<span class="key">Campos:</span>
+  Nombre: <span class="kw">{{$json.nombre}}</span>
+  Stage:  <span class="str">"Prospecto"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Notion vs Airtable — ¿cuándo usar cada uno?</div>
+          <table class="comp-table" style="margin-top:8px;">
+            <thead><tr><th>Criterio</th><th>Notion</th><th>Airtable</th></tr></thead>
+            <tbody>
+              <tr><td>Fuerza</td><td>Docs + DB</td><td>Base de datos pura</td></tr>
+              <tr><td>Vistas</td><td>Tabla, Kanban, Galería</td><td>Grid, Gantt, Calendario</td></tr>
+              <tr><td>API</td><td>Sí, robusta</td><td>Sí, más madura</td></tr>
+              <tr><td>Mejor para</td><td>Wiki + CRM ligero</td><td>Gestión de proyectos</td></tr>
+              <tr><td>Nodo n8n</td><td>✅ Nativo</td><td>✅ Nativo</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ind-grid">
+        <div class="ind-item">
+          <div class="ind-sec">Agencias / Proyectos</div>
+          <div class="ind-case">📁 Crear proyecto al ganar un cliente</div>
+          <div class="ind-flow">Deal cerrado en CRM → n8n crea página en Notion con nombre del cliente, fecha de inicio, brief inicial y asigna al PM responsable automáticamente</div>
+          <div class="ind-arrow">CRM → <span style="color:var(--pink);">Notion página proyecto</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Producto / UX</div>
+          <div class="ind-case">🐛 Registrar feedback de usuarios</div>
+          <div class="ind-flow">Formulario de feedback enviado → n8n crea registro en Airtable con texto del feedback, rating, categoría y usuario → equipo lo revisa en vista Kanban</div>
+          <div class="ind-arrow">Formulario → <span style="color:var(--pink);">Airtable feedback</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Contenido / Marketing</div>
+          <div class="ind-case">✍️ Agregar tarea de contenido</div>
+          <div class="ind-flow">Solicitud de contenido por formulario → n8n crea tarea en Notion con título, formato, fecha límite, responsable y la mueve a "Backlog" en el Kanban</div>
+          <div class="ind-arrow">Formulario → <span style="color:var(--pink);">Notion tarea</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Ventas</div>
+          <div class="ind-case">🔄 Sincronizar leads entre sistemas</div>
+          <div class="ind-flow">Nuevo lead en Typeform → n8n crea en Airtable (para el equipo de ventas) Y en Notion (para el CRM del CEO) al mismo tiempo con los mismos datos</div>
+          <div class="ind-arrow">Webhook → <span style="color:var(--pink);">Airtable + Notion</span></div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('wa')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('db')">Siguiente: Bases de datos →</button>
+      </div>
+    </section>
+
+    <!-- ══════ 8 · BASES DE DATOS ══════ -->
+    <section id="db" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Acción 7 de 7</div>
+        <h1>Bases de <span>Datos</span></h1>
+        <p>Para producción real con volumen. MySQL, PostgreSQL, Supabase y MongoDB se conectan directamente a n8n para leer, escribir y actualizar registros desde el workflow.</p>
+      </div>
+
+      <div class="action-hero ah-db">
+        <div class="ah-top">
+          <div class="ah-icon">🗄️</div>
+          <div>
+            <div class="ah-type">MySQL · PostgreSQL · Supabase · MongoDB</div>
+            <div class="ah-title">El backend de tus automatizaciones serias</div>
+            <div class="ah-desc">Cuando los datos superan a Google Sheets o necesitas transacciones, índices y consultas complejas, conectas directamente a la base de datos. n8n tiene nodos nativos para MySQL, PostgreSQL y MongoDB, y Supabase se integra vía su API REST. CRUD completo desde el workflow.</div>
+          </div>
+        </div>
+        <div class="ah-tags">
+          <span class="ah-tag">SELECT · INSERT</span>
+          <span class="ah-tag">UPDATE · DELETE</span>
+          <span class="ah-tag">🔐 Conexión segura</span>
+          <span class="ah-tag">🚀 Alto volumen</span>
+          <span class="ah-tag">⚡ Supabase REST</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card tb">
+          <div class="card-label">⚙️ Consultas SQL en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// INSERT — registrar nuevo lead</span>
+<span class="kw">INSERT INTO</span> leads
+  (nombre, email, telefono, fuente, created_at)
+<span class="kw">VALUES</span>
+  (<span class="str">'{{$json.nombre}}'</span>,
+   <span class="str">'{{$json.email}}'</span>,
+   <span class="str">'{{$json.telefono}}'</span>,
+   <span class="str">'{{$json.fuente}}'</span>,
+   <span class="kw">NOW()</span>)
+
+<span class="cm">// SELECT — buscar cliente por email</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> clientes
+<span class="kw">WHERE</span> email = <span class="str">'{{$json.email}}'</span>
+<span class="kw">LIMIT</span> 1
+
+<span class="cm">// UPDATE — cambiar estado del pedido</span>
+<span class="kw">UPDATE</span> pedidos
+<span class="kw">SET</span> estado = <span class="str">'enviado'</span>, updated_at = <span class="kw">NOW()</span>
+<span class="kw">WHERE</span> id = <span class="val">{{$json.pedido_id}}</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Sheets vs Base de datos — cuándo escalar</div>
+          <table class="comp-table" style="margin-top:8px;">
+            <thead><tr><th>Situación</th><th>Usar</th></tr></thead>
+            <tbody>
+              <tr><td>Menos de 10k registros</td><td><span class="b-green">Sheets</span></td></tr>
+              <tr><td>Equipo no técnico</td><td><span class="b-green">Sheets</span></td></tr>
+              <tr><td>Panel visible para todos</td><td><span class="b-green">Sheets</span></td></tr>
+              <tr><td>+100k registros</td><td><span class="b-teal">Base de datos</span></td></tr>
+              <tr><td>Consultas complejas (JOINs)</td><td><span class="b-teal">Base de datos</span></td></tr>
+              <tr><td>Datos de producción críticos</td><td><span class="b-teal">Base de datos</span></td></tr>
+              <tr><td>Múltiples apps leen los mismos datos</td><td><span class="b-teal">Base de datos</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ind-grid">
+        <div class="ind-item">
+          <div class="ind-sec">SaaS / Producto</div>
+          <div class="ind-case">👤 Activar cuenta tras pago</div>
+          <div class="ind-flow">Webhook de Stripe → pago confirmado → n8n hace UPDATE en PostgreSQL: activa la cuenta del usuario, asigna plan y registra fecha de activación</div>
+          <div class="ind-arrow">Stripe → <span style="color:var(--teal);">PostgreSQL UPDATE</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">E-commerce / Logística</div>
+          <div class="ind-case">📦 Registrar pedido en MySQL</div>
+          <div class="ind-flow">Checkout completado → n8n inserta pedido en MySQL (productos, cantidades, cliente, dirección) → actualiza inventario → confirma por email</div>
+          <div class="ind-arrow">Checkout → <span style="color:var(--teal);">MySQL INSERT+UPDATE</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">Analytics / Reporting</div>
+          <div class="ind-case">📊 Pipeline de datos diario</div>
+          <div class="ind-flow">Cron nocturno → n8n extrae datos de múltiples APIs → transforma con Function → INSERT masivo en Supabase → dashboard se actualiza automáticamente</div>
+          <div class="ind-arrow">APIs → <span style="color:var(--teal);">Supabase INSERT</span></div>
+        </div>
+        <div class="ind-item">
+          <div class="ind-sec">CRM interno</div>
+          <div class="ind-case">🔄 Sincronizar contactos</div>
+          <div class="ind-flow">Formulario de contacto → n8n busca si el email ya existe (SELECT) → si existe: UPDATE datos; si no: INSERT nuevo registro → notifica en Slack</div>
+          <div class="ind-arrow"><span style="color:var(--teal);">SELECT → UPDATE/INSERT</span></div>
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top:16px;"><span class="tip-icon">🔒</span><div class="tip-text"><strong>Seguridad:</strong> nunca pongas credenciales de base de datos directamente en el nodo. Usa las <strong>Credentials de n8n</strong> que las almacena cifradas. Además, usa un usuario de DB con solo los permisos necesarios (principio de mínimo privilegio).</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('notion')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('elegir')">Siguiente: ¿Cuál usar? →</button>
+      </div>
+    </section>
+
+    <!-- ══════ 9 · ELEGIR ══════ -->
+    <section id="elegir" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>¿Cuál <span>Acción Usar?</span></h1>
+        <p>La guía definitiva para elegir el canal correcto según tu contexto, destinatario y urgencia. Una acción mal elegida es información que no llega.</p>
+      </div>
+
+      <!-- ÁRBOL DE DECISIÓN -->
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🔍 Árbol de decisión</div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:18px;margin-top:14px;margin-bottom:12px;border-left:3px solid var(--accent);">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Pregunta 1</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;">¿Quién es el destinatario?</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid var(--border);">
+              <div style="font-size:12px;font-weight:700;color:var(--amber);">Tu equipo interno</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px;">→ <strong style="color:var(--amber);">Slack</strong> (si lo usan)<br>→ <strong style="color:var(--sky);">Telegram</strong> (grupo rápido)<br>→ <strong style="color:var(--accent2);">Email</strong> (reportes)</div>
+            </div>
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid var(--border);">
+              <div style="font-size:12px;font-weight:700;color:var(--lime);">Tus clientes</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px;">→ <strong style="color:var(--lime);">WhatsApp</strong> (máxima apertura)<br>→ <strong style="color:var(--accent2);">Email</strong> (formal, adjuntos)<br>→ <strong style="color:var(--sky);">Telegram</strong> (comunidades)</div>
+            </div>
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid var(--border);">
+              <div style="font-size:12px;font-weight:700;color:var(--teal);">Un sistema / base de datos</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px;">→ <strong style="color:var(--green);">Google Sheets</strong> (equipo no técnico)<br>→ <strong style="color:var(--pink);">Notion/Airtable</strong> (gestión)<br>→ <strong style="color:var(--teal);">Base de datos</strong> (producción)</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:18px;margin-bottom:12px;border-left:3px solid var(--amber);">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Pregunta 2 — si es notificación</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;">¿Qué tan urgente es?</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid rgba(240,90,90,0.3);">
+              <div style="font-size:12px;font-weight:700;color:var(--red);">🔴 Urgente — minutos</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px;"><strong style="color:var(--sky);">Telegram</strong> o <strong style="color:var(--amber);">Slack</strong><br>Apertura casi inmediata</div>
+            </div>
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid rgba(240,160,48,0.3);">
+              <div style="font-size:12px;font-weight:700;color:var(--amber);">🟡 Normal — horas</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px;"><strong style="color:var(--lime);">WhatsApp</strong> o <strong style="color:var(--accent2);">Email</strong><br>Alta tasa de lectura</div>
+            </div>
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid rgba(34,201,122,0.3);">
+              <div style="font-size:12px;font-weight:700;color:var(--green);">🟢 No urgente — días</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px;"><strong style="color:var(--accent2);">Email</strong> formal<br>Reportes, documentos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA RESUMEN -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">📋 Resumen — las 7 acciones</div>
+        <table class="comp-table" style="margin-top:10px;">
+          <thead><tr><th>Acción</th><th>Mejor para</th><th>Destinatario</th><th>Velocidad</th></tr></thead>
+          <tbody>
+            <tr><td>📧 Email</td><td>Confirmaciones, reportes, onboarding</td><td>Clientes / Equipo</td><td><span class="b-amber">Media</span></td></tr>
+            <tr><td>📊 Google Sheets</td><td>Registros visibles, dashboards simples</td><td>Sistema / Equipo</td><td><span class="b-acc">Inmediata</span></td></tr>
+            <tr><td>💬 Slack</td><td>Alertas internas urgentes, asignaciones</td><td>Equipo interno</td><td><span class="b-acc">Inmediata</span></td></tr>
+            <tr><td>✈️ Telegram</td><td>Notificaciones personales, grupos, canales</td><td>Personal / Equipo / Clientes</td><td><span class="b-acc">Inmediata</span></td></tr>
+            <tr><td>📱 WhatsApp</td><td>Mensajes a clientes con máxima apertura</td><td>Clientes externos</td><td><span class="b-acc">Inmediata</span></td></tr>
+            <tr><td>📋 Notion / Airtable</td><td>Crear tareas, registros, gestión de proyectos</td><td>Sistema / Equipo</td><td><span class="b-acc">Inmediata</span></td></tr>
+            <tr><td>🗄️ Base de datos</td><td>Producción real, alto volumen, CRUD crítico</td><td>Sistema</td><td><span class="b-acc">Inmediata</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- WORKFLOW COMPLETO FINAL -->
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">🚀 Workflow final — múltiples acciones en paralelo</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:16px;">Un solo trigger dispara 4 acciones distintas al mismo tiempo</div>
+        <div class="flow-row">
+          <div class="fn trigger"><div class="fi">🌐</div><div class="ft">Trigger</div><div class="fn2">Webhook pago</div></div>
+          <div class="farrow">→</div>
+          <div class="fn process"><div class="fi">🔧</div><div class="ft">Set</div><div class="fn2">Formatear</div></div>
+          <div class="farrow">→</div>
+          <div class="fn process"><div class="fi">🔀</div><div class="ft">IF</div><div class="fn2">¿Aprobado?</div></div>
+          <div class="farrow" style="font-size:12px;color:var(--green);">→ SÍ</div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <div class="fn action" style="min-width:100px;"><div class="fi">📧</div><div class="ft">Email</div><div class="fn2">Confirmación</div></div>
+            <div class="fn action" style="min-width:100px;border-color:rgba(132,204,22,0.4);background:rgba(132,204,22,0.04);"><div class="fi">📱</div><div class="ft" style="color:var(--lime);">WhatsApp</div><div class="fn2">Notificación</div></div>
+            <div class="fn action" style="min-width:100px;border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.04);"><div class="fi">📊</div><div class="ft">Sheets</div><div class="fn2">Registrar</div></div>
+            <div class="fn action" style="min-width:100px;border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.04);"><div class="fi">🗄️</div><div class="ft" style="color:var(--teal);">DB</div><div class="fn2">Activar cuenta</div></div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">Un pago aprobado → dispara 4 acciones simultáneas → cliente notificado por 2 canales, registro en Sheets y cuenta activa en DB →</p>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:40px;margin-bottom:12px;">🎓</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Semana 3 completa — ¡Bien hecho!</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:500px;margin:0 auto 20px;">Triggers, nodos y acciones dominados. En la Semana 4 construimos workflows de nivel producción: manejo de errores, sub-workflows, variables de entorno y deployment en servidor propio.</p>
+          <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+            <span class="badge b-acc">🛡️ Manejo de errores</span>
+            <span class="badge b-green">🔧 Sub-workflows</span>
+            <span class="badge b-teal">🚀 Deploy en servidor</span>
+            <span class="badge b-amber">🔐 Variables de entorno</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-ghost" onclick="goTo('db')">← Anterior</button>
+        <button class="btn btn-primary" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections = ['intro','email','sheets','slack','telegram','wa','notion','db','elegir'];
+
+  function go(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goTo(id) {
+    const el = document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+    go(id, el);
+  }
+
+  function updateProgress(id) {
+    const idx = sections.indexOf(id);
+    const pct = Math.round(((idx + 1) / sections.length) * 100);
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `Sección ${idx + 1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>

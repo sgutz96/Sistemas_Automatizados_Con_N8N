@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semana 3 · Parte 5 — Lógica en n8n</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* ── SIDEBAR ── */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* ── MAIN ── */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── HEADERS ── */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* ── GRIDS ── */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+
+  /* ── CARDS ── */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* ── LOGIC HERO ── */
+  .logic-hero{border-radius:14px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .logic-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;opacity:0.07;pointer-events:none;}
+  .lh-if    {background:var(--bg2);border:1px solid rgba(34,201,122,0.4);}    .lh-if::before{background:var(--green);}
+  .lh-sw    {background:var(--bg2);border:1px solid rgba(56,189,248,0.4);}    .lh-sw::before{background:var(--sky);}
+  .lh-fil   {background:var(--bg2);border:1px solid rgba(240,160,48,0.4);}    .lh-fil::before{background:var(--amber);}
+  .lh-exp   {background:var(--bg2);border:1px solid rgba(124,110,245,0.4);}   .lh-exp::before{background:var(--accent);}
+  .lh-err   {background:var(--bg2);border:1px solid rgba(240,90,90,0.4);}     .lh-err::before{background:var(--red);}
+  .lh-wait  {background:var(--bg2);border:1px solid rgba(232,121,160,0.4);}   .lh-wait::before{background:var(--pink);}
+  .lh-sub   {background:var(--bg2);border:1px solid rgba(32,212,176,0.4);}    .lh-sub::before{background:var(--teal);}
+
+  .lh-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;}
+  .lh-icon{font-size:30px;width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .lh-if .lh-icon   {background:rgba(34,201,122,0.12);}
+  .lh-sw .lh-icon   {background:rgba(56,189,248,0.12);}
+  .lh-fil .lh-icon  {background:rgba(240,160,48,0.12);}
+  .lh-exp .lh-icon  {background:rgba(124,110,245,0.12);}
+  .lh-err .lh-icon  {background:rgba(240,90,90,0.12);}
+  .lh-wait .lh-icon {background:rgba(232,121,160,0.12);}
+  .lh-sub .lh-icon  {background:rgba(32,212,176,0.12);}
+
+  .lh-type{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;}
+  .lh-if .lh-type   {color:var(--green);}
+  .lh-sw .lh-type   {color:var(--sky);}
+  .lh-fil .lh-type  {color:var(--amber);}
+  .lh-exp .lh-type  {color:var(--accent2);}
+  .lh-err .lh-type  {color:var(--red);}
+  .lh-wait .lh-type {color:var(--pink);}
+  .lh-sub .lh-type  {color:var(--teal);}
+
+  .lh-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .lh-desc{font-size:14px;color:var(--text2);line-height:1.6;}
+  .lh-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .lh-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;}
+  .lh-if .lh-tag   {background:var(--green-bg);color:var(--green);}
+  .lh-sw .lh-tag   {background:var(--sky-bg);color:var(--sky);}
+  .lh-fil .lh-tag  {background:var(--amber-bg);color:var(--amber);}
+  .lh-exp .lh-tag  {background:var(--accent-glow);color:var(--accent2);}
+  .lh-err .lh-tag  {background:var(--red-bg);color:var(--red);}
+  .lh-wait .lh-tag {background:var(--pink-bg);color:var(--pink);}
+  .lh-sub .lh-tag  {background:var(--teal-bg);color:var(--teal);}
+
+  /* ── CODE ── */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);} .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);} .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);}
+
+  /* ── FLOW ── */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:4px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;text-align:center;flex-shrink:0;min-width:100px;}
+  .fn .fi{font-size:18px;margin-bottom:4px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:2px;}
+  .fn .fn2{font-size:11px;font-weight:600;color:var(--text);}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.err {border-color:rgba(240,90,90,0.4);background:rgba(240,90,90,0.05);}   .fn.err .ft{color:var(--red);}
+  .fn.sub {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.sub .ft{color:var(--teal);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+  .fork{display:flex;flex-direction:column;padding:0 6px;gap:6px;flex-shrink:0;}
+  .fork span{font-size:11px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:4px;}
+
+  /* ── CHECKLIST ── */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* ── WTU ── */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* ── STAT ── */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* ── BADGES ── */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+
+  /* ── TABLE ── */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* ── TIP ── */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* ── HIGHLIGHT ── */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* ── DECISION STEP ── */
+  .dstep{background:var(--bg3);border-radius:10px;padding:18px;margin-bottom:12px;}
+  .dstep-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+  .dstep-q{font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .dstep-opts{display:flex;gap:10px;flex-wrap:wrap;}
+  .dopt{background:var(--bg4);border-radius:8px;padding:10px 14px;border:1px solid var(--border);font-size:13px;color:var(--text2);line-height:1.5;flex:1;min-width:200px;}
+
+  /* ── EXPR PILL ── */
+  .ep{display:inline-block;background:var(--bg3);border:1px solid rgba(124,110,245,0.25);border-radius:6px;padding:3px 10px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent2);margin:3px;}
+
+  /* ── NAV ── */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{background:var(--accent2);}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+
+  /* ── ERROR FLOW SPECIAL ── */
+  .err-path{background:var(--bg3);border:1px solid rgba(240,90,90,0.3);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .err-path .ep-icon{font-size:18px;flex-shrink:0;}
+  .err-path .ep-text{font-size:13px;color:var(--text2);line-height:1.5;}
+  .err-path .ep-text strong{color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Semana 3 · Parte 5</div>
+      <h2>Lógica en n8n</h2>
+      <p>n8n · automatización</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> ¿Qué es la lógica?</a>
+    <a class="nav-item" onclick="go('if',this)"><span class="ni">🔀</span> IF avanzado</a>
+    <a class="nav-item" onclick="go('switch',this)"><span class="ni">🎛️</span> Switch avanzado</a>
+    <a class="nav-item" onclick="go('filter',this)"><span class="ni">🧹</span> Filter</a>
+    <a class="nav-item" onclick="go('expr',this)"><span class="ni">✏️</span> Expresiones</a>
+    <a class="nav-item" onclick="go('errors',this)"><span class="ni">🛡️</span> Manejo de errores</a>
+    <a class="nav-item" onclick="go('wait',this)"><span class="ni">⏳</span> Wait / Retry</a>
+    <a class="nav-item" onclick="go('subwf',this)"><span class="ni">📦</span> Sub-workflows</a>
+    <a class="nav-item" onclick="go('patrones',this)"><span class="nn">9</span> Patrones completos</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Semana 3 · Parte 5</div>
+        <h1>Lógica <span>en n8n</span></h1>
+        <p>La lógica es lo que convierte un workflow lineal en una automatización inteligente. Toma decisiones, filtra datos, maneja errores y se adapta a cada situación.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🧠 La diferencia entre un workflow básico y uno profesional</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">Un workflow sin lógica hace siempre lo mismo. Con lógica, actúa diferente según la situación.</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">Básico: recibe datos → envía email. Siempre igual, sin importar qué. <strong style="color:var(--text);">Con lógica:</strong> recibe datos → valida → si es cliente VIP hace una cosa, si no otra → si falla reintenta → registra el resultado. Eso es un workflow real.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+        <div class="stat"><div class="sn">8</div><div class="sl">herramientas de lógica que verás hoy</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">IF</div><div class="sl">el operador más usado en cualquier workflow real</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">0</div><div class="sl">errores no manejados en un workflow de producción</div></div>
+        <div class="stat"><div class="sn" style="color:var(--teal);">∞</div><div class="sl">combinaciones posibles de condiciones</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🗺️ El mapa de lógica de hoy</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;">
+          <div style="background:var(--bg3);border:1px solid rgba(34,201,122,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔀</div>
+            <div style="font-size:12px;font-weight:700;color:var(--green);">IF avanzado</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">AND, OR, anidado</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🎛️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--sky);">Switch avanzado</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Múltiples rutas complejas</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,160,48,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🧹</div>
+            <div style="font-size:12px;font-weight:700;color:var(--amber);">Filter</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Descartar items</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(124,110,245,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">✏️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent2);">Expresiones</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Lógica en campos</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,90,90,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🛡️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--red);">Manejo errores</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Try/catch, fallback</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(232,121,160,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">⏳</div>
+            <div style="font-size:12px;font-weight:700;color:var(--pink);">Wait / Retry</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Esperar y reintentar</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(32,212,176,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📦</div>
+            <div style="font-size:12px;font-weight:700;color:var(--teal);">Sub-workflows</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Modularidad</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;opacity:0.5;">
+            <div style="font-size:22px;margin-bottom:6px;">🏗️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);">Patrones</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Flujos completos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">📐 Dónde vive la lógica en el workflow</div>
+        <div class="flow-row" style="margin-top:14px;">
+          <div class="fn trig"><div class="fi">⚡</div><div class="ft">Trigger</div><div class="fn2">Inicia</div></div>
+          <div class="fa">→</div>
+          <div class="fn proc"><div class="fi">✏️</div><div class="ft">Expresiones</div><div class="fn2">Dentro de nodos</div></div>
+          <div class="fa">→</div>
+          <div class="fn" style="border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.04);"><div class="fi">🧹</div><div class="ft" style="color:var(--amber);">Filter</div><div class="fn2">Descartar</div></div>
+          <div class="fa">→</div>
+          <div class="fn" style="border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.04);"><div class="fi">🔀</div><div class="ft" style="color:var(--green);">IF / Switch</div><div class="fn2">Bifurcar</div></div>
+          <div class="fa">→</div>
+          <div class="fn err"><div class="fi">🛡️</div><div class="ft">Error handler</div><div class="fn2">Proteger</div></div>
+          <div class="fa">→</div>
+          <div class="fn act"><div class="fi">🎯</div><div class="ft">Acción</div><div class="fn2">Resultado</div></div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">La lógica no es un solo nodo — vive en múltiples puntos del workflow →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-p" onclick="goTo('if')">Siguiente: IF avanzado →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · IF AVANZADO ══ -->
+    <section id="if" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Lógica 1 de 8</div>
+        <h1>IF <span>Avanzado</span></h1>
+        <p>Más allá del simple sí/no. Condiciones múltiples con AND y OR, IFs anidados, comparaciones complejas y lógica que cubre todos los casos posibles.</p>
+      </div>
+
+      <div class="logic-hero lh-if">
+        <div class="lh-top">
+          <div class="lh-icon">🔀</div>
+          <div>
+            <div class="lh-type">IF · Condicional avanzado</div>
+            <div class="lh-title">Condiciones combinadas y anidadas</div>
+            <div class="lh-desc">En la Parte 3 viste el IF básico. Ahora profundizamos: múltiples condiciones con AND/OR, cómo anidar IFs para crear árbol de decisión complejo, condiciones sobre arrays, fechas, y cómo evitar los patrones que rompen workflows en producción.</div>
+          </div>
+        </div>
+        <div class="lh-tags">
+          <span class="lh-tag">AND · OR</span>
+          <span class="lh-tag">🌲 IF anidado</span>
+          <span class="lh-tag">📅 Comparar fechas</span>
+          <span class="lh-tag">📋 Comparar arrays</span>
+          <span class="lh-tag">🔢 Rangos numéricos</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">⚙️ AND — todas deben cumplirse</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Lead calificado = email válido
+// AND monto > umbral AND país correcto</span>
+
+email <span class="kw">contiene</span> <span class="str">"@"</span>
+  <span class="kw">AND</span>
+monto > <span class="vl">500000</span>
+  <span class="kw">AND</span>
+pais <span class="kw">igual a</span> <span class="str">"CO"</span>
+
+<span class="cm">→ TRUE:  lead calificado → CRM premium
+→ FALSE: lead genérico → CRM estándar</span>
+
+<span class="cm">// Caso de stock crítico</span>
+stock < <span class="vl">10</span>
+  <span class="kw">AND</span>
+activo <span class="kw">igual a</span> <span class="str">true</span>
+  <span class="kw">AND</span>
+categoria <span class="kw">igual a</span> <span class="str">"A"</span>
+<span class="cm">→ alerta urgente al equipo de compras</span>
+          </div>
+        </div>
+
+        <div class="card sb">
+          <div class="card-label">⚙️ OR — basta con una</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Notificar si es de LATAM</span>
+pais <span class="kw">igual a</span> <span class="str">"CO"</span>
+  <span class="kw">OR</span>
+pais <span class="kw">igual a</span> <span class="str">"MX"</span>
+  <span class="kw">OR</span>
+pais <span class="kw">igual a</span> <span class="str">"AR"</span>
+<span class="cm">→ TRUE si es de alguno de los tres países</span>
+
+<span class="cm">// Escalar ticket si es urgente o VIP</span>
+prioridad <span class="kw">igual a</span> <span class="str">"alta"</span>
+  <span class="kw">OR</span>
+tipo_cliente <span class="kw">igual a</span> <span class="str">"enterprise"</span>
+<span class="cm">→ TRUE en cualquiera de los dos casos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">🌲 IFs anidados — árbol de decisión completo</div>
+        <div class="code-block">
+<span class="cm">// Nivel 1: ¿el pago fue aprobado?</span>
+<span class="kw">IF</span> estado_pago == <span class="str">"aprobado"</span>
+  
+  <span class="cm">// Nivel 2 (true): ¿es cliente nuevo?</span>
+  <span class="kw">IF</span> es_nuevo == <span class="str">true</span>
+    → Email bienvenida + onboarding
+  <span class="kw">ELSE</span>
+    → Email confirmación de renovación
+
+<span class="kw">ELSE</span>
+  <span class="cm">// Nivel 2 (false): ¿fue rechazado o pendiente?</span>
+  <span class="kw">IF</span> estado_pago == <span class="str">"rechazado"</span>
+    → Email "tarjeta rechazada" + link de reintento
+  <span class="kw">ELSE</span>
+    → Email "pago pendiente, verificando..."
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">En n8n: IF nivel 1 → rama true → IF nivel 2 → dos ramas. Rama false → otro IF → dos ramas →</p>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📅 Comparaciones especiales</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Tipo</th><th>Operador</th><th>Ejemplo real</th></tr></thead>
+          <tbody>
+            <tr><td>Fecha pasada</td><td>fecha &lt; hoy</td><td>Detectar suscripciones vencidas</td></tr>
+            <tr><td>Fecha futura</td><td>fecha &gt; ahora + 7 días</td><td>Recordatorio con 7 días de anticipación</td></tr>
+            <tr><td>Campo vacío</td><td>campo está vacío</td><td>Validar que llegó el teléfono</td></tr>
+            <tr><td>Campo no vacío</td><td>campo no está vacío</td><td>Solo procesar si hay email</td></tr>
+            <tr><td>Contiene texto</td><td>asunto contiene "urgente"</td><td>Escalar emails urgentes</td></tr>
+            <tr><td>Empieza con</td><td>email empieza con "noreply"</td><td>Ignorar emails automáticos</td></tr>
+            <tr><td>Rango numérico</td><td>monto &gt;= 100 AND monto &lt;= 999</td><td>Clasificar tamaño del pedido</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="g2">
+        <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Regla de oro:</strong> si necesitas más de 3 niveles de IF anidados, es señal de que debes usar un <strong>Switch</strong> o mover la lógica a un nodo <strong>Function</strong> con JavaScript. Los IFs profundos son imposibles de mantener.</div></div>
+        <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Rama false vacía:</strong> si la rama false de un IF no tiene nodo conectado, n8n la descarta silenciosamente. Siempre conecta las dos ramas, aunque la false sea solo un nodo de log o notificación.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('switch')">Siguiente: Switch avanzado →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · SWITCH AVANZADO ══ -->
+    <section id="switch" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Lógica 2 de 8</div>
+        <h1>Switch <span>Avanzado</span></h1>
+        <p>Enrutamiento inteligente con múltiples salidas. Casos de uso complejos, salida "fallback" para lo inesperado, y combinación con otros nodos.</p>
+      </div>
+
+      <div class="logic-hero lh-sw">
+        <div class="lh-top">
+          <div class="lh-icon">🎛️</div>
+          <div>
+            <div class="lh-type">Switch · Enrutamiento múltiple avanzado</div>
+            <div class="lh-title">Hasta N salidas con lógica compleja por ruta</div>
+            <div class="lh-desc">El Switch no solo evalúa igualdad exacta. Puedes configurar cada salida con condiciones distintas: una con rango numérico, otra con texto que contiene, otra con fecha comparada. Y siempre con una salida "default" que captura lo que no encaja en ninguna regla.</div>
+          </div>
+        </div>
+        <div class="lh-tags">
+          <span class="lh-tag">🛣️ N salidas</span>
+          <span class="lh-tag">📋 Condición por salida</span>
+          <span class="lh-tag">🪤 Fallback default</span>
+          <span class="lh-tag">🔢 Rangos y texto</span>
+          <span class="lh-tag">⚡ Sin IFs anidados</span>
+        </div>
+      </div>
+
+      <div class="card sb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Switch con condiciones distintas por salida</div>
+        <div class="code-block">
+<span class="cm">// Clasificar el tamaño del pedido</span>
+<span class="cm">// Cada salida tiene su propia condición</span>
+
+<span class="sk">Salida 0</span> — <span class="str">"Pequeño"</span>:  monto > <span class="vl">0</span>     AND monto <= <span class="vl">99999</span>
+<span class="sk">Salida 1</span> — <span class="str">"Mediano"</span>:  monto > <span class="vl">99999</span>  AND monto <= <span class="vl">499999</span>
+<span class="sk">Salida 2</span> — <span class="str">"Grande"</span>:   monto > <span class="vl">499999</span> AND monto <= <span class="vl">1999999</span>
+<span class="sk">Salida 3</span> — <span class="str">"Enterprise"</span>: monto > <span class="vl">1999999</span>
+<span class="sk">Fallback</span>  — <span class="cm">default: cualquier cosa que no encajó</span>
+
+<span class="cm">// Cada salida conecta a su propio flujo:</span>
+→ Pequeño  : proceso estándar  → email simple
+→ Mediano  : asignar vendedor  → llamada de seguimiento
+→ Grande   : alertar gerencia  → propuesta personalizada
+→ Enterprise: CEO notificado   → reunión agendada
+→ Fallback  : log de anomalía  → revisión manual
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">🏢 Casos reales de Switch complejo</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">🌍</span><div class="wt"><strong>Por región + idioma:</strong> CO/MX → español LATAM, ES → español EU, US → inglés, resto → inglés genérico</div></div>
+            <div class="wtu"><span class="we">🎫</span><div class="wt"><strong>Categoría de soporte:</strong> "facturación" → equipo finanzas, "técnico" → dev, "envíos" → logística, otros → primer nivel</div></div>
+            <div class="wtu"><span class="we">💳</span><div class="wt"><strong>Estado de pago:</strong> "aprobado", "rechazado", "pendiente", "reembolsado" → cada uno con su flujo propio</div></div>
+            <div class="wtu"><span class="we">📦</span><div class="wt"><strong>Tipo de envío:</strong> "nacional", "bogotá mismo día", "internacional" → cada uno con tarifa, transportadora y tiempo distintos</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🪤 La salida Fallback — por qué es obligatoria</div>
+          <div class="code-block" style="font-size:12px;margin-top:8px;">
+<span class="cm">// Sin fallback:</span>
+Switch recibe estado = <span class="str">"cancelado"</span>
+→ No encaja en ninguna salida
+→ <span class="rd">Item desaparecido silenciosamente</span>
+→ <span class="rd">Nadie se entera del problema</span>
+
+<span class="cm">// Con fallback:</span>
+Switch recibe estado = <span class="str">"cancelado"</span>
+→ Va a salida default
+→ <span class="lm">Log en Sheets: "estado desconocido"</span>
+→ <span class="lm">Slack alerta: "revisar manualmente"</span>
+→ <span class="lm">El dato no se pierde</span>
+          </div>
+          <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-top:10px;"><strong style="color:var(--text);">Regla:</strong> todo Switch en producción debe tener un fallback conectado a una notificación de anomalía.</p>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('if')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('filter')">Siguiente: Filter →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · FILTER ══ -->
+    <section id="filter" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Lógica 3 de 8</div>
+        <h1>Nodo <span>Filter</span></h1>
+        <p>El guardián del workflow. Descarta items que no cumplen condiciones antes de que lleguen a los nodos costosos. Simple, silencioso y muy poderoso.</p>
+      </div>
+
+      <div class="logic-hero lh-fil">
+        <div class="lh-top">
+          <div class="lh-icon">🧹</div>
+          <div>
+            <div class="lh-type">Filter · Descarte de items</div>
+            <div class="lh-title">Solo pasan los datos que importan</div>
+            <div class="lh-desc">El nodo Filter evalúa cada item de la lista y solo deja pasar los que cumplen la condición. Los que no la cumplen son descartados sin generar errores ni ruido. A diferencia del IF (que bifurca), el Filter simplemente limpia. Perfecto antes de un Loop o una acción costosa.</div>
+          </div>
+        </div>
+        <div class="lh-tags">
+          <span class="lh-tag">✅ Pasan: cumplen</span>
+          <span class="lh-tag">🗑️ Descartan: no cumplen</span>
+          <span class="lh-tag">🔇 Sin error ni ruido</span>
+          <span class="lh-tag">📋 Funciona en arrays</span>
+          <span class="lh-tag">⚡ Antes de acciones costosas</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card amb">
+          <div class="card-label">⚙️ Filter vs IF — diferencia clave</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// IF — bifurca en dos ramas</span>
+Items → <span class="kw">IF</span> condición
+  → rama TRUE:  items que cumplen
+  → rama FALSE: items que NO cumplen
+<span class="cm">// Necesitas manejar ambas ramas</span>
+
+<span class="cm">─────────────────────────────</span>
+
+<span class="cm">// Filter — solo pasan los que cumplen</span>
+Items → <span class="kw">Filter</span> condición
+  → solo items que cumplen
+  → los demás desaparecen sin ruido
+<span class="cm">// Una sola salida, más limpio</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo usar Filter</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Antes de un Loop</strong> — filtrar la lista para solo iterar los items relevantes</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Limpiar datos inválidos</strong> — descartar emails sin @, nombres vacíos, montos en 0</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Antes de API costosa</strong> — solo llamar la API con los items que realmente necesitan procesarse</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Fechas</strong> — solo procesar registros del día de hoy, no todos los históricos</div></div>
+            <div class="wtu"><span class="we">❌</span><div class="wt"><strong>No usar</strong> si necesitas hacer algo con los items descartados — ahí sí necesitas IF</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">🏢 Ejemplos reales de Filter en acción</div>
+        <div class="code-block">
+<span class="cm">// 1. Filtrar solo leads con email válido</span>
+Filter: email <span class="kw">contiene</span> <span class="str">"@"</span>  <span class="kw">AND</span>  email <span class="kw">no contiene</span> <span class="str">"test"</span>
+<span class="cm">→ Solo pasan emails reales de personas</span>
+
+<span class="cm">// 2. Filtrar pedidos de hoy para reporte diario</span>
+Filter: fecha_creacion <span class="kw">es hoy</span>  <span class="kw">AND</span>  estado <span class="kw">igual a</span> <span class="str">"completado"</span>
+<span class="cm">→ Solo pedidos completados hoy</span>
+
+<span class="cm">// 3. Filtrar clientes activos con saldo</span>
+Filter: activo <span class="kw">igual a</span> <span class="str">true</span>  <span class="kw">AND</span>  saldo_pendiente > <span class="vl">0</span>
+<span class="cm">→ Solo clientes que deben dinero y siguen activos</span>
+
+<span class="cm">// 4. Filtrar noticias no procesadas en RSS</span>
+Filter: procesado <span class="kw">no igual a</span> <span class="str">true</span>  <span class="kw">AND</span>  categoria <span class="kw">igual a</span> <span class="str">"tech"</span>
+<span class="cm">→ Solo noticias tech que aún no se han publicado</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('switch')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('expr')">Siguiente: Expresiones →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · EXPRESIONES ══ -->
+    <section id="expr" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Lógica 4 de 8</div>
+        <h1><span>Expresiones</span> en n8n</h1>
+        <p>La lógica que vive dentro de los campos. Con expresiones puedes calcular, transformar, condicionar y manipular datos directamente en cualquier nodo, sin código aparte.</p>
+      </div>
+
+      <div class="logic-hero lh-exp">
+        <div class="lh-top">
+          <div class="lh-icon">✏️</div>
+          <div>
+            <div class="lh-type">Expresiones · Lógica inline en campos</div>
+            <div class="lh-title">JavaScript ligero dentro de {{ }}</div>
+            <div class="lh-desc">Las expresiones son mini-scripts JavaScript que escribes directamente en cualquier campo de n8n entre dobles llaves. No necesitas un nodo Function separado para operaciones simples: transformar texto, calcular fechas, hacer condicionales ternarios, acceder a datos de otros nodos.</div>
+          </div>
+        </div>
+        <div class="lh-tags">
+          <span class="lh-tag">{{ $json.campo }}</span>
+          <span class="lh-tag">Ternario if/else</span>
+          <span class="lh-tag">📅 Fechas con $now</span>
+          <span class="lh-tag">🔢 Cálculos</span>
+          <span class="lh-tag">📡 $node acceso cruzado</span>
+        </div>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Las expresiones más usadas</div>
+        <div class="code-block">
+<span class="cm">// ─── ACCESO A DATOS ───────────────────────────────</span>
+<span class="ep">{{$json.nombre}}</span>             <span class="cm">dato del nodo actual</span>
+<span class="ep">{{$json.direccion.ciudad}}</span>   <span class="cm">dato anidado</span>
+<span class="ep">{{$json.items[0].precio}}</span>   <span class="cm">primer elemento del array</span>
+
+<span class="cm">// ─── FECHAS ───────────────────────────────────────</span>
+<span class="ep">{{$now}}</span>                     <span class="cm">timestamp actual (ISO)</span>
+<span class="ep">{{$now.toFormat('dd/MM/yyyy')}}</span>  <span class="cm">fecha formateada</span>
+<span class="ep">{{$now.plus({days: 7})}}</span>    <span class="cm">fecha en 7 días</span>
+<span class="ep">{{$now.minus({days: 30})}}</span>  <span class="cm">hace 30 días</span>
+
+<span class="cm">// ─── TEXTO ────────────────────────────────────────</span>
+<span class="ep">{{$json.nombre.toUpperCase()}}</span>         <span class="cm">MAYÚSCULAS</span>
+<span class="ep">{{$json.email.toLowerCase()}}</span>          <span class="cm">minúsculas</span>
+<span class="ep">{{$json.descripcion.slice(0, 100)}}</span>   <span class="cm">primeros 100 caracteres</span>
+<span class="ep">{{$json.nombre.trim()}}</span>                <span class="cm">quitar espacios</span>
+
+<span class="cm">// ─── CÁLCULOS ─────────────────────────────────────</span>
+<span class="ep">{{$json.precio * $json.cantidad}}</span>     <span class="cm">total del item</span>
+<span class="ep">{{Math.round($json.monto * 1.19)}}</span>   <span class="cm">monto con IVA</span>
+<span class="ep">{{($json.ventas / $json.meta * 100).toFixed(1)}}%</span>  <span class="cm">% de meta</span>
+
+<span class="cm">// ─── CONDICIONAL TERNARIO ─────────────────────────</span>
+<span class="ep">{{$json.vip === true ? "Cliente VIP" : "Cliente estándar"}}</span>
+<span class="ep">{{$json.monto > 500000 ? "grande" : "pequeño"}}</span>
+<span class="ep">{{$json.email ? $json.email : "sin-email@n8n.io"}}</span>  <span class="cm">fallback</span>
+
+<span class="cm">// ─── ACCEDER A OTRO NODO ──────────────────────────</span>
+<span class="ep">{{$node["Nodo Set"].json.campo}}</span>      <span class="cm">dato de nodo anterior</span>
+<span class="ep">{{$("Webhook").first().json.email}}</span>  <span class="cm">dato del trigger</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">🏢 Expresiones en contexto real</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Campo "asunto" del email</span>
+<span class="str">"Pedido #{{$json.id}} - {{$json.estado === 'aprobado'
+  ? '✅ Confirmado'
+  : '⚠️ Pendiente revisión'}}"</span>
+
+<span class="cm">// Campo "cuerpo" del Slack</span>
+<span class="str">"{{$json.nombre}} acaba de {{$json.es_nuevo
+  ? 'registrarse 🎉'
+  : 'renovar su plan 🔄'
+}}\nMonto: ${{
+  ($json.monto/1000).toFixed(0)
+}}k COP"</span>
+
+<span class="cm">// Campo "fecha_entrega" en Sheets</span>
+<span class="ep">{{$now.plus({days: $json.tipo === 'express' ? 1 : 3}).toFormat('dd/MM/yyyy')}}</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">⚠️ Errores comunes con expresiones</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Acceder a campo que no existe</strong><br><span style="font-size:12px;">Si <code>$json.telefono</code> no existe, la expresión falla. Usa: <code>{{$json.telefono ?? "N/A"}}</code></span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Olvidar las dobles llaves</strong><br><span style="font-size:12px;">Escribir <code>$json.nombre</code> sin <code>{{ }}</code> → texto literal, no evalúa</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Anidar demasiado en una sola expresión</strong><br><span style="font-size:12px;">Si es complejo → moverlo a un nodo Function. Las expresiones son para lógica simple</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Usa el editor de expresiones</strong><br><span style="font-size:12px;">n8n tiene un editor visual con preview en tiempo real. Siempre úsalo para validar antes de guardar</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('filter')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('errors')">Siguiente: Manejo de errores →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · ERRORES ══ -->
+    <section id="errors" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Lógica 5 de 8</div>
+        <h1>Manejo de <span>Errores</span></h1>
+        <p>La diferencia entre un workflow de prueba y uno de producción. Todo lo que puede fallar, fallará. La pregunta es si tu workflow lo maneja con gracia o se rompe sin avisar.</p>
+      </div>
+
+      <div class="logic-hero lh-err">
+        <div class="lh-top">
+          <div class="lh-icon">🛡️</div>
+          <div>
+            <div class="lh-type">Error handling · Producción real</div>
+            <div class="lh-title">Workflows que fallan bien</div>
+            <div class="lh-desc">Un workflow sin manejo de errores es una bomba de tiempo. La API externa puede caer, los datos pueden llegar mal formados, una credencial puede expirar. n8n tiene múltiples herramientas para capturar errores, tomar rutas alternativas, reintentar y notificar sin detener todo el flujo.</div>
+          </div>
+        </div>
+        <div class="lh-tags">
+          <span class="lh-tag">🪤 Error Trigger</span>
+          <span class="lh-tag">🔁 Auto-retry</span>
+          <span class="lh-tag">🛤️ Ruta alternativa</span>
+          <span class="lh-tag">📩 Notificar al fallar</span>
+          <span class="lh-tag">📋 Log de errores</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card rb">
+          <div class="card-label">⚙️ Error Trigger — workflow de manejo de errores</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Workflow principal: "Procesar Pagos"</span>
+Webhook → Set → HTTP API pago → Gmail
+<span class="cm">// Si el nodo HTTP falla → n8n puede disparar
+// el workflow de errores automáticamente</span>
+
+<span class="cm">// Workflow secundario: "Handler de Errores"</span>
+<span class="kw">Error Trigger</span>
+  ↓ recibe: {
+    <span class="ky">workflow</span>: <span class="str">"Procesar Pagos"</span>,
+    <span class="ky">node</span>:     <span class="str">"HTTP Request"</span>,
+    <span class="ky">error</span>:    <span class="str">"Connection timeout"</span>,
+    <span class="ky">data</span>:     { <span class="cm">...datos del item que falló</span> }
+  }
+  ↓
+Set → construir mensaje de alerta
+  ↓
+Slack: <span class="str">"🚨 Falló workflow Procesar Pagos
+  Nodo: HTTP Request
+  Error: Connection timeout
+  Reintentar manualmente."</span>
+  ↓
+Sheets: registrar en log de errores
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🔁 Auto-retry — reintentar automáticamente</div>
+          <div style="margin-top:8px;">
+            <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px;">n8n permite configurar reintentos automáticos por nodo. Si la API falla, espera X segundos y vuelve a intentar antes de declararlo error.</p>
+            <div class="code-block" style="font-size:12px;">
+<span class="cm">// Configuración en el nodo HTTP Request</span>
+<span class="ky">On Error:</span>     <span class="str">"Retry"</span>
+<span class="ky">Max retries:</span>  <span class="vl">3</span>
+<span class="ky">Wait between:</span> <span class="vl">5</span> segundos
+
+<span class="cm">// Secuencia:</span>
+Intento 1 → falla → espera 5s
+Intento 2 → falla → espera 5s
+Intento 3 → falla → espera 5s
+Intento 4 → falla → <span class="rd">Error real</span>
+           → dispara Error Trigger
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">🛤️ Rutas alternativas con "Continue on Error"</div>
+        <div class="code-block">
+<span class="cm">// Activar "Continue on Error" en el nodo que puede fallar</span>
+<span class="cm">// El workflow no se detiene — continúa por la rama de error</span>
+
+HTTP Request (buscar cliente en CRM)
+  ↓ éxito: datos del cliente
+  ↓ error: objeto de error → { error: "Not found" }
+
+<span class="cm">// Luego un IF detecta si hubo error:</span>
+<span class="kw">IF</span> error <span class="kw">no está vacío</span>
+  → <span class="rd">true</span>:  crear cliente nuevo en CRM → continuar
+  → <span class="vl">false</span>: usar datos existentes → continuar
+
+<span class="cm">// El workflow termina en ambos casos sin romperse</span>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📋 Los 4 tipos de error en n8n y cómo manejarlos</div>
+        <div style="margin-top:12px;">
+          <div class="err-path"><span class="ep-icon">🌐</span><div class="ep-text"><strong>API externa caída / timeout</strong> — usar auto-retry (3 intentos). Si persiste, notificar por Slack y registrar en log. No detener el workflow completo.</div></div>
+          <div class="err-path"><span class="ep-icon">📦</span><div class="ep-text"><strong>Datos mal formados</strong> — usar Filter antes de la acción crítica. Descartar items inválidos silenciosamente o derivarlos a una cola de revisión manual.</div></div>
+          <div class="err-path"><span class="ep-icon">🔑</span><div class="ep-text"><strong>Credencial expirada</strong> — n8n notifica en la UI. Configura el Error Trigger para enviar alerta cuando ocurre, con el nombre del workflow afectado.</div></div>
+          <div class="err-path"><span class="ep-icon">📬</span><div class="ep-text"><strong>Acción fallida (email, Slack)</strong> — usar rutas alternativas. Si Gmail falla, intentar SMTP de respaldo. Siempre tener un canal secundario para notificaciones críticas.</div></div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('expr')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('wait')">Siguiente: Wait / Retry →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · WAIT / RETRY ══ -->
+    <section id="wait" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Lógica 6 de 8</div>
+        <h1>Wait <span>/ Retry</span></h1>
+        <p>Workflows que esperan, pausan y se reactivan. Para secuencias con tiempo entre pasos, seguimientos automáticos y procesos que dependen de confirmación externa.</p>
+      </div>
+
+      <div class="logic-hero lh-wait">
+        <div class="lh-top">
+          <div class="lh-icon">⏳</div>
+          <div>
+            <div class="lh-type">Wait · Pause · Resume · Time-based logic</div>
+            <div class="lh-title">El workflow puede pausar y retomar</div>
+            <div class="lh-desc">El nodo Wait pausa la ejecución por un tiempo determinado o hasta recibir una señal externa. Esto permite construir secuencias temporales: enviar un email, esperar 3 días, verificar si hubo respuesta, actuar según el resultado. Todo automatizado, sin cron separado.</div>
+          </div>
+        </div>
+        <div class="lh-tags">
+          <span class="lh-tag">⏱️ Esperar X tiempo</span>
+          <span class="lh-tag">📅 Hasta fecha/hora</span>
+          <span class="lh-tag">🔔 Hasta webhook</span>
+          <span class="lh-tag">📧 Secuencias de email</span>
+          <span class="lh-tag">🔁 Follow-up automático</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card pb">
+          <div class="card-label">⚙️ Modos del nodo Wait</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Modo 1: Esperar tiempo fijo</span>
+<span class="ky">Tipo:</span>    <span class="str">"Time Interval"</span>
+<span class="ky">Esperar:</span> <span class="vl">3</span> días
+<span class="cm">→ el workflow se pausa 72 horas y retoma</span>
+
+<span class="cm">// Modo 2: Esperar hasta fecha/hora específica</span>
+<span class="ky">Tipo:</span>    <span class="str">"Specific Time"</span>
+<span class="ky">Hasta:</span>   <span class="kw">{{$json.fecha_entrega}}</span>
+<span class="cm">→ retoma exactamente en esa fecha</span>
+
+<span class="cm">// Modo 3: Esperar señal externa (webhook)</span>
+<span class="ky">Tipo:</span>    <span class="str">"On Webhook Call"</span>
+<span class="ky">URL:</span>     generada por n8n automáticamente
+<span class="cm">→ pausa indefinidamente hasta que
+  alguien llame esa URL (aprobación manual)</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos reales con Wait</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">📧</span><div class="wt"><strong>Secuencia de onboarding:</strong> día 0 bienvenida → Wait 2 días → día 2 tips de uso → Wait 5 días → día 7 invitar a llamada</div></div>
+            <div class="wtu"><span class="we">🔔</span><div class="wt"><strong>Follow-up a lead:</strong> formulario → email inmediato → Wait 3 días → IF no respondió: email follow-up → Wait 7 días → tercer toque</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Aprobación humana:</strong> solicitud de gasto → notifica al gerente → Wait webhook → gerente aprueba/rechaza → continúa flujo</div></div>
+            <div class="wtu"><span class="we">⏰</span><div class="wt"><strong>Recordatorio de cita:</strong> cita agendada → Wait hasta 24h antes → enviar recordatorio WhatsApp</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Workflow: secuencia de onboarding con Wait</div>
+        <div class="flow-row" style="margin-top:12px;flex-wrap:wrap;gap:0;">
+          <div class="fn trig" style="min-width:90px;"><div class="fi">📋</div><div class="ft">Trigger</div><div class="fn2">Registro</div></div>
+          <div class="fa">→</div>
+          <div class="fn act" style="min-width:90px;"><div class="fi">📧</div><div class="ft">Acción</div><div class="fn2">Email día 0</div></div>
+          <div class="fa">→</div>
+          <div class="fn" style="min-width:90px;border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.04);"><div class="fi">⏳</div><div class="ft" style="color:var(--pink);">Wait</div><div class="fn2">2 días</div></div>
+          <div class="fa">→</div>
+          <div class="fn act" style="min-width:90px;"><div class="fi">📧</div><div class="ft">Acción</div><div class="fn2">Email día 2</div></div>
+          <div class="fa">→</div>
+          <div class="fn" style="min-width:90px;border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.04);"><div class="fi">⏳</div><div class="ft" style="color:var(--pink);">Wait</div><div class="fn2">5 días</div></div>
+          <div class="fa">→</div>
+          <div class="fn act" style="min-width:90px;"><div class="fi">📧</div><div class="ft">Acción</div><div class="fn2">Email día 7</div></div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">Un solo workflow ejecuta toda la secuencia con las pausas integradas →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('errors')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('subwf')">Siguiente: Sub-workflows →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · SUB-WORKFLOWS ══ -->
+    <section id="subwf" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Lógica 7 de 8</div>
+        <h1><span>Sub-workflows</span></h1>
+        <p>Modularidad real. En vez de un workflow gigante que hace todo, divides la lógica en piezas reutilizables que se llaman entre sí. Como funciones en programación.</p>
+      </div>
+
+      <div class="logic-hero lh-sub">
+        <div class="lh-top">
+          <div class="lh-icon">📦</div>
+          <div>
+            <div class="lh-type">Sub-workflows · Execute Workflow · Modularidad</div>
+            <div class="lh-title">Workflows que llaman a otros workflows</div>
+            <div class="lh-desc">El nodo "Execute Workflow" permite llamar a otro workflow desde el actual, pasarle datos y recibir el resultado. Esto permite crear "funciones reutilizables": un workflow de "enviar notificación" que todos los demás workflows llaman. Cambia la lógica en un solo lugar y actualiza todos.</div>
+          </div>
+        </div>
+        <div class="lh-tags">
+          <span class="lh-tag">🔗 Llama otro workflow</span>
+          <span class="lh-tag">📤 Pasa datos</span>
+          <span class="lh-tag">📥 Recibe resultado</span>
+          <span class="lh-tag">♻️ Reutilizable</span>
+          <span class="lh-tag">🧹 Workflows limpios</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card tb">
+          <div class="card-label">⚙️ Cómo funciona</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Workflow principal: "Procesar Lead"</span>
+Webhook → Set → IF válido
+  → <span class="kw">Execute Workflow:</span> <span class="str">"Notificar Equipo"</span>
+    pasa: { nombre, email, fuente }
+  → <span class="kw">Execute Workflow:</span> <span class="str">"Crear en CRM"</span>
+    pasa: { nombre, email, telefono }
+
+<span class="cm">─────────────────────────────────</span>
+
+<span class="cm">// Sub-workflow: "Notificar Equipo"</span>
+<span class="kw">When Called By Another Workflow</span>
+  recibe: { nombre, email, fuente }
+  ↓
+Set → construir mensaje
+  ↓
+Slack → canal #leads
+  ↓
+Telegram → grupo ventas
+  ↓
+retorna: { notificado: true }
+
+<span class="cm">// Este sub-workflow lo usan
+// TODOS los workflows que necesiten notificar</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">💡 Por qué usar sub-workflows</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">DRY — Don't Repeat Yourself</strong><br><span style="font-size:12px;">La lógica de notificación está en un solo lugar. Si cambia el canal, editas 1 sub-workflow, no 15 workflows distintos.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Flujos más cortos y legibles</strong><br><span style="font-size:12px;">El workflow principal tiene 10 nodos claros en vez de 40 nodos mezclados. Más fácil de debugear.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Testing independiente</strong><br><span style="font-size:12px;">Puedes probar el sub-workflow de notificaciones solo, sin ejecutar todo el flujo principal.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Colaboración</strong><br><span style="font-size:12px;">Cada persona del equipo puede trabajar en su sub-workflow sin afectar los demás.</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏗️ Arquitectura de sub-workflows en empresa real</div>
+        <div class="code-block">
+<span class="cm">// Nivel 1 — Workflows principales (1 por proceso de negocio)</span>
+<span class="vl">📋 Procesar-Lead</span>        → llama a Notificar + Crear-CRM
+<span class="vl">💳 Procesar-Pago</span>        → llama a Notificar + Activar-Cuenta + Factura
+<span class="vl">📦 Procesar-Pedido</span>      → llama a Notificar + Stock + Logística
+<span class="vl">🚨 Manejar-Error</span>        → llama a Notificar + Log-Error
+
+<span class="cm">// Nivel 2 — Sub-workflows reutilizables</span>
+<span class="kw">📣 Notificar</span>            ← lo llaman TODOS los workflows
+<span class="kw">📝 Log-Actividad</span>        ← registro de todo en Sheets
+<span class="kw">🧾 Generar-Factura</span>      ← lo llaman pago y pedido
+<span class="kw">📊 Actualizar-Dashboard</span> ← lo llama todo lo que modifica datos
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('wait')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('patrones')">Siguiente: Patrones completos →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · PATRONES ══ -->
+    <section id="patrones" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Patrones <span>Completos</span></h1>
+        <p>Tres workflows de producción reales que combinan toda la lógica vista. Así se ven los flujos que valen dinero en el mundo real.</p>
+      </div>
+
+      <!-- PATRÓN 1 -->
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Patrón 1 — Pipeline de captación de leads con validación completa</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Webhook → validar → clasificar → CRM → notificar equipo → secuencia de emails</div>
+        <div class="code-block">
+<span class="cm">WEBHOOK</span> recibe lead del formulario
+  ↓
+<span class="kw">Filter:</span> email válido AND nombre no vacío AND país no vacío
+  → items inválidos: <span class="rd">descartados</span> (no llegan a CRM)
+  ↓
+<span class="kw">Set:</span> formatear datos + timestamp + calcular score
+  <span class="cm">score = {{$json.empresa ? 30 : 0}} + {{$json.telefono ? 20 : 0}} + 50</span>
+  ↓
+<span class="kw">Switch:</span> por score del lead
+  → score >= 80: <span class="vl">Lead calificado</span>    → Execute: <span class="str">"Notificar-Ventas"</span> urgente
+  → score 50-79: <span class="vl">Lead interesante</span>  → Execute: <span class="str">"Notificar-Ventas"</span> normal
+  → score < 50:  <span class="vl">Lead frío</span>         → solo registro, sin alerta
+  ↓ (todos)
+<span class="kw">HTTP Request:</span> crear contacto en CRM
+  → On error: Continue + log en Sheets "CRM falló"
+  ↓
+<span class="kw">Execute Workflow:</span> <span class="str">"Secuencia-Onboarding"</span>
+  → Día 0: email bienvenida
+  → Wait 2 días
+  → Día 2: email de valor
+  → Wait 5 días
+  → Día 7: invitar a llamada
+        </div>
+      </div>
+
+      <!-- PATRÓN 2 -->
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Patrón 2 — Procesamiento de pedido con manejo de errores robusto</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Cada paso protegido. Si algo falla, el cliente sabe y el equipo también.</div>
+        <div class="code-block">
+<span class="cm">WEBHOOK</span> recibe pedido de Shopify
+  ↓
+<span class="kw">Set:</span> extraer campos necesarios con expresiones
+  <span class="cm">total = {{$json.line_items.reduce((a,i) => a + i.price, 0)}}</span>
+  <span class="cm">es_vip = {{$json.customer.orders_count > 5}}</span>
+  ↓
+<span class="kw">HTTP Request:</span> verificar stock en ERP (On Error: Continue)
+  <span class="kw">IF</span> error <span class="kw">no vacío</span>:
+    → Slack <span class="rd">"⚠️ ERP no disponible, pedido manual: {{id}}"</span>
+    → Gmail cliente: "procesando tu pedido" (no mencionar el error)
+  <span class="kw">IF</span> stock < cantidad_pedida:
+    → Gmail cliente: "producto agotado, opciones alternativas"
+    → <span class="kw">STOP</span>
+  ↓
+<span class="kw">Switch:</span> tipo de envío
+  → "bogota-express" → transportadora A → 4h
+  → "nacional"       → transportadora B → 3 días
+  → "internacional"  → DHL → calcular arancel
+  ↓
+<span class="kw">HTTP Request:</span> crear guía (On Error: Retry 3x)
+  → si falla 3x: Slack urgente + pedido en cola manual
+  ↓
+<span class="kw">Gmail:</span> confirmación con guía + fecha estimada
+<span class="kw">WhatsApp:</span> notificación al cliente (template aprobado)
+<span class="kw">Sheets:</span> registrar pedido con estado "despachado"
+        </div>
+      </div>
+
+      <!-- PATRÓN 3 -->
+      <div class="card gb" style="margin-bottom:20px;">
+        <div class="card-label">🏗️ Patrón 3 — Reporte inteligente con lógica condicional</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">No solo reporta — compara con la semana anterior y alerta si hay anomalías.</div>
+        <div class="code-block">
+<span class="cm">SCHEDULE</span> Lunes 8am
+  ↓
+<span class="kw">HTTP Request:</span> GET métricas semana actual de Analytics
+<span class="kw">HTTP Request:</span> GET métricas semana anterior (para comparar)
+  ↓
+<span class="kw">Function:</span> calcular variaciones
+  <span class="cm">ventas_delta = (actual.ventas - anterior.ventas) / anterior.ventas * 100</span>
+  <span class="cm">leads_delta  = (actual.leads  - anterior.leads)  / anterior.leads  * 100</span>
+  <span class="cm">conversion   = (actual.ventas / actual.leads * 100).toFixed(1)</span>
+  ↓
+<span class="kw">IF:</span> alguna métrica cayó más del 20%
+  → <span class="rd">true</span>:  Slack urgente <span class="str">"🚨 ALERTA: {{metrica}} cayó {{delta}}%"</span>
+  → <span class="vl">false</span>: Slack normal con emoji positivo
+  ↓ (ambas ramas)
+<span class="kw">Set:</span> construir cuerpo del email con expresiones ternarias
+  <span class="cm">tendencia = {{ventas_delta > 0 ? '📈 +' : '📉 '}}{{ventas_delta.toFixed(1)}}%</span>
+  ↓
+<span class="kw">Gmail:</span> reporte HTML semanal al cliente/gerencia
+<span class="kw">Sheets:</span> registrar métricas históricas (para el próximo lunes comparar)
+        </div>
+      </div>
+
+      <!-- RESUMEN FINAL -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">📋 Resumen — las 8 herramientas de lógica</div>
+        <table class="ct" style="margin-top:10px;">
+          <thead><tr><th>Herramienta</th><th>Para qué sirve</th><th>Cuándo usarla</th></tr></thead>
+          <tbody>
+            <tr><td>🔀 IF avanzado</td><td>AND/OR, anidados, fechas</td><td>Bifurcar según condición compleja</td></tr>
+            <tr><td>🎛️ Switch</td><td>N rutas + fallback obligatorio</td><td>3+ casos distintos por valor</td></tr>
+            <tr><td>🧹 Filter</td><td>Descartar sin bifurcar</td><td>Limpiar datos antes de acciones costosas</td></tr>
+            <tr><td>✏️ Expresiones</td><td>JS inline en cualquier campo</td><td>Transformar, calcular, ternarios simples</td></tr>
+            <tr><td>🛡️ Manejo errores</td><td>Error Trigger, retry, rutas alt.</td><td>Todo workflow en producción</td></tr>
+            <tr><td>⏳ Wait</td><td>Pausar y retomar</td><td>Secuencias con tiempo, follow-ups</td></tr>
+            <tr><td>📦 Sub-workflows</td><td>Modularidad y reutilización</td><td>Lógica que se repite en múltiples flows</td></tr>
+            <tr><td>🏗️ Patrones</td><td>Combinar todas las anteriores</td><td>Workflows de producción reales</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:40px;margin-bottom:12px;">🚀</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Semana 4 — Workflows de producción</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:500px;margin:0 auto 20px;">Con lógica dominada, la Semana 4 construye workflows listos para el mundo real: variables de entorno, credenciales seguras, deploy en servidor propio, monitoreo y workflows de alta disponibilidad.</p>
+          <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+            <span class="b bac">🔐 Variables de entorno</span>
+            <span class="b bl">🖥️ Deploy en servidor</span>
+            <span class="b bt">📊 Monitoreo</span>
+            <span class="b bg">♾️ Alta disponibilidad</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('subwf')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','if','switch','filter','expr','errors','wait','subwf','patrones'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(`.nav-item[onclick*="'${id}'"]`);go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Sección ${idx+1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>

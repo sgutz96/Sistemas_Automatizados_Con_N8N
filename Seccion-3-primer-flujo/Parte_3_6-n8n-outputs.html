@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semana 3 · Parte 6 — Outputs y Resultados en n8n</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* OUTPUT HERO */
+  .out-hero{border-radius:14px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .out-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;opacity:0.07;pointer-events:none;}
+  .oh-resp  {background:var(--bg2);border:1px solid rgba(124,110,245,0.4);} .oh-resp::before{background:var(--accent);}
+  .oh-log   {background:var(--bg2);border:1px solid rgba(34,201,122,0.4);}  .oh-log::before{background:var(--green);}
+  .oh-notif {background:var(--bg2);border:1px solid rgba(240,160,48,0.4);}  .oh-notif::before{background:var(--amber);}
+  .oh-feed  {background:var(--bg2);border:1px solid rgba(56,189,248,0.4);}  .oh-feed::before{background:var(--sky);}
+  .oh-stop  {background:var(--bg2);border:1px solid rgba(240,90,90,0.4);}   .oh-stop::before{background:var(--red);}
+  .oh-ret   {background:var(--bg2);border:1px solid rgba(32,212,176,0.4);}  .oh-ret::before{background:var(--teal);}
+  .oh-summ  {background:var(--bg2);border:1px solid rgba(232,121,160,0.4);} .oh-summ::before{background:var(--pink);}
+
+  .oh-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;}
+  .oh-icon{font-size:30px;width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .oh-resp .oh-icon {background:rgba(124,110,245,0.12);}
+  .oh-log  .oh-icon {background:rgba(34,201,122,0.12);}
+  .oh-notif .oh-icon{background:rgba(240,160,48,0.12);}
+  .oh-feed .oh-icon {background:rgba(56,189,248,0.12);}
+  .oh-stop .oh-icon {background:rgba(240,90,90,0.12);}
+  .oh-ret  .oh-icon {background:rgba(32,212,176,0.12);}
+  .oh-summ .oh-icon {background:rgba(232,121,160,0.12);}
+
+  .oh-type{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;}
+  .oh-resp .oh-type {color:var(--accent2);}
+  .oh-log  .oh-type {color:var(--green);}
+  .oh-notif .oh-type{color:var(--amber);}
+  .oh-feed .oh-type {color:var(--sky);}
+  .oh-stop .oh-type {color:var(--red);}
+  .oh-ret  .oh-type {color:var(--teal);}
+  .oh-summ .oh-type {color:var(--pink);}
+
+  .oh-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .oh-desc{font-size:14px;color:var(--text2);line-height:1.6;}
+  .oh-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .oh-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;}
+  .oh-resp .oh-tag {background:var(--accent-glow);color:var(--accent2);}
+  .oh-log  .oh-tag {background:var(--green-bg);color:var(--green);}
+  .oh-notif .oh-tag{background:var(--amber-bg);color:var(--amber);}
+  .oh-feed .oh-tag {background:var(--sky-bg);color:var(--sky);}
+  .oh-stop .oh-tag {background:var(--red-bg);color:var(--red);}
+  .oh-ret  .oh-tag {background:var(--teal-bg);color:var(--teal);}
+  .oh-summ .oh-tag {background:var(--pink-bg);color:var(--pink);}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);}
+  .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:4px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;text-align:center;flex-shrink:0;min-width:100px;}
+  .fn .fi{font-size:18px;margin-bottom:4px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:2px;}
+  .fn .fn2{font-size:11px;font-weight:600;color:var(--text);}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fn.err {border-color:rgba(240,90,90,0.4);background:rgba(240,90,90,0.05);}   .fn.err .ft{color:var(--red);}
+  .fn.end {border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.05);} .fn.end .ft{color:var(--pink);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+  .fork{display:flex;flex-direction:column;padding:0 6px;gap:6px;flex-shrink:0;}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* OUTPUT STATUS PILL */
+  .status-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;margin:4px;}
+  .sp-ok {background:var(--green-bg);border:1px solid rgba(34,201,122,0.3);color:var(--green);}
+  .sp-err{background:var(--red-bg);border:1px solid rgba(240,90,90,0.25);color:var(--red);}
+  .sp-warn{background:var(--amber-bg);border:1px solid rgba(240,160,48,0.3);color:var(--amber);}
+  .sp-info{background:var(--accent-glow);border:1px solid rgba(124,110,245,0.3);color:var(--accent2);}
+
+  /* IO */
+  .io-row{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;align-items:center;margin-top:14px;}
+  .io-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8;}
+  .io-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+  .io-arr{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);}
+
+  /* LIFECYCLE */
+  .lifecycle{display:flex;flex-direction:column;gap:0;margin-top:14px;}
+  .lc-step{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--border);}
+  .lc-step:last-child{border-bottom:none;}
+  .lc-num{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px;}
+  .lc-content h4{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
+  .lc-content p{font-size:13px;color:var(--text2);line-height:1.6;}
+  .lc-content .tag{display:inline-block;margin-top:5px;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--bg4);color:var(--text3);}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{background:var(--accent2);}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Semana 3 · Parte 6</div>
+      <h2>Outputs y Resultados</h2>
+      <p>n8n · automatización</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> ¿Qué es un output?</a>
+    <a class="nav-item" onclick="go('respond',this)"><span class="ni">↩️</span> Respond to Webhook</a>
+    <a class="nav-item" onclick="go('log',this)"><span class="ni">📋</span> Logs y registros</a>
+    <a class="nav-item" onclick="go('notif',this)"><span class="ni">🔔</span> Notificaciones finales</a>
+    <a class="nav-item" onclick="go('feedback',this)"><span class="ni">🔄</span> Feedback al sistema</a>
+    <a class="nav-item" onclick="go('stop',this)"><span class="ni">🛑</span> Detener el flujo</a>
+    <a class="nav-item" onclick="go('retorno',this)"><span class="ni">📤</span> Retorno a sub-workflow</a>
+    <a class="nav-item" onclick="go('summary',this)"><span class="ni">📊</span> Output de resumen</a>
+    <a class="nav-item" onclick="go('cierre',this)"><span class="nn">9</span> Cierre de Semana 3</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Semana 3 · Parte 6</div>
+        <h1>Outputs y <span>Resultados</span></h1>
+        <p>El final inteligente de un workflow. No se trata solo de terminar — se trata de terminar bien: respondiendo, registrando, notificando y dejando todo en orden.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🎯 La pregunta que cierra cada workflow</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">"¿Qué sabe el mundo cuando este workflow termina?"</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">Un workflow sin output claro es trabajo invisible. El cliente no sabe si su pedido fue confirmado. El sistema origen no sabe si la operación fue exitosa. El equipo no tiene registro de lo que pasó. Los outputs son la <strong style="color:var(--text);">prueba de que la automatización funcionó</strong>.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+        <div class="stat"><div class="sn">7</div><div class="sl">tipos de output que verás hoy</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">200ms</div><div class="sl">tiempo máximo para responder un webhook</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">3</div><div class="sl">destinos mínimos de todo output: origen, equipo, registro</div></div>
+        <div class="stat"><div class="sn" style="color:var(--teal);">∞</div><div class="sl">combinaciones posibles al cerrar un flujo</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🗺️ Los 7 tipos de output</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;">
+          <div style="background:var(--bg3);border:1px solid rgba(124,110,245,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">↩️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent2);">Respond to Webhook</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Respuesta HTTP al origen</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(34,201,122,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📋</div>
+            <div style="font-size:12px;font-weight:700;color:var(--green);">Logs y registros</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Trazabilidad del flujo</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,160,48,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔔</div>
+            <div style="font-size:12px;font-weight:700;color:var(--amber);">Notificación final</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Confirmación al usuario</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔄</div>
+            <div style="font-size:12px;font-weight:700;color:var(--sky);">Feedback al sistema</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Actualizar el origen</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,90,90,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🛑</div>
+            <div style="font-size:12px;font-weight:700;color:var(--red);">Detener el flujo</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Stop on condition</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(32,212,176,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📤</div>
+            <div style="font-size:12px;font-weight:700;color:var(--teal);">Retorno sub-workflow</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Respuesta al padre</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(232,121,160,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📊</div>
+            <div style="font-size:12px;font-weight:700;color:var(--pink);">Output de resumen</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Consolidar resultados</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;opacity:0.4;">
+            <div style="font-size:22px;margin-bottom:6px;">🎓</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);">Cierre Semana 3</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Repaso completo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🔁 El ciclo completo de un workflow con outputs</div>
+        <div class="flow-row" style="margin-top:14px;">
+          <div class="fn trig"><div class="fi">⚡</div><div class="ft">Trigger</div><div class="fn2">Entrada</div></div>
+          <div class="fa">→</div>
+          <div class="fn proc"><div class="fi">🔧</div><div class="ft">Proceso</div><div class="fn2">Transformar</div></div>
+          <div class="fa">→</div>
+          <div class="fn proc"><div class="fi">🔀</div><div class="ft">Lógica</div><div class="fn2">Decidir</div></div>
+          <div class="fa">→</div>
+          <div class="fn act"><div class="fi">🎯</div><div class="ft">Acción</div><div class="fn2">Ejecutar</div></div>
+          <div class="fa">→</div>
+          <div class="fn out" style="box-shadow:0 0 18px rgba(32,212,176,0.15);"><div class="fi">📤</div><div class="ft">OUTPUT</div><div class="fn2">Cerrar bien</div></div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">El output no es el último nodo — es la garantía de que todo lo anterior llegó a su destino →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-p" onclick="goTo('respond')">Siguiente: Respond to Webhook →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · RESPOND TO WEBHOOK ══ -->
+    <section id="respond" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Output 1 de 7</div>
+        <h1>Respond to <span>Webhook</span></h1>
+        <p>Cuando el flujo empieza con un Webhook, el sistema que lo llamó espera una respuesta. El nodo "Respond to Webhook" le devuelve exactamente lo que necesita.</p>
+      </div>
+
+      <div class="out-hero oh-resp">
+        <div class="oh-top">
+          <div class="oh-icon">↩️</div>
+          <div>
+            <div class="oh-type">Respond to Webhook · Respuesta HTTP al origen</div>
+            <div class="oh-title">Cierra el ciclo HTTP con el sistema que llamó</div>
+            <div class="oh-desc">Cuando un formulario, una app o un sistema externo hace un POST al webhook de n8n, espera una respuesta HTTP. Sin el nodo "Respond to Webhook", la petición queda abierta hasta que n8n la cierra con un 200 automático. Con el nodo, tú controlas exactamente qué se responde, con qué código HTTP y con qué datos.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">↩️ HTTP 200 / 400 / 500</span>
+          <span class="oh-tag">📦 Body JSON</span>
+          <span class="oh-tag">⚡ Respuesta inmediata</span>
+          <span class="oh-tag">🔗 Cierra el loop HTTP</span>
+          <span class="oh-tag">🛡️ Código de error controlado</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card ab">
+          <div class="card-label">⚙️ Configuración del nodo</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Respuesta exitosa — 200 OK</span>
+<span class="ky">Status Code:</span>  <span class="vl">200</span>
+<span class="ky">Response Body:</span>
+{
+  <span class="ky">"success"</span>:  <span class="kw">true</span>,
+  <span class="ky">"message"</span>:  <span class="str">"Lead recibido correctamente"</span>,
+  <span class="ky">"id"</span>:       <span class="str">"{{$json.id_crm}}"</span>,
+  <span class="ky">"timestamp"</span>:<span class="str">"{{$now}}"</span>
+}
+
+<span class="cm">// Respuesta de error controlado — 400</span>
+<span class="ky">Status Code:</span>  <span class="vl">400</span>
+<span class="ky">Response Body:</span>
+{
+  <span class="ky">"success"</span>: <span class="kw">false</span>,
+  <span class="ky">"error"</span>:   <span class="str">"Email inválido o faltante"</span>,
+  <span class="ky">"code"</span>:    <span class="str">"INVALID_EMAIL"</span>
+}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo y dónde colocarlo</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Siempre que el trigger sea Webhook</strong> — el sistema origen espera confirmación de recepción</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>APIs que construyes en n8n</strong> — n8n como backend: recibe petición, procesa, responde JSON</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Formularios con validación</strong> — responder con éxito o con mensaje de error específico al front-end</div></div>
+            <div class="wtu"><span class="we">⚠️</span><div class="wt"><strong>Colocarlo temprano si el flujo es largo</strong> — responder primero al webhook y luego procesar en paralelo, evitando timeouts</div></div>
+            <div class="wtu"><span class="we">❌</span><div class="wt"><strong>No necesario en Schedule o Manual</strong> — solo aplica cuando el trigger es HTTP</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Patrón: responder rápido y procesar después</div>
+        <div class="code-block">
+<span class="cm">// Problema: el flujo tarda 10 segundos → timeout del cliente</span>
+
+<span class="cm">// Solución: separar respuesta de procesamiento</span>
+WEBHOOK recibe pedido
+  ↓
+Set → validar datos básicos
+  ↓
+<span class="kw">Respond to Webhook</span>  <span class="cm">← responder en &lt;200ms</span>
+{
+  <span class="ky">"success"</span>: <span class="kw">true</span>,
+  <span class="ky">"message"</span>: <span class="str">"Pedido recibido, procesando..."</span>
+}
+  ↓ (el workflow sigue ejecutándose en segundo plano)
+HTTP Request → ERP
+  ↓
+Gmail → cliente
+  ↓
+Sheets → registrar
+<span class="cm">// El cliente ya recibió confirmación.
+// El procesamiento ocurre independientemente.</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Códigos HTTP que debes conocer:</strong> 200 OK, 201 Created (nuevo recurso), 400 Bad Request (datos inválidos), 401 Unauthorized, 404 Not Found, 500 Server Error. Usar el código correcto permite que el sistema origen reaccione apropiadamente.</div></div>
+        <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Timeout:</strong> por defecto muchos sistemas esperan respuesta en 5-30 segundos. Si tu flujo es largo, coloca el "Respond to Webhook" antes de los pasos lentos y continúa procesando después.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('log')">Siguiente: Logs y registros →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · LOGS ══ -->
+    <section id="log" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Output 2 de 7</div>
+        <h1>Logs y <span>Registros</span></h1>
+        <p>La memoria del workflow. Todo lo que ejecuta n8n debe dejar rastro: qué pasó, cuándo, con qué datos y con qué resultado. Sin logs, no hay trazabilidad.</p>
+      </div>
+
+      <div class="out-hero oh-log">
+        <div class="oh-top">
+          <div class="oh-icon">📋</div>
+          <div>
+            <div class="oh-type">Logs · Trazabilidad · Auditoría</div>
+            <div class="oh-title">Todo workflow debe dejar rastro</div>
+            <div class="oh-desc">Un log es el registro de lo que ocurrió. En n8n tienes dos niveles: el log interno que n8n guarda automáticamente en el historial de ejecuciones, y el log externo que tú construyes explícitamente en Sheets, una base de datos o un sistema de observabilidad. El segundo es el que importa en producción.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">📊 Google Sheets como log</span>
+          <span class="oh-tag">🗄️ DB de logs</span>
+          <span class="oh-tag">⏱️ Timestamp siempre</span>
+          <span class="oh-tag">✅ / ❌ Estado del resultado</span>
+          <span class="oh-tag">🔍 Auditoría completa</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">⚙️ Estructura de un buen log</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Columnas mínimas de un log en Sheets o DB</span>
+
+<span class="ky">timestamp</span>   → <span class="str">"{{$now}}"</span>
+<span class="ky">workflow</span>    → <span class="str">"Procesar-Lead"</span>
+<span class="ky">evento</span>      → <span class="str">"lead_recibido"</span>
+<span class="ky">estado</span>      → <span class="str">"exitoso"</span>  <span class="cm">o "fallido"</span>
+<span class="ky">id_item</span>     → <span class="str">"{{$json.id}}"</span>
+<span class="ky">datos_clave</span> → <span class="str">"{{$json.email}}"</span>
+<span class="ky">mensaje</span>     → <span class="str">"Lead creado en CRM: clt_8f3a"</span>
+<span class="ky">duracion_ms</span> → <span class="str">"{{$execution.resumeUrl}}"</span>
+
+<span class="cm">// Columnas extra para errores</span>
+<span class="ky">error_msg</span>   → <span class="str">"{{$json.error ?? ''}}"</span>
+<span class="ky">nodo_fallo</span>  → <span class="str">"HTTP Request - CRM"</span>
+<span class="ky">reintento</span>   → <span class="vl">2</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Los 3 momentos de log en un workflow</div>
+          <div class="lifecycle" style="margin-top:8px;">
+            <div class="lc-step">
+              <div class="lc-num" style="background:rgba(240,160,48,0.15);color:var(--amber);">1</div>
+              <div class="lc-content">
+                <h4>Al recibir el input</h4>
+                <p>Registrar que llegó la petición, qué datos trajo, de qué fuente. Sirve para auditar si el dato llegó y cómo llegó.</p>
+                <span class="tag">evento: "recibido"</span>
+              </div>
+            </div>
+            <div class="lc-step">
+              <div class="lc-num" style="background:rgba(124,110,245,0.15);color:var(--accent2);">2</div>
+              <div class="lc-content">
+                <h4>Si ocurre un error</h4>
+                <p>Registrar qué nodo falló, el mensaje de error, los datos del item afectado. Esencial para diagnóstico.</p>
+                <span class="tag">evento: "error" + detalle</span>
+              </div>
+            </div>
+            <div class="lc-step">
+              <div class="lc-num" style="background:rgba(34,201,122,0.15);color:var(--green);">3</div>
+              <div class="lc-content">
+                <h4>Al completar exitosamente</h4>
+                <p>Registrar el resultado final, IDs generados, acciones tomadas. La confirmación de que todo funcionó.</p>
+                <span class="tag">evento: "completado" + resultado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏢 Log en Sheets vs Log en base de datos</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Criterio</th><th>Google Sheets</th><th>Base de datos</th></tr></thead>
+          <tbody>
+            <tr><td>Volumen</td><td>Hasta ~10k filas cómodamente</td><td>Millones sin problema</td></tr>
+            <tr><td>Visibilidad</td><td>Todo el equipo lo ve y filtra</td><td>Requiere query o panel</td></tr>
+            <tr><td>Velocidad setup</td><td>5 minutos</td><td>30-60 minutos</td></tr>
+            <tr><td>Búsqueda</td><td>Filtros de Sheets</td><td>SQL completo con índices</td></tr>
+            <tr><td>Mejor para</td><td>Equipos no técnicos, &lt;1k eventos/día</td><td>Producción real, +1k eventos/día</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Regla del log:</strong> el log no es opcional en producción. Si el workflow falla a las 3am y nadie lo vio, sin log no sabrás qué pasó, a quién afectó ni cuántos items se perdieron. Sheets + log estructurado es el mínimo aceptable.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('respond')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('notif')">Siguiente: Notificaciones finales →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · NOTIFICACIONES FINALES ══ -->
+    <section id="notif" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Output 3 de 7</div>
+        <h1>Notificaciones <span>Finales</span></h1>
+        <p>El output más visible. La confirmación que el usuario recibe, el resumen que llega al equipo, la alerta que cierra el ciclo entre la automatización y las personas.</p>
+      </div>
+
+      <div class="out-hero oh-notif">
+        <div class="oh-top">
+          <div class="oh-icon">🔔</div>
+          <div>
+            <div class="oh-type">Notificación de cierre · Confirmación al usuario y equipo</div>
+            <div class="oh-title">El mundo sabe que el workflow terminó</div>
+            <div class="oh-desc">La notificación final no es lo mismo que la acción del flujo. La acción es lo que hace el workflow. La notificación de cierre es la confirmación de que todo salió bien — o mal. Va dirigida a dos audiencias distintas: el usuario final que inició el proceso y el equipo interno que debe saberlo.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">👤 Confirmación al usuario</span>
+          <span class="oh-tag">👥 Resumen al equipo</span>
+          <span class="oh-tag">✅ Éxito / ❌ Fallo</span>
+          <span class="oh-tag">📧 Email · 💬 Slack · ✈️ Telegram</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card amb">
+          <div class="card-label">⚙️ Dos audiencias, dos mensajes distintos</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Para el USUARIO FINAL (cliente)</span>
+<span class="cm">→ Canal: Email o WhatsApp</span>
+<span class="cm">→ Tono: claro, tranquilizador, humano</span>
+<span class="cm">→ Contenido: qué pasó con SU operación</span>
+
+Email para el cliente:
+<span class="str">"Hola {{nombre}},
+Tu pedido #{{id}} fue confirmado ✅
+Llegará el {{fecha_entrega}}.
+Puedes rastrearlo aquí: {{link}}"</span>
+
+<span class="cm">────────────────────────────────</span>
+
+<span class="cm">// Para el EQUIPO INTERNO</span>
+<span class="cm">→ Canal: Slack o Telegram</span>
+<span class="cm">→ Tono: técnico, datos concretos</span>
+<span class="cm">→ Contenido: métricas de la ejecución</span>
+
+Slack #operaciones:
+<span class="str">"✅ Pedido procesado
+  Cliente: {{nombre}} ({{email}})
+  Monto:   ${{monto}} COP
+  Guía:    {{num_guia}}
+  Tiempo:  {{duracion}}ms"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo notificar y cuándo no</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Siempre</strong> al usuario final en transacciones — pedidos, pagos, registros. Necesita saber que funcionó</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Siempre</strong> al equipo en eventos de negocio importantes — nuevo cliente, deal cerrado, incidente</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Siempre</strong> cuando el flujo falla — equipo debe saber qué se rompió y cuándo</div></div>
+            <div class="wtu"><span class="we">❌</span><div class="wt"><strong>No notificar</strong> en cada ejecución de flujos que corren 100 veces al día — generas ruido y se ignoran</div></div>
+            <div class="wtu"><span class="we">⚠️</span><div class="wt"><strong>Agrupa</strong> notificaciones frecuentes en un resumen diario en vez de mensajes individuales</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Patrón: notificación diferenciada por resultado</div>
+        <div class="code-block">
+<span class="cm">// El flujo termina con IF para personalizar la notificación</span>
+
+...proceso principal...
+  ↓
+<span class="kw">IF</span> resultado == <span class="str">"exitoso"</span>
+
+  → <span class="vl">TRUE</span>:
+    Gmail cliente: <span class="str">"✅ Tu operación fue exitosa"</span>
+    Slack equipo:  <span class="str">"✅ Procesado: {{nombre}} - ${{monto}}"</span>
+    Sheets log:    estado = <span class="str">"completado"</span>
+
+  → <span class="rd">FALSE</span>:
+    Gmail cliente: <span class="str">"⚠️ Hubo un problema, te contactamos"</span>
+    Slack equipo:  <span class="str">"🚨 FALLO: {{nombre}} - Error: {{msg}}"</span>
+    Sheets log:    estado = <span class="str">"fallido"</span> + detalle_error
+
+<span class="cm">// Ambas ramas notifican — nadie se queda sin respuesta</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('log')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('feedback')">Siguiente: Feedback al sistema →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · FEEDBACK AL SISTEMA ══ -->
+    <section id="feedback" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Output 4 de 7</div>
+        <h1>Feedback al <span>Sistema</span></h1>
+        <p>El output que actualiza el origen. Después de procesar, el workflow regresa al sistema que disparó el evento para actualizarlo: cambiar el estado, marcar como procesado, agregar datos.</p>
+      </div>
+
+      <div class="out-hero oh-feed">
+        <div class="oh-top">
+          <div class="oh-icon">🔄</div>
+          <div>
+            <div class="oh-type">Feedback · Update · Marcar como procesado</div>
+            <div class="oh-title">Cierra el ciclo con el sistema origen</div>
+            <div class="oh-desc">Muchos workflows leen datos de un sistema, los procesan y deben volver a ese mismo sistema para actualizar el estado. Ejemplo: leer un pedido de Airtable, procesarlo, y actualizar la columna "estado" de ese mismo registro a "enviado". Sin feedback, el sistema origen cree que el item sigue pendiente.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">✏️ Actualizar estado</span>
+          <span class="oh-tag">🏷️ Marcar como procesado</span>
+          <span class="oh-tag">🔗 Volver al origen</span>
+          <span class="oh-tag">📊 Sheets · Airtable · CRM · DB</span>
+          <span class="oh-tag">♻️ Evitar reprocesamiento</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card sb">
+          <div class="card-label">⚙️ Patrón: leer → procesar → actualizar</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Flujo: procesar leads pendientes de Sheets</span>
+
+<span class="kw">Schedule</span> cada hora
+  ↓
+<span class="kw">Sheets READ:</span> obtener filas donde
+  estado == <span class="str">"pendiente"</span>
+  ↓
+<span class="kw">Filter:</span> solo items con email válido
+  ↓
+<span class="kw">Loop</span> por cada lead
+  ↓
+  HTTP → crear en CRM
+    → si OK:
+      <span class="kw">Sheets UPDATE</span> fila:
+        estado    = <span class="str">"procesado"</span>
+        id_crm    = <span class="str">"{{$json.crm_id}}"</span>
+        fecha_ok  = <span class="str">"{{$now}}"</span>
+    → si ERROR:
+      <span class="kw">Sheets UPDATE</span> fila:
+        estado    = <span class="str">"error"</span>
+        msg_error = <span class="str">"{{$json.error}}"</span>
+        intentos  = <span class="vl">{{$json.intentos + 1}}</span>
+<span class="cm">// La próxima ejecución NO reprocesa los "procesado"
+// Solo vuelve a intentar los "error"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos reales de feedback</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">📦</span><div class="wt"><strong>ERP de pedidos:</strong> después de generar guía → actualizar campo "estado_envío" y "num_guía" en el pedido original del ERP</div></div>
+            <div class="wtu"><span class="we">🎫</span><div class="wt"><strong>Sistema de tickets:</strong> después de resolver → cambiar estado de "abierto" a "resuelto" + agregar nota con el resultado</div></div>
+            <div class="wtu"><span class="we">📋</span><div class="wt"><strong>Airtable de tareas:</strong> workflow completa una tarea → marca el checkbox "Hecho" y agrega fecha de completado</div></div>
+            <div class="wtu"><span class="we">👤</span><div class="wt"><strong>CRM de leads:</strong> después de enviar email de bienvenida → actualizar etapa del lead de "nuevo" a "contactado"</div></div>
+            <div class="wtu"><span class="we">💳</span><div class="wt"><strong>Sistema de pagos:</strong> pago validado → marcar factura como "pagada" en el sistema contable con fecha y referencia</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">⚠️ Por qué el feedback es crítico — el problema del doble procesamiento</div>
+        <div class="code-block">
+<span class="cm">// Sin feedback: reprocesamiento infinito</span>
+Ejecución 1 → lee pedido "pendiente" → procesa → <span class="rd">NO actualiza origen</span>
+Ejecución 2 → lee MISMO pedido "pendiente" → procesa OTRA VEZ
+Ejecución 3 → lee MISMO pedido "pendiente" → <span class="rd">el cliente recibe 3 emails</span>
+
+<span class="cm">// Con feedback: cada item se procesa exactamente una vez</span>
+Ejecución 1 → lee pedido "pendiente" → procesa → <span class="vl">actualiza a "procesado"</span>
+Ejecución 2 → lee pedidos "pendiente" → <span class="vl">este ya no aparece → omitido</span>
+Ejecución 3 → igual → <span class="vl">0 reprocesos, 0 duplicados</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('notif')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('stop')">Siguiente: Detener el flujo →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · STOP ══ -->
+    <section id="stop" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Output 5 de 7</div>
+        <h1>Detener <span>el Flujo</span></h1>
+        <p>A veces el mejor output es no hacer nada más. Saber cuándo y cómo detener el workflow correctamente evita errores, datos duplicados y acciones no deseadas.</p>
+      </div>
+
+      <div class="out-hero oh-stop">
+        <div class="oh-top">
+          <div class="oh-icon">🛑</div>
+          <div>
+            <div class="oh-type">Stop · No-Op · Early exit · Detención controlada</div>
+            <div class="oh-title">Parar el flujo intencionalmente, no por error</div>
+            <div class="oh-desc">Hay situaciones en las que el workflow debe detenerse sin ejecutar las acciones principales: datos inválidos, item duplicado, condición no cumplida. Detener el flujo correctamente es distinto a que falle — es una decisión consciente que no genera alertas de error pero sí puede dejar un registro.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🚫 Filter vacío</span>
+          <span class="oh-tag">↩️ Respond 400 temprano</span>
+          <span class="oh-tag">🔇 Sin acción = detención</span>
+          <span class="oh-tag">🏷️ Log silencioso</span>
+          <span class="oh-tag">✅ Detención limpia</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card rb">
+          <div class="card-label">⚙️ Las 3 formas de detener el flujo</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Forma 1: Filter que no deja pasar nada</span>
+Filter: email <span class="kw">contiene</span> <span class="str">"@"</span>
+→ Si ningún item pasa → flujo se detiene solo
+→ n8n marca la ejecución como exitosa (0 items)
+
+<span class="cm">// Forma 2: IF sin rama false conectada</span>
+<span class="kw">IF</span> condicion_critica == <span class="str">true</span>
+→ true: continúa con las acciones
+→ false: sin nodo conectado → se detiene
+
+<span class="cm">// Forma 3: Respond al webhook + no continuar</span>
+<span class="kw">IF</span> dato_duplicado == <span class="str">true</span>
+  → true:
+    <span class="kw">Respond to Webhook</span>:
+      { <span class="ky">"msg"</span>: <span class="str">"Duplicado ignorado"</span>, status: <span class="vl">200</span> }
+    <span class="cm">← no hay más nodos después</span>
+  → false: continúa el flujo normal
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo detener el flujo voluntariamente</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">🔁</span><div class="wt"><strong>Item duplicado:</strong> el mismo webhook llega dos veces (reintentos) — procesar una sola vez y descartar el segundo</div></div>
+            <div class="wtu"><span class="we">📭</span><div class="wt"><strong>Sin datos relevantes:</strong> el Schedule corrió pero no hay nuevos registros que procesar — salida limpia sin errores</div></div>
+            <div class="wtu"><span class="we">⛔</span><div class="wt"><strong>Condición de negocio no cumplida:</strong> el pedido fue cancelado antes de que el workflow lo procesara — detener sin enviar nada</div></div>
+            <div class="wtu"><span class="we">🧪</span><div class="wt"><strong>Datos de prueba:</strong> detectar emails con "test" o "example.com" y descartarlos sin llegar a las acciones reales</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏗️ Patrón: idempotencia — procesar una sola vez aunque llegue dos veces</div>
+        <div class="code-block">
+<span class="cm">// El webhook de Stripe puede llegar duplicado (reintentos automáticos)
+// Solución: verificar antes de actuar</span>
+
+WEBHOOK recibe pago de Stripe
+  ↓
+<span class="kw">HTTP Request:</span> buscar en DB si pago_id ya existe
+  ↓
+<span class="kw">IF</span> registro_encontrado == <span class="str">true</span>
+
+  → <span class="rd">true</span> (duplicado):
+    <span class="kw">Respond to Webhook</span>: { <span class="ky">"msg"</span>: <span class="str">"already processed"</span> }
+    Sheets log: <span class="str">"Duplicado ignorado: {{pago_id}}"</span>
+    <span class="cm">← workflow termina aquí, sin reenviar email</span>
+
+  → <span class="vl">false</span> (nuevo):
+    Continuar → activar cuenta → email → log → respond
+<span class="cm">// Resultado: cada pago se procesa exactamente una vez</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('feedback')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('retorno')">Siguiente: Retorno a sub-workflow →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · RETORNO ══ -->
+    <section id="retorno" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Output 6 de 7</div>
+        <h1>Retorno al <span>Sub-workflow</span></h1>
+        <p>Cuando un workflow hijo termina, le devuelve datos al padre. Así los sub-workflows no son cajas negras — son funciones con entrada y salida definida.</p>
+      </div>
+
+      <div class="out-hero oh-ret">
+        <div class="oh-top">
+          <div class="oh-icon">📤</div>
+          <div>
+            <div class="oh-type">Respond to Parent Workflow · Output estructurado</div>
+            <div class="oh-title">El sub-workflow responde con datos al flujo padre</div>
+            <div class="oh-desc">Cuando usas "Execute Workflow" para llamar a un sub-workflow, el flujo padre puede esperar una respuesta. El sub-workflow usa el nodo "Respond to Parent Workflow" para devolver datos estructurados — resultado de la operación, IDs generados, estado, errores — que el flujo padre puede usar en sus siguientes pasos.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">📥 Padre espera respuesta</span>
+          <span class="oh-tag">📤 Hijo devuelve JSON</span>
+          <span class="oh-tag">✅ Estado de la operación</span>
+          <span class="oh-tag">🆔 IDs generados</span>
+          <span class="oh-tag">🔗 Composición de workflows</span>
+        </div>
+      </div>
+
+      <div class="card tb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Flujo padre ↔ hijo con retorno de datos</div>
+        <div class="code-block">
+<span class="cm">// ── WORKFLOW PADRE: "Procesar Lead" ──────────────</span>
+Webhook → Set → Filter
+  ↓
+<span class="kw">Execute Workflow:</span> <span class="str">"Crear-en-CRM"</span>
+  pasa: { nombre, email, telefono, empresa }
+  espera respuesta: <span class="kw">true</span>
+  ↓ recibe del hijo:
+{
+  <span class="ky">"crm_id"</span>:  <span class="str">"clt_8f3a9b"</span>,
+  <span class="ky">"estado"</span>:  <span class="str">"creado"</span>,
+  <span class="ky">"etapa"</span>:   <span class="str">"lead"</span>
+}
+  ↓
+Set: combinar datos originales + respuesta del CRM
+  ↓
+Gmail: <span class="str">"Bienvenido {{nombre}}, tu ID es {{crm_id}}"</span>
+Slack: <span class="str">"Lead creado: {{nombre}} → {{crm_id}}"</span>
+
+<span class="cm">// ── SUB-WORKFLOW HIJO: "Crear-en-CRM" ────────────</span>
+<span class="kw">When Called By Another Workflow</span>
+  recibe: { nombre, email, telefono }
+  ↓
+HTTP Request → POST al CRM API
+  ↓
+<span class="kw">Respond to Parent Workflow</span>:
+{
+  <span class="ky">"crm_id"</span>: <span class="str">"{{$json.id}}"</span>,
+  <span class="ky">"estado"</span>: <span class="str">"creado"</span>,
+  <span class="ky">"etapa"</span>:  <span class="str">"lead"</span>
+}
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">💡 Qué debe retornar un sub-workflow</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Estado de la operación</strong> — "exitoso" / "fallido" para que el padre decida qué hacer</div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">IDs generados</strong> — si se creó un registro, el ID del nuevo objeto para usarlo en pasos siguientes</div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Mensaje legible</strong> — descripción del resultado para log o notificación</div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Datos mínimos</strong> — solo lo que el padre necesita, no todo el JSON interno del sub-workflow</div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">No retornar nada</strong> — si el padre no recibe respuesta, no puede actuar según el resultado</div></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏗️ Ventajas del retorno estructurado</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">🔗</span><div class="wt"><strong>Composición limpia:</strong> el padre orquesta, el hijo ejecuta. Cada uno hace lo suyo y se comunican por interfaz definida</div></div>
+            <div class="wtu"><span class="we">🧪</span><div class="wt"><strong>Testing independiente:</strong> puedes probar el sub-workflow solo, verificar que retorna el JSON correcto antes de integrarlo</div></div>
+            <div class="wtu"><span class="we">♻️</span><div class="wt"><strong>Reutilización real:</strong> el mismo sub-workflow lo llaman múltiples flujos padres y todos reciben el mismo formato de respuesta</div></div>
+            <div class="wtu"><span class="we">🛡️</span><div class="wt"><strong>Manejo de errores limpio:</strong> el hijo retorna <code>estado: "error"</code> y el padre decide si reintenta, notifica o sigue</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('stop')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('summary')">Siguiente: Output de resumen →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · SUMMARY ══ -->
+    <section id="summary" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Output 7 de 7</div>
+        <h1>Output de <span>Resumen</span></h1>
+        <p>Cuando el workflow procesa múltiples items, el output final consolida todo: cuántos fueron exitosos, cuántos fallaron, métricas del proceso, listo para reportar.</p>
+      </div>
+
+      <div class="out-hero oh-summ">
+        <div class="oh-top">
+          <div class="oh-icon">📊</div>
+          <div>
+            <div class="oh-type">Summary Output · Consolidación de resultados</div>
+            <div class="oh-title">Un resumen al final de procesar N items</div>
+            <div class="oh-desc">Cuando un workflow procesa 50 leads, envía 200 emails o sincroniza 1000 registros, el output no puede ser 1000 notificaciones individuales. El output de resumen consolida todos los resultados en un solo mensaje: X procesados, Y exitosos, Z fallidos, duración total. Un solo Slack o email que lo dice todo.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🔢 Contador de resultados</span>
+          <span class="oh-tag">✅ Exitosos / ❌ Fallidos</span>
+          <span class="oh-tag">⏱️ Duración total</span>
+          <span class="oh-tag">📋 Lista de errores</span>
+          <span class="oh-tag">📧 Un solo mensaje final</span>
+        </div>
+      </div>
+
+      <div class="card pb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Construir el resumen con Function</div>
+        <div class="code-block">
+<span class="cm">// Después del Loop, todos los resultados llegan al Function</span>
+<span class="cm">// Cada item del loop pasó su resultado: {ok: true/false, email, error?}</span>
+
+<span class="kw">const</span> items = $input.all();
+<span class="kw">const</span> exitosos = items.filter(i => i.json.ok === <span class="kw">true</span>);
+<span class="kw">const</span> fallidos  = items.filter(i => i.json.ok === <span class="kw">false</span>);
+<span class="kw">const</span> errores   = fallidos.map(i =>
+  <span class="str">`• ${i.json.email}: ${i.json.error}`</span>
+).join(<span class="str">'\n'</span>);
+
+<span class="kw">return</span> [{
+  json: {
+    <span class="ky">total</span>:      items.length,
+    <span class="ky">exitosos</span>:   exitosos.length,
+    <span class="ky">fallidos</span>:   fallidos.length,
+    <span class="ky">tasa_exito</span>: <span class="str">`${(exitosos.length/items.length*100).toFixed(1)}%`</span>,
+    <span class="ky">lista_errores</span>: errores || <span class="str">"Ninguno"</span>,
+    <span class="ky">timestamp</span>:  $now.toISO()
+  }
+}];
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">📧 El mensaje de resumen final</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Slack — resumen del proceso batch</span>
+<span class="str">"📊 *Proceso completado* — {{$now.toFormat('dd/MM HH:mm')}}
+
+✅ Exitosos:  {{exitosos}} / {{total}}
+❌ Fallidos:  {{fallidos}} / {{total}}
+📈 Éxito:    {{tasa_exito}}
+
+{{#if fallidos > 0}}
+⚠️ *Errores:*
+{{lista_errores}}
+{{/if}}"</span>
+
+<span class="cm">// Email — reporte al gerente</span>
+<span class="str">"Asunto: Proceso de emails completado
+
+Se procesaron {{total}} registros:
+- Exitosos: {{exitosos}}
+- Fallidos: {{fallidos}}
+- Tasa de éxito: {{tasa_exito}}
+
+Ver log completo: [link a Sheets]"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos reales de output resumen</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">📧</span><div class="wt"><strong>Campaña de email:</strong> después de enviar 500 emails → resumen: 498 enviados, 2 fallidos (emails inválidos)</div></div>
+            <div class="wtu"><span class="we">💳</span><div class="wt"><strong>Cobros recurrentes:</strong> 200 intentos de cobro → 185 exitosos, 15 fallidos → lista de clientes a contactar manualmente</div></div>
+            <div class="wtu"><span class="we">🔄</span><div class="wt"><strong>Sincronización diaria:</strong> 1000 registros sincronizados entre sistemas → resumen: cuántos nuevos, actualizados, sin cambios, errores</div></div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>Reporte batch:</strong> generación de 50 reportes PDF para clientes → cuántos generados, cuántos con error, tiempo total</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('retorno')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('cierre')">Siguiente: Cierre Semana 3 →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · CIERRE ══ -->
+    <section id="cierre" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Cierre Semana 3</div>
+        <h1>Cierre de <span>Semana 3</span></h1>
+        <p>Todo lo que aprendiste en esta semana, integrado. Un workflow completo de producción que usa triggers, nodos, acciones, lógica y outputs correctamente.</p>
+      </div>
+
+      <!-- RESUMEN OUTPUTS -->
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">📋 Los 7 tipos de output — referencia rápida</div>
+        <table class="ct" style="margin-top:10px;">
+          <thead><tr><th>Output</th><th>Para qué sirve</th><th>Cuándo usarlo</th></tr></thead>
+          <tbody>
+            <tr><td>↩️ Respond Webhook</td><td>Respuesta HTTP al sistema que llamó</td><td>Siempre que el trigger sea Webhook</td></tr>
+            <tr><td>📋 Log / Registro</td><td>Trazabilidad y auditoría del proceso</td><td>Todo workflow en producción</td></tr>
+            <tr><td>🔔 Notificación final</td><td>Confirmar al usuario y/o al equipo</td><td>Transacciones, eventos de negocio</td></tr>
+            <tr><td>🔄 Feedback al sistema</td><td>Actualizar el origen con el resultado</td><td>Cuando lees y debes marcar como procesado</td></tr>
+            <tr><td>🛑 Detener el flujo</td><td>Parar limpiamente sin error ni acción</td><td>Duplicados, datos inválidos, sin items</td></tr>
+            <tr><td>📤 Retorno sub-workflow</td><td>Devolver datos estructurados al padre</td><td>Workflows modulares con sub-workflows</td></tr>
+            <tr><td>📊 Output de resumen</td><td>Consolidar N resultados en un mensaje</td><td>Procesos batch con múltiples items</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- WORKFLOW FINAL COMPLETO -->
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Workflow completo — Semana 3 integrada</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Un flujo que usa todo: trigger, nodos, lógica, acciones y outputs correctamente estructurados</div>
+        <div class="code-block">
+<span class="cm">── TRIGGER ──────────────────────────────────────────</span>
+<span class="kw">WEBHOOK</span> recibe formulario de lead
+
+<span class="cm">── OUTPUTS TEMPRANOS ────────────────────────────────</span>
+<span class="kw">Filter</span>: email válido AND nombre no vacío
+  → si falla: <span class="kw">Respond Webhook</span> 400 + <span class="rd">STOP</span>
+
+<span class="cm">── IDEMPOTENCIA ─────────────────────────────────────</span>
+<span class="kw">HTTP</span>: ¿ya existe email en DB?
+  → si existe: <span class="kw">Respond Webhook</span> 200 "duplicado" + <span class="rd">STOP</span>
+
+<span class="cm">── PROCESAMIENTO ────────────────────────────────────</span>
+<span class="kw">Set</span>: formatear + calcular score con expresiones
+<span class="kw">Switch</span>: por score → calificado / interesante / frío
+
+<span class="cm">── ACCIONES ─────────────────────────────────────────</span>
+<span class="kw">Execute Workflow</span>: <span class="str">"Crear-en-CRM"</span>
+  → retorno: { crm_id, estado }
+
+<span class="cm">── OUTPUTS PRINCIPALES ──────────────────────────────</span>
+<span class="kw">Respond to Webhook</span>: { success: true, id: crm_id }
+
+<span class="kw">Gmail</span> cliente: confirmación de recepción
+<span class="kw">Slack</span> equipo:  alerta con datos del lead + score
+
+<span class="kw">Sheets</span> log: timestamp + email + estado + crm_id
+
+<span class="cm">── FEEDBACK AL SISTEMA ───────────────────────────────</span>
+<span class="kw">Sheets UPDATE</span> origen: estado = <span class="str">"procesado"</span> + crm_id
+
+<span class="cm">── INICIO SECUENCIA (output temporal) ───────────────</span>
+<span class="kw">Execute Workflow</span>: <span class="str">"Secuencia-Onboarding"</span>
+  → Wait 2 días → email D2
+  → Wait 5 días → email D7
+
+<span class="cm">// Resultado: todo documentado, todos notificados,
+// sin duplicados, el origen actualizado, el cliente
+// con respuesta inmediata, el equipo con la info.</span>
+        </div>
+      </div>
+
+      <!-- RESUMEN SEMANA 3 COMPLETA -->
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🎓 Semana 3 completa — lo que dominaste</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:10px;font-family:'JetBrains Mono',monospace;">PARTE 1 — Primer Flujo Real</div>
+            <ul class="cl" style="margin-top:0;">
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Workflow trigger → proceso → acción</li>
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Webhook como punto de entrada</li>
+              <li style="padding:7px 0;font-size:13px;border-bottom:none;"><span class="ck">✓</span>Buenas prácticas desde el inicio</li>
+            </ul>
+            <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:10px;margin-top:14px;font-family:'JetBrains Mono',monospace;">PARTE 2 — Los Triggers</div>
+            <ul class="cl" style="margin-top:0;">
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Webhook, Schedule, Manual</li>
+              <li style="padding:7px 0;font-size:13px;border-bottom:none;"><span class="ck">✓</span>Email, Polling y cuándo usar cada uno</li>
+            </ul>
+            <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px;margin-top:14px;font-family:'JetBrains Mono',monospace;">PARTE 3 — Nodos Principales</div>
+            <ul class="cl" style="margin-top:0;">
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Set, Function, IF, Switch</li>
+              <li style="padding:7px 0;font-size:13px;border-bottom:none;"><span class="ck">✓</span>HTTP Request, Merge, Loop</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:10px;font-family:'JetBrains Mono',monospace;">PARTE 4 — Acciones</div>
+            <ul class="cl" style="margin-top:0;">
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Email, Sheets, Slack, Telegram</li>
+              <li style="padding:7px 0;font-size:13px;border-bottom:none;"><span class="ck">✓</span>WhatsApp, Notion, Bases de datos</li>
+            </ul>
+            <div style="font-size:12px;font-weight:700;color:var(--pink);margin-bottom:10px;margin-top:14px;font-family:'JetBrains Mono',monospace;">PARTE 5 — Lógica</div>
+            <ul class="cl" style="margin-top:0;">
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>IF/Switch avanzados, Filter</li>
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Expresiones, manejo de errores</li>
+              <li style="padding:7px 0;font-size:13px;border-bottom:none;"><span class="ck">✓</span>Wait, Sub-workflows, Patrones</li>
+            </ul>
+            <div style="font-size:12px;font-weight:700;color:var(--sky);margin-bottom:10px;margin-top:14px;font-family:'JetBrains Mono',monospace;">PARTE 6 — Outputs (esta)</div>
+            <ul class="cl" style="margin-top:0;">
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Respond, Logs, Notificaciones</li>
+              <li style="padding:7px 0;font-size:13px;border-bottom:none;"><span class="ck">✓</span>Feedback, Stop, Retorno, Resumen</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRÓXIMA SEMANA -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">🚀</div>
+          <h3 style="font-size:24px;margin-bottom:10px;">Semana 4 — Producción y Escalabilidad</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:520px;margin:0 auto 20px;">Con la Semana 3 dominada ya construyes workflows reales. La Semana 4 los lleva a producción: deploy en servidor propio, variables de entorno seguras, monitoreo, alta disponibilidad y workflows que soportan carga real sin romperse.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">🖥️ Deploy en servidor</span>
+            <span class="b bl">🔐 Variables de entorno</span>
+            <span class="b bt">📊 Monitoreo real</span>
+            <span class="b bg">♾️ Alta disponibilidad</span>
+            <span class="b ba">⚡ Performance</span>
+            <span class="b bs">🔒 Seguridad</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('summary')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','respond','log','notif','feedback','stop','retorno','summary','cierre'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(`.nav-item[onclick*="'${id}'"]`);go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Sección ${idx+1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>
