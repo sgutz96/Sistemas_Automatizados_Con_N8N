@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Índice — Automatización con n8n</title>
+<title>Índice del Curso — Automatización con n8n</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -137,8 +137,8 @@
     gap: 14px;
     transition: border-color .15s, transform .15s;
   }
-  .carta.activa { cursor: default; }
-  .carta.activa:hover { border-color: var(--border2); transform: translateX(3px); }
+  .carta.activa { cursor: pointer; text-decoration: none; color: inherit; }
+  .carta.activa:hover { border-color: var(--border2); transform: translateX(3px); background: var(--bg3); }
   .carta.pronto   { opacity: .65; }
   .carta.bloqueada { opacity: .35; }
 
@@ -220,7 +220,7 @@
   <div class="hero">
     <div class="eyebrow"><div class="ldot"></div>Curso activo · n8n</div>
     <h1><span class="dim">Índice</span> del Curso<br><span class="hi">Automatización</span> <span class="dim">con n8n</span></h1>
-    <p>Secciones 1 a 3 disponibles. Sigue el orden para construir tu stack de automatización.</p>
+    <p>Secciones 1 a 3 disponibles ahora. Sigue el orden para construir tu stack de automatización de cero a producción.</p>
   </div>
 
   <!-- ══════════ SECCIÓN 1 ══════════ -->
@@ -230,10 +230,9 @@
       <span class="sec-title">Diagnóstico estratégico</span>
       <span class="sec-badge b-done"><span class="bd"></span>Publicado</span>
     </div>
-
     <div class="partes">
 
-      <div class="carta activa">
+      <a class="carta activa" href="Seccion-1-diagnostico/semana1-Diagnostico_estrategico.html">
         <div class="carta-line cl-g"></div>
         <div class="carta-icon">🧭</div>
         <div class="carta-body">
@@ -245,7 +244,7 @@
           <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
           <span class="carta-dur">45 min</span>
         </div>
-      </div>
+      </a>
 
     </div>
   </div>
@@ -259,10 +258,9 @@
       <span class="sec-title">Fundamentos de n8n</span>
       <span class="sec-badge b-done"><span class="bd"></span>Publicado</span>
     </div>
-
     <div class="partes">
 
-      <div class="carta activa">
+      <a class="carta activa" href="Seccion-2-fundamentos/Parte_2_0-Fundamentos_Aplicados.html">
         <div class="carta-line cl-g"></div>
         <div class="carta-icon">⚙️</div>
         <div class="carta-body">
@@ -274,9 +272,9 @@
           <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
           <span class="carta-dur">50 min</span>
         </div>
-      </div>
+      </a>
 
-      <div class="carta activa">
+      <a class="carta activa" href="Seccion-2-fundamentos/Parte_2_1-Instalacion.html">
         <div class="carta-line cl-g"></div>
         <div class="carta-icon">🖥️</div>
         <div class="carta-body">
@@ -288,7 +286,7 @@
           <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
           <span class="carta-dur">60 min</span>
         </div>
-      </div>
+      </a>
 
     </div>
   </div>
@@ -299,17 +297,30 @@
   <div class="seccion">
     <div class="sec-label">
       <span class="sec-num sn-g">Sección 3</span>
-      <span class="sec-title">Núcleo de n8n</span>
-      <span class="sec-badge b-done"><span class="bd"></span>Publicado</span>
+      <span class="sec-title">Primer flujo en n8n</span>
+      <span class="sec-badge b-wip"><span class="bd"></span>En desarrollo</span>
     </div>
-
     <div class="partes">
 
-      <div class="carta activa">
+      <a class="carta activa" href="Seccion-3-primer-flujo/Parte_3_1-PrimerWorflow.html">
         <div class="carta-line cl-g"></div>
         <div class="carta-icon">⚡</div>
         <div class="carta-body">
-          <div class="carta-tag ct-g">Módulo A · Unidad 3.1</div>
+          <div class="carta-tag ct-g">Parte 1 · Unidad 3.1</div>
+          <div class="carta-title">Primer Workflow</div>
+          <div class="carta-desc">Construye tu primer workflow real de principio a fin en n8n.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">—</span>
+        </div>
+      </a>
+
+      <a class="carta activa" href="Seccion-3-primer-flujo/Parte_3_2-n8n-Triggers.html">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">🔔</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Parte 2 · Unidad 3.2</div>
           <div class="carta-title">Triggers</div>
           <div class="carta-desc">Webhook, Schedule, Form y Event. Cuándo y por qué usar cada disparador.</div>
         </div>
@@ -317,13 +328,13 @@
           <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
           <span class="carta-dur">—</span>
         </div>
-      </div>
+      </a>
 
-      <div class="carta activa">
+      <a class="carta activa" href="Seccion-3-primer-flujo/Parte_3_3-n8n-nodos.html">
         <div class="carta-line cl-g"></div>
         <div class="carta-icon">🧩</div>
         <div class="carta-body">
-          <div class="carta-tag ct-g">Módulo B · Unidad 3.2</div>
+          <div class="carta-tag ct-g">Parte 3 · Unidad 3.3</div>
           <div class="carta-title">Nodos</div>
           <div class="carta-desc">SET, HTTP Request, Code, Merge y Split. El flujo de datos entre cada paso.</div>
         </div>
@@ -331,13 +342,27 @@
           <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
           <span class="carta-dur">—</span>
         </div>
-      </div>
+      </a>
 
-      <div class="carta activa">
+      <a class="carta activa" href="Seccion-3-primer-flujo/Parte_3_4-n8n-acciones.html">
+        <div class="carta-line cl-g"></div>
+        <div class="carta-icon">🎯</div>
+        <div class="carta-body">
+          <div class="carta-tag ct-g">Parte 4 · Unidad 3.4</div>
+          <div class="carta-title">Acciones</div>
+          <div class="carta-desc">Email, bases de datos, notificaciones y respuestas automáticas al exterior.</div>
+        </div>
+        <div class="carta-meta">
+          <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
+          <span class="carta-dur">—</span>
+        </div>
+      </a>
+
+      <a class="carta activa" href="Seccion-3-primer-flujo/Parte_3_5-n8n-logica.html">
         <div class="carta-line cl-g"></div>
         <div class="carta-icon">🧠</div>
         <div class="carta-body">
-          <div class="carta-tag ct-g">Módulo C · Unidad 3.3</div>
+          <div class="carta-tag ct-g">Parte 5 · Unidad 3.5</div>
           <div class="carta-title">Lógica y condicionales</div>
           <div class="carta-desc">IF, Switch, Error Trigger, Wait y loops. Workflows que toman decisiones.</div>
         </div>
@@ -345,21 +370,21 @@
           <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
           <span class="carta-dur">—</span>
         </div>
-      </div>
+      </a>
 
-      <div class="carta activa">
+      <a class="carta activa" href="Seccion-3-primer-flujo/Parte_3_6-n8n-outputs.html">
         <div class="carta-line cl-g"></div>
-        <div class="carta-icon">🎯</div>
+        <div class="carta-icon">📤</div>
         <div class="carta-body">
-          <div class="carta-tag ct-g">Módulo D · Unidad 3.4</div>
-          <div class="carta-title">Acciones y resultados</div>
-          <div class="carta-desc">Email, bases de datos, notificaciones y respuestas automáticas al exterior.</div>
+          <div class="carta-tag ct-g">Parte 6 · Unidad 3.6</div>
+          <div class="carta-title">Outputs y resultados</div>
+          <div class="carta-desc">Estructura y formato de los datos de salida. Cómo conectar resultados a otros sistemas.</div>
         </div>
         <div class="carta-meta">
           <span class="sec-badge b-done"><span class="bd"></span>Listo</span>
           <span class="carta-dur">—</span>
         </div>
-      </div>
+      </a>
 
     </div>
   </div>
@@ -370,7 +395,7 @@
   <div class="seccion sec-x">
     <div class="sec-label">
       <span class="sec-num sn-x">Sección 4</span>
-      <span class="sec-title" style="color:var(--text3);">Integraciones Reales</span>
+      <span class="sec-title" style="color:var(--text3);">Leads y Captación</span>
       <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
     </div>
     <div class="partes">
@@ -407,7 +432,7 @@
   <div class="seccion sec-x">
     <div class="sec-label">
       <span class="sec-num sn-x">Sección 5</span>
-      <span class="sec-title" style="color:var(--text3);">IA en tus Workflows</span>
+      <span class="sec-title" style="color:var(--text3);">CRM y Gestión de Clientes</span>
       <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
     </div>
     <div class="partes">
@@ -444,7 +469,7 @@
   <div class="seccion sec-x">
     <div class="sec-label">
       <span class="sec-num sn-x">Sección 6</span>
-      <span class="sec-title" style="color:var(--text3);">n8n en Producción</span>
+      <span class="sec-title" style="color:var(--text3);">Operaciones y Procesos</span>
       <span class="sec-badge b-wip"><span class="bd"></span>Pronto</span>
     </div>
     <div class="partes">
@@ -481,7 +506,7 @@
   <div class="seccion sec-x">
     <div class="sec-label">
       <span class="sec-num sn-x">Sección 7</span>
-      <span class="sec-title" style="color:var(--text3);">Automatización Avanzada</span>
+      <span class="sec-title" style="color:var(--text3);">APIs e Integraciones</span>
       <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
     </div>
     <div class="partes">
@@ -518,7 +543,7 @@
   <div class="seccion sec-x">
     <div class="sec-label">
       <span class="sec-num sn-x">Sección 8</span>
-      <span class="sec-title" style="color:var(--text3);">Proyectos Reales</span>
+      <span class="sec-title" style="color:var(--text3);">Inteligencia Artificial</span>
       <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
     </div>
     <div class="partes">
@@ -555,7 +580,7 @@
   <div class="seccion sec-x">
     <div class="sec-label">
       <span class="sec-num sn-x">Sección 9</span>
-      <span class="sec-title" style="color:var(--text3);">Monetización con n8n</span>
+      <span class="sec-title" style="color:var(--text3);">Optimización avanzada</span>
       <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
     </div>
     <div class="partes">
@@ -592,7 +617,7 @@
   <div class="seccion sec-x">
     <div class="sec-label">
       <span class="sec-num sn-x">Sección 10</span>
-      <span class="sec-title" style="color:var(--text3);">Cierre y Siguientes Pasos</span>
+      <span class="sec-title" style="color:var(--text3);">Proyecto Final</span>
       <span class="sec-badge b-soon"><span class="bd"></span>Próximamente</span>
     </div>
     <div class="partes">
