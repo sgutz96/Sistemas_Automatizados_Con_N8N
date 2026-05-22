@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 6 — Automatizaciones con Lógica Condicional</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);}
+  .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;text-align:center;flex-shrink:0;min-width:110px;}
+  .fn .fi{font-size:20px;margin-bottom:5px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:3px;}
+  .fn .fn2{font-size:12px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.val {border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.05);}  .fn.val .ft{color:var(--sky);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fn.err {border-color:rgba(240,90,90,0.4);background:rgba(240,90,90,0.05);}   .fn.err .ft{color:var(--red);}
+  .fn.wait{border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.05);} .fn.wait .ft{color:var(--pink);}
+  .fn.cond{border-color:rgba(132,204,22,0.4);background:rgba(132,204,22,0.05);}  .fn.cond .ft{color:var(--lime);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* IF VISUAL */
+  .if-tree{margin-top:16px;}
+  .if-root{background:var(--bg3);border:1px solid rgba(132,204,22,0.4);border-radius:10px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:13px;margin-bottom:0;}
+  .if-root .lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--lime);margin-right:4px;}
+  .if-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;position:relative;}
+  .if-branches::before{content:'';position:absolute;top:-20px;left:50%;width:1px;height:20px;background:var(--border2);}
+  .if-branch{border-radius:10px;padding:16px;border:1px solid var(--border);}
+  .if-branch.yes{border-color:rgba(34,201,122,0.3);background:rgba(34,201,122,0.04);}
+  .if-branch.no {border-color:rgba(240,90,90,0.25);background:rgba(240,90,90,0.04);}
+  .if-branch-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+  .if-branch.yes .if-branch-lbl{color:var(--green);}
+  .if-branch.no  .if-branch-lbl{color:var(--red);}
+
+  /* SWITCH VISUAL */
+  .sw-container{margin-top:14px;}
+  .sw-root{background:var(--bg3);border:1px solid rgba(56,189,248,0.4);border-radius:10px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:13px;display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .sw-root .lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--sky);}
+  .sw-outputs{display:grid;gap:10px;}
+  .sw-out{display:flex;align-items:flex-start;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;}
+  .sw-out-num{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
+  .sw-out-cond{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);margin-bottom:4px;}
+  .sw-out-action{font-size:12px;color:var(--text3);}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* COMPARISON ROW */
+  .cmp{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;align-items:start;margin-top:14px;}
+  .cmp-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:16px 18px;}
+  .cmp-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;}
+  .cmp-arr{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);padding-top:28px;}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{opacity:0.85;}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Clase 6</div>
+      <h2>Automatizaciones con Lógica Condicional</h2>
+      <p>n8n · flujos que deciden solos</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> Introducción</a>
+    <a class="nav-item" onclick="go('conceptos',this)"><span class="ni">🧠</span> Conceptos clave</a>
+    <a class="nav-item" onclick="go('nodo-if',this)"><span class="ni">🔀</span> Nodo IF — dos caminos</a>
+    <a class="nav-item" onclick="go('nodo-switch',this)"><span class="ni">🔢</span> Nodo Switch — múltiples rutas</a>
+    <a class="nav-item" onclick="go('condiciones',this)"><span class="ni">⚙️</span> Condiciones avanzadas</a>
+    <a class="nav-item" onclick="go('combinaciones',this)"><span class="ni">🧩</span> Combinaciones reales</a>
+    <a class="nav-item" onclick="go('caso',this)"><span class="ni">🚀</span> Caso práctico completo</a>
+    <a class="nav-item" onclick="go('practicas',this)"><span class="ni">✅</span> Buenas prácticas</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Clase 6</div>
+        <h1>Automatizaciones con <span>Lógica Condicional</span></h1>
+        <p>Hasta ahora tus workflows hacen siempre lo mismo sin importar qué datos llegan. A partir de esta clase, el sistema lee los datos y decide qué hacer. Eso lo convierte en inteligente.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🔥 El salto de esta clase</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div style="background:var(--bg4);border-radius:10px;padding:18px;border:1px solid var(--border);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Clases 1–5 — Workflows lineales</div>
+            <div style="font-size:17px;font-weight:800;color:var(--text2);margin-bottom:8px;">"Hacer siempre lo mismo"</div>
+            <p style="font-size:13px;color:var(--text3);line-height:1.6;">Llega un dato → siempre el mismo email → siempre el mismo estado → siempre la misma notificación. Sin importar quién es el lead ni qué quiere.</p>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(132,204,22,0.07),rgba(124,110,245,0.07));border-radius:10px;padding:18px;border:1px solid rgba(132,204,22,0.3);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--lime);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Clase 6 — Workflows condicionales</div>
+            <div style="font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:8px;">"Decidir según los datos"</div>
+            <p style="font-size:13px;color:var(--text2);line-height:1.6;">Llega un dato → el sistema evalúa → toma el camino correcto → ejecuta la acción exacta para ese caso. Cada lead recibe un trato diferente.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn" style="color:var(--lime);">IF</div><div class="sl">nodo para dos caminos: sí o no</div></div>
+        <div class="stat"><div class="sn" style="color:var(--sky);">Switch</div><div class="sl">nodo para múltiples rutas según valor</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">AND/OR</div><div class="sl">combinar condiciones en una sola regla</div></div>
+        <div class="stat"><div class="sn" style="color:var(--teal);">∞</div><div class="sl">condiciones anidadas sin límite</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🧠 Qué vas a aprender en esta clase</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">El nodo IF — bifurcar en dos caminos</strong><br><span style="font-size:13px;">La estructura más básica de la lógica: si se cumple una condición, ejecuta el camino A; si no, el camino B. Se usa en el 80% de los workflows reales.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">El nodo Switch — múltiples rutas desde un solo punto</strong><br><span style="font-size:13px;">Cuando hay más de dos casos posibles, el Switch evalúa un campo y envía el dato por la salida que corresponde. Hasta 10 salidas distintas desde un solo nodo.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Condiciones AND / OR — combinar reglas</strong><br><span style="font-size:13px;">Una condición puede depender de varios campos a la vez. "Si el email existe Y el score es mayor a 70" es una condición AND. Aprenderás a combinarlas correctamente.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Condiciones sobre texto, números y fechas</strong><br><span style="font-size:13px;">Los operadores disponibles en n8n: igual, contiene, empieza con, mayor que, menor que, existe, está vacío. Cada tipo de dato tiene sus operadores específicos.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Caso práctico: router de leads inteligente</strong><br><span style="font-size:13px;">Combinarás IF y Switch para construir un sistema que enruta cada lead por la ruta exacta según su perfil, interés, hora y estado previo.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" disabled style="opacity:0.3;cursor:default;">← Clase 5</button>
+        <button class="btn btn-p" onclick="goTo('conceptos')">Siguiente: Conceptos →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · CONCEPTOS ══ -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Conceptos <span>Clave</span></h1>
+        <p>La lógica condicional es el mismo concepto en programación, en Excel y en n8n. Si ya usaste un IF en Excel, ya sabes lo más importante.</p>
+      </div>
+
+      <div class="card lmb" style="margin-bottom:16px;">
+        <div class="card-label">🔸 ¿Qué es la lógica condicional?</div>
+        <h3 style="margin-bottom:10px;">Una instrucción que evalúa algo y actúa diferente según el resultado</h3>
+        <p style="margin-bottom:16px;">En lenguaje humano: <strong style="color:var(--text);">"Si el lead tiene teléfono, llámale. Si no, solo envíale email."</strong> En n8n eso es exactamente un nodo IF. La condición es la pregunta; las dos salidas son las respuestas.</p>
+        <div class="cmp">
+          <div class="cmp-box">
+            <div class="cmp-lbl" style="color:var(--text3);">Lenguaje humano</div>
+            <div style="font-size:14px;color:var(--text);line-height:1.8;">
+              <strong>Si</strong> el lead tiene más de 80 puntos...<br>
+              &nbsp;&nbsp;→ asignar al vendedor senior<br>
+              <strong>Si no</strong>...<br>
+              &nbsp;&nbsp;→ asignar al equipo general
+            </div>
+          </div>
+          <div class="cmp-arr">→</div>
+          <div class="cmp-box">
+            <div class="cmp-lbl" style="color:var(--lime);">n8n — Nodo IF</div>
+            <div class="code-block" style="margin-top:0;font-size:12px;border:none;padding:0;background:transparent;">
+<span class="kw">Campo:</span>   <span class="ky">score</span>
+<span class="kw">Operador:</span> mayor que
+<span class="kw">Valor:</span>   <span class="vl">80</span>
+
+<span class="str">✓ True</span>  → asignar senior
+<span class="rd">✗ False</span> → equipo general
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g3">
+        <div class="card sb">
+          <div class="card-label">🔸 Tipos de condición</div>
+          <table class="ct" style="margin-top:4px;">
+            <thead><tr><th>Tipo</th><th>Operadores</th></tr></thead>
+            <tbody>
+              <tr><td>Texto</td><td>igual, contiene, empieza con, termina con, existe, vacío</td></tr>
+              <tr><td>Número</td><td>igual, mayor, menor, mayor o igual, entre</td></tr>
+              <tr><td>Booleano</td><td>es verdadero, es falso</td></tr>
+              <tr><td>Fecha</td><td>antes de, después de, entre</td></tr>
+              <tr><td>Array</td><td>contiene, tiene longitud, está vacío</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card amb">
+          <div class="card-label">🔸 AND vs OR</div>
+          <p style="margin-bottom:14px;">Cuando necesitas evaluar más de una condición a la vez.</p>
+          <div style="background:var(--bg);border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;">
+            <div style="margin-bottom:12px;">
+              <div style="color:var(--amber);margin-bottom:4px;">AND — ambas deben cumplirse</div>
+              <div style="color:var(--text2);">score &gt; 70</div>
+              <div style="color:var(--text3);font-size:11px;">Y</div>
+              <div style="color:var(--text2);">telefono existe</div>
+              <div style="color:var(--text3);font-size:11px;">→ solo si las DOS son true</div>
+            </div>
+            <div>
+              <div style="color:var(--sky);margin-bottom:4px;">OR — basta con una</div>
+              <div style="color:var(--text2);">fuente = "referido"</div>
+              <div style="color:var(--text3);font-size:11px;">O</div>
+              <div style="color:var(--text2);">score &gt; 90</div>
+              <div style="color:var(--text3);font-size:11px;">→ si CUALQUIERA es true</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🔸 IF vs Switch — cuándo usar cada uno</div>
+          <div style="padding:8px 0;">
+            <div style="padding:12px 0;border-bottom:1px solid var(--border);">
+              <div style="font-size:13px;font-weight:700;color:var(--lime);margin-bottom:5px;">Nodo IF — usa cuando…</div>
+              <div style="font-size:13px;color:var(--text2);line-height:1.6;">La respuesta solo puede ser <strong style="color:var(--text);">sí o no</strong>. ¿Tiene teléfono? ¿El score es alto? ¿El email es válido? Dos salidas: True / False.</div>
+            </div>
+            <div style="padding:12px 0;">
+              <div style="font-size:13px;font-weight:700;color:var(--sky);margin-bottom:5px;">Nodo Switch — usa cuando…</div>
+              <div style="font-size:13px;color:var(--text2);line-height:1.6;">Hay <strong style="color:var(--text);">tres o más casos</strong> distintos. ¿Qué plan eligió? ¿De qué país viene? ¿Cuál es su industria? Cada valor tiene su propia salida.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>La regla de oro:</strong> usa IF cuando la pregunta tenga respuesta binaria (sí/no, verdadero/falso, mayor/menor). Usa Switch cuando el campo evaluado pueda tener múltiples valores distintos con acciones distintas para cada uno. Mezclarlos mal es el error más común.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('nodo-if')">Siguiente: Nodo IF →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · NODO IF ══ -->
+    <section id="nodo-if" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Nodo IF — <span>Dos Caminos</span></h1>
+        <p>El nodo IF es el más usado en n8n. Evalúa una o más condiciones y divide el flujo en dos ramas: True (se cumple) y False (no se cumple). Todo lo que entra, sale por uno de los dos lados.</p>
+      </div>
+
+      <div class="card lmb" style="margin-bottom:16px;">
+        <div class="card-label">🔀 Estructura del nodo IF en n8n</div>
+        <div class="g2" style="margin-top:14px;margin-bottom:0;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Configuración en el editor</div>
+            <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: IF</span>
+<span class="cm">// Modo: Rules (recomendado)</span>
+
+<span class="cm">// ── CONDICIÓN SIMPLE ──────────────────────</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.score}}</span>
+<span class="ky">Operation:</span> Larger Than
+<span class="ky">Value 2:</span>   <span class="vl">80</span>
+
+<span class="cm">// Resultado:</span>
+<span class="str">✓ Output 0 (True)</span>  → score mayor a 80
+<span class="rd">✗ Output 1 (False)</span> → score 80 o menos
+
+<span class="cm">// ── CONDICIÓN CON EXPRESIÓN ───────────────</span>
+<span class="cm">// También puedes usar JavaScript:</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.email && $json.telefono}}</span>
+<span class="ky">Operation:</span> Is True
+<span class="cm">// True solo si AMBOS campos existen</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Diagrama de flujo</div>
+            <div style="background:var(--bg3);border-radius:10px;padding:20px;border:1px solid var(--border);">
+              <div style="display:flex;justify-content:center;margin-bottom:16px;">
+                <div style="background:rgba(132,204,22,0.08);border:1px solid rgba(132,204,22,0.4);border-radius:8px;padding:12px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;text-align:center;">
+                  <div style="color:var(--lime);font-size:10px;text-transform:uppercase;margin-bottom:4px;">IF</div>
+                  <div style="color:var(--text);">score &gt; 80</div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:rgba(34,201,122,0.06);border:1px solid rgba(34,201,122,0.3);border-radius:8px;padding:12px;text-align:center;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);margin-bottom:6px;">✓ TRUE</div>
+                  <div style="font-size:12px;color:var(--text2);">Vendedor senior<br>Notificación urgente<br>Tarea inmediata</div>
+                </div>
+                <div style="background:rgba(240,90,90,0.05);border:1px solid rgba(240,90,90,0.3);border-radius:8px;padding:12px;text-align:center;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);margin-bottom:6px;">✗ FALSE</div>
+                  <div style="font-size:12px;color:var(--text2);">Equipo general<br>Notificación normal<br>Tarea en 24h</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">📋 Los 10 IFs más útiles en automatización comercial</div>
+        <table class="ct" style="margin-top:0;">
+          <thead>
+            <tr><th>Pregunta</th><th>Campo</th><th>Operador</th><th>Valor</th><th>Uso</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>¿Tiene teléfono?</td><td><code>telefono</code></td><td>Exists</td><td>—</td><td>WhatsApp vs solo email</td></tr>
+            <tr><td>¿Score alto?</td><td><code>score</code></td><td>≥</td><td><code>80</code></td><td>Senior vs general</td></tr>
+            <tr><td>¿Email corporativo?</td><td><code>email</code></td><td>Does not contain</td><td><code>gmail / hotmail</code></td><td>B2B vs B2C</td></tr>
+            <tr><td>¿Primera vez?</td><td><code>cantidad_contactos</code></td><td>=</td><td><code>0</code></td><td>Bienvenida vs follow-up</td></tr>
+            <tr><td>¿Ya es cliente?</td><td><code>estado</code></td><td>=</td><td><code>"Cliente"</code></td><td>Upsell vs captación</td></tr>
+            <tr><td>¿Horario laboral?</td><td><code>hora</code></td><td>Between</td><td><code>9, 18</code></td><td>Enviar ahora vs encolar</td></tr>
+            <tr><td>¿Presupuesto alto?</td><td><code>presupuesto</code></td><td>≥</td><td><code>5000</code></td><td>Demo personalizada</td></tr>
+            <tr><td>¿Interés especificado?</td><td><code>interes</code></td><td>Is not empty</td><td>—</td><td>Email genérico vs específico</td></tr>
+            <tr><td>¿Viene de referido?</td><td><code>fuente</code></td><td>=</td><td><code>"referido"</code></td><td>Descuento especial</td></tr>
+            <tr><td>¿Inactivo mucho tiempo?</td><td><code>dias_sin_respuesta</code></td><td>≥</td><td><code>30</code></td><td>Campaña de reactivación</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">✅ IF con condiciones AND — ejemplo real</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo IF — modo: Rules</span>
+<span class="cm">// Combinar con AND (todas deben cumplirse)</span>
+
+<span class="cm">// Condición 1</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.score}}</span>
+<span class="ky">Operation:</span> Larger Than
+<span class="ky">Value 2:</span>   <span class="vl">70</span>
+
+<span class="cm">// Condición 2 (clic en "+ Add Condition")</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.telefono}}</span>
+<span class="ky">Operation:</span> Is Not Empty
+
+<span class="cm">// Combinar con: AND</span>
+<span class="cm">// True solo si score > 70 Y tiene teléfono</span>
+<span class="cm">// → llamada directa al lead</span>
+<span class="cm">// False: solo email, sin llamada</span>
+          </div>
+        </div>
+
+        <div class="card amb">
+          <div class="card-label">✅ IF con condiciones OR — ejemplo real</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo IF — modo: Rules</span>
+<span class="cm">// Combinar con OR (basta una)</span>
+
+<span class="cm">// Condición 1</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.fuente}}</span>
+<span class="ky">Operation:</span> Equals
+<span class="ky">Value 2:</span>   <span class="str">"referido"</span>
+
+<span class="cm">// Condición 2</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.score}}</span>
+<span class="ky">Operation:</span> Larger Than
+<span class="ky">Value 2:</span>   <span class="vl">90</span>
+
+<span class="cm">// Combinar con: OR</span>
+<span class="cm">// True si es referido O si el score > 90</span>
+<span class="cm">// → tratamiento VIP automático</span>
+<span class="cm">// False: flujo estándar</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Las dos salidas del IF siempre deben estar conectadas.</strong> Si dejas la salida False sin conectar, los datos que no cumplan la condición simplemente desaparecen del workflow. Conecta siempre ambas salidas, aunque una de ellas vaya a un nodo que no hace nada (NoOp) para que sea explícito.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('nodo-switch')">Siguiente: Nodo Switch →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · SWITCH ══ -->
+    <section id="nodo-switch" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 4</div>
+        <h1>Nodo Switch — <span>Múltiples Rutas</span></h1>
+        <p>El Switch es como tener varios IFs en un solo nodo. Evalúa un campo y enruta el dato por la salida que corresponda. Es la herramienta perfecta cuando hay más de dos casos posibles.</p>
+      </div>
+
+      <div class="card sb" style="margin-bottom:16px;">
+        <div class="card-label">🔢 Estructura del nodo Switch</div>
+        <div class="sw-container">
+          <div class="sw-root">
+            <span class="lbl">Switch —</span>
+            <span style="color:var(--text2);">campo evaluado:</span>
+            <code style="font-size:13px;">{{$json.plan}}</code>
+          </div>
+          <div class="sw-outputs">
+            <div class="sw-out">
+              <div class="sw-out-num" style="background:rgba(240,90,90,0.15);color:var(--red);">1</div>
+              <div>
+                <div class="sw-out-cond"><span style="color:var(--red);">plan</span> = <span style="color:var(--green);">"premium"</span></div>
+                <div class="sw-out-action">→ Onboarding personal + llamada de bienvenida + descuento VIP</div>
+              </div>
+            </div>
+            <div class="sw-out">
+              <div class="sw-out-num" style="background:rgba(124,110,245,0.15);color:var(--accent2);">2</div>
+              <div>
+                <div class="sw-out-cond"><span style="color:var(--accent2);">plan</span> = <span style="color:var(--green);">"pro"</span></div>
+                <div class="sw-out-action">→ Email de activación + tutorial en video + soporte por chat</div>
+              </div>
+            </div>
+            <div class="sw-out">
+              <div class="sw-out-num" style="background:rgba(240,160,48,0.15);color:var(--amber);">3</div>
+              <div>
+                <div class="sw-out-cond"><span style="color:var(--amber);">plan</span> = <span style="color:var(--green);">"basico"</span></div>
+                <div class="sw-out-action">→ Email automático + acceso al portal de autoservicio</div>
+              </div>
+            </div>
+            <div class="sw-out" style="border-color:rgba(56,189,248,0.3);background:rgba(56,189,248,0.03);">
+              <div class="sw-out-num" style="background:rgba(56,189,248,0.15);color:var(--sky);">FB</div>
+              <div>
+                <div class="sw-out-cond" style="color:var(--sky);">Fallback — ninguna regla coincidió</div>
+                <div class="sw-out-action">→ Notificar al equipo para revisión manual</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card proc ab">
+          <div class="card-label">⚙️ Configuración del Switch en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Switch</span>
+<span class="ky">Mode:</span> Rules  <span class="cm">← recomendado</span>
+
+<span class="cm">// ── REGLA 1 ───────────────────────────────</span>
+<span class="ky">Value 1:</span>    <span class="kw">{{$json.plan}}</span>
+<span class="ky">Operation:</span>  Equals
+<span class="ky">Value 2:</span>    <span class="str">"premium"</span>
+<span class="ky">Output:</span>     0
+
+<span class="cm">// ── REGLA 2 ───────────────────────────────</span>
+<span class="ky">Value 1:</span>    <span class="kw">{{$json.plan}}</span>
+<span class="ky">Operation:</span>  Equals
+<span class="ky">Value 2:</span>    <span class="str">"pro"</span>
+<span class="ky">Output:</span>     1
+
+<span class="cm">// ── REGLA 3 ───────────────────────────────</span>
+<span class="ky">Value 1:</span>    <span class="kw">{{$json.plan}}</span>
+<span class="ky">Operation:</span>  Equals
+<span class="ky">Value 2:</span>    <span class="str">"basico"</span>
+<span class="ky">Output:</span>     2
+
+<span class="cm">// ── FALLBACK ──────────────────────────────</span>
+<span class="ky">Fallback Output:</span> activado → Output 3
+<span class="cm">// Siempre activar el fallback</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📋 Casos de uso más comunes del Switch</div>
+          <table class="ct" style="margin-top:0;">
+            <thead><tr><th>Campo</th><th>Salidas posibles</th><th>Para qué</th></tr></thead>
+            <tbody>
+              <tr><td><code>plan</code></td><td>premium / pro / básico</td><td>Onboarding diferente por plan</td></tr>
+              <tr><td><code>pais</code></td><td>MX / CO / AR / otro</td><td>Precios e impuestos locales</td></tr>
+              <tr><td><code>industria</code></td><td>retail / salud / tech</td><td>Email con casos de éxito específicos</td></tr>
+              <tr><td><code>estado</code></td><td>nuevo / contactado / interesado</td><td>Acción según etapa del pipeline</td></tr>
+              <tr><td><code>fuente</code></td><td>ads / organic / referido</td><td>Mensaje según cómo llegó</td></tr>
+              <tr><td><code>tipo_lead</code></td><td>caliente / medio / frío</td><td>Asignación y urgencia</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🔀 Switch en modo Expression — evaluación dinámica</div>
+        <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo Switch — modo: Expression (avanzado)</span>
+<span class="cm">// Útil cuando la condición es un cálculo, no un valor fijo</span>
+
+<span class="ky">Mode:</span> Expression
+
+<span class="cm">// Expresión que devuelve un número de output:</span>
+<span class="ky">Output:</span>
+<span class="kw">{{
+  $json.score >= 80 ? 0 :   // Output 0: caliente
+  $json.score >= 50 ? 1 :   // Output 1: medio
+  $json.score >= 30 ? 2 :   // Output 2: frío
+                      3     // Output 3: descartar
+}}</span>
+
+<span class="cm">// Ventaja: una sola expresión define todas las rutas
+// Desventaja: más difícil de leer para el equipo
+// Recomendado: usar Rules para la mayoría de casos</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Siempre activa el Fallback Output.</strong> Si llega un lead con un valor de <code>plan</code> que no estaba en tus reglas (por ejemplo <code>"enterprise"</code> que no definiste), sin fallback el dato se pierde silenciosamente. Con fallback va a un camino de revisión manual y no se pierde.</div></div>
+        <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>El Switch no conecta la misma salida dos veces.</strong> Cada output es independiente. Si quieres que dos valores distintos ejecuten la misma acción, conecta ambos outputs al mismo nodo siguiente, o fusiona las ramas con un nodo Merge después.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('nodo-if')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('condiciones')">Siguiente: Condiciones avanzadas →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · CONDICIONES AVANZADAS ══ -->
+    <section id="condiciones" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 5</div>
+        <h1>Condiciones <span>Avanzadas</span></h1>
+        <p>Más allá del "igual a" y "mayor que". Estas son las condiciones que resuelven los casos reales: campos vacíos, textos parciales, fechas relativas y evaluaciones sobre arrays.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card tb">
+          <div class="card-label">🔍 Condiciones sobre texto — operadores clave</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// ── CONTIENE (Contains) ───────────────────</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.email}}</span>
+<span class="ky">op:</span>     Contains
+<span class="ky">valor:</span>  <span class="str">"empresa.com"</span>
+<span class="cm">// True para ana@empresa.com, carlos@empresa.com</span>
+
+<span class="cm">// ── NO CONTIENE (Does Not Contain) ────────</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.email}}</span>
+<span class="ky">op:</span>     Does Not Contain
+<span class="ky">valor:</span>  <span class="str">"gmail"</span>
+<span class="cm">// True para todos los NO gmail → B2B</span>
+
+<span class="cm">// ── VACÍO / NO VACÍO ──────────────────────</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.telefono}}</span>
+<span class="ky">op:</span>     Is Empty <span class="cm">← o Is Not Empty</span>
+<span class="cm">// True si el campo es "", null o undefined</span>
+
+<span class="cm">// ── EXPRESIÓN REGEX (avanzado) ────────────</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.email}}</span>
+<span class="ky">op:</span>     Regex
+<span class="ky">valor:</span>  <span class="str">"^[^@]+@[^@]+\.[^@]+$"</span>
+<span class="cm">// Valida formato de email básico</span>
+          </div>
+        </div>
+
+        <div class="card amb">
+          <div class="card-label">🔢 Condiciones sobre números — rangos y comparaciones</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// ── MAYOR / MENOR ─────────────────────────</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.score}}</span>
+<span class="ky">op:</span>     Larger Than
+<span class="ky">valor:</span>  <span class="vl">80</span>
+
+<span class="cm">// ── ENTRE (Between) — en Expression mode ──</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.score >= 50 && $json.score < 80}}</span>
+<span class="ky">op:</span>     Is True
+<span class="cm">// Score entre 50 y 79 inclusive</span>
+
+<span class="cm">// ── DIVISIBLE (par/impar para distribución) </span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.id % 2}}</span>
+<span class="ky">op:</span>     Equals
+<span class="ky">valor:</span>  <span class="vl">0</span>
+<span class="cm">// IDs pares → vendedor A, impares → vendedor B
+// Útil para distribución Round Robin sin base de datos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card pb" style="margin-bottom:16px;">
+        <div class="card-label">📅 Condiciones sobre fechas y tiempo — casos reales</div>
+        <div class="g2" style="margin-bottom:0;">
+          <div class="code-block" style="margin-top:0;font-size:12px;">
+<span class="cm">// ── HORARIO LABORAL ───────────────────────</span>
+<span class="cm">// Enviar emails solo de lunes a viernes 9–18h</span>
+<span class="ky">campo:</span>  <span class="kw">{{new Date().getHours()}}</span>
+<span class="ky">op:</span>     Larger Than Or Equal
+<span class="ky">valor:</span>  <span class="vl">9</span>
+
+<span class="cm">// Y también:</span>
+<span class="ky">campo:</span>  <span class="kw">{{new Date().getHours()}}</span>
+<span class="ky">op:</span>     Smaller Than
+<span class="ky">valor:</span>  <span class="vl">18</span>
+
+<span class="cm">// Combinar con AND → ambas true = horario laboral</span>
+          </div>
+          <div class="code-block" style="margin-top:0;font-size:12px;">
+<span class="cm">// ── DÍAS SIN ACTIVIDAD ────────────────────</span>
+<span class="cm">// ¿Llevan más de 7 días sin responder?</span>
+<span class="ky">campo:</span>
+<span class="kw">{{
+  const ultimo = new Date($json.ultimo_contacto);
+  const hoy = new Date();
+  const dias = (hoy - ultimo) / (1000*60*60*24);
+  dias
+}}</span>
+<span class="ky">op:</span>     Larger Than
+<span class="ky">valor:</span>  <span class="vl">7</span>
+
+<span class="cm">// True si llevan más de 7 días sin actividad
+// → activar campaña de reactivación automática</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">🧩 IFs anidados — condiciones dentro de condiciones</div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:14px;">Puedes conectar la salida True de un IF a otro IF, y así sucesivamente. Cada nivel añade una capa de refinamiento. Úsalo con moderación: más de 3 niveles se vuelve difícil de mantener.</p>
+        <div class="flow-row">
+          <div class="fn trig">
+            <div class="fi">📥</div>
+            <div class="ft">Lead</div>
+            <div class="fn2">Nuevo</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn cond">
+            <div class="fi">🔀</div>
+            <div class="ft">IF #1</div>
+            <div class="fn2">score &gt; 70</div>
+            <div class="fn3">primer filtro</div>
+          </div>
+          <div class="fa" style="flex-direction:column;gap:4px;">
+            <span style="font-size:11px;color:var(--green);">✓</span>
+            <span style="font-size:16px;">→</span>
+          </div>
+          <div class="fn cond">
+            <div class="fi">🔀</div>
+            <div class="ft">IF #2</div>
+            <div class="fn2">tiene tel</div>
+            <div class="fn3">segundo filtro</div>
+          </div>
+          <div class="fa" style="flex-direction:column;gap:4px;">
+            <span style="font-size:11px;color:var(--green);">✓</span>
+            <span style="font-size:16px;">→</span>
+          </div>
+          <div class="fn act">
+            <div class="fi">📞</div>
+            <div class="ft">Acción</div>
+            <div class="fn2">Llamada</div>
+            <div class="fn3">VIP</div>
+          </div>
+          <div class="fa">|</div>
+          <div class="fn err">
+            <div class="fi">📧</div>
+            <div class="ft">Fallback</div>
+            <div class="fn2">Solo email</div>
+            <div class="fn3">sin tel</div>
+          </div>
+        </div>
+        <div class="tip" style="margin-top:12px;margin-bottom:0;">
+          <span class="ti">💡</span>
+          <div class="tt"><strong>Alternativa más limpia:</strong> en vez de anidar dos IFs, usa un solo nodo Code que calcule una variable compuesta (<code>segmento</code>) y luego un único Switch sobre esa variable. El workflow es más fácil de leer y depurar.</div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('nodo-switch')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('combinaciones')">Siguiente: Combinaciones reales →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · COMBINACIONES ══ -->
+    <section id="combinaciones" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6</div>
+        <h1>Combinaciones <span>Reales</span></h1>
+        <p>En la práctica, IF y Switch casi nunca se usan solos. Esta sección muestra los patrones más útiles de cómo combinarlos para resolver casos del mundo real.</p>
+      </div>
+
+      <!-- PATRÓN 1 -->
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">🧩 Patrón 1 — Code + Switch: clasificar antes de enrutar</div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:14px;">En vez de usar condiciones complejas dentro del Switch, primero calculas una variable simple en un nodo Code y luego el Switch evalúa esa variable. El workflow queda limpio y fácil de modificar.</p>
+        <div class="flow-row">
+          <div class="fn trig">
+            <div class="fi">📥</div>
+            <div class="ft">Entrada</div>
+            <div class="fn2">Lead</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn proc">
+            <div class="fi">⚙️</div>
+            <div class="ft">Code</div>
+            <div class="fn2">Calcular</div>
+            <div class="fn3">segmento</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn val">
+            <div class="fi">🔢</div>
+            <div class="ft">Switch</div>
+            <div class="fn2">segmento</div>
+            <div class="fn3">4 salidas</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn act">
+            <div class="fi">🔥</div>
+            <div class="ft">Ruta A</div>
+            <div class="fn2">VIP</div>
+          </div>
+          <div class="fa">|</div>
+          <div class="fn out">
+            <div class="fi">🟡</div>
+            <div class="ft">Ruta B</div>
+            <div class="fn2">Standard</div>
+          </div>
+          <div class="fa">|</div>
+          <div class="fn wait">
+            <div class="fi">❄️</div>
+            <div class="ft">Ruta C</div>
+            <div class="fn2">Nurture</div>
+          </div>
+        </div>
+        <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo Code — calcular variable "segmento"</span>
+<span class="kw">const</span> d = $input.first().json;
+<span class="kw">let</span> segmento;
+
+<span class="kw">if</span>     (d.score >= <span class="vl">80</span> && d.fuente === <span class="str">'referido'</span>) segmento = <span class="str">'vip'</span>;
+<span class="kw">else if</span>(d.score >= <span class="vl">80</span>)                              segmento = <span class="str">'caliente'</span>;
+<span class="kw">else if</span>(d.score >= <span class="vl">50</span>)                              segmento = <span class="str">'medio'</span>;
+<span class="kw">else</span>                                                 segmento = <span class="str">'frio'</span>;
+
+<span class="kw">return</span> [{ json: { ...d, <span class="ky">segmento</span> } }];
+
+<span class="cm">// Ahora el Switch solo evalúa {{$json.segmento}}
+// con 4 reglas simples: vip / caliente / medio / frío</span>
+        </div>
+      </div>
+
+      <!-- PATRÓN 2 -->
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">🧩 Patrón 2 — Merge + IF: reagrupar ramas y tomar decisión unificada</div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:14px;">A veces quieres que varias ramas del Switch vuelvan a juntarse antes de continuar. El nodo Merge une los datos y luego un IF decide el siguiente paso para todos.</p>
+        <div class="code-block" style="font-size:12px;">
+<span class="cm">// Escenario: 3 planes distintos con onboarding diferente,
+// pero todos pasan por la misma verificación de email al final</span>
+
+<span class="cm">// Switch → 3 ramas (premium, pro, básico)</span>
+<span class="cm">// Cada rama hace su onboarding específico</span>
+<span class="cm">// Las 3 ramas convergen en un Nodo Merge</span>
+<span class="cm">// El Merge reúne todos los datos</span>
+
+<span class="cm">// Nodo Merge — configuración:</span>
+<span class="ky">Mode:</span>           Append  <span class="cm">← todos los items juntos</span>
+<span class="ky">Number of Inputs:</span> 3
+
+<span class="cm">// Después del Merge → IF: ¿email corporativo?</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.email}}</span>
+<span class="ky">op:</span>     Does Not Contain
+<span class="ky">valor:</span>  <span class="str">"gmail"</span>
+<span class="cm">// True  → notificar al equipo B2B</span>
+<span class="cm">// False → email al equipo B2C</span>
+        </div>
+      </div>
+
+      <!-- PATRÓN 3 -->
+      <div class="card sb" style="margin-bottom:16px;">
+        <div class="card-label">🧩 Patrón 3 — IF como guardián: validar antes de ejecutar</div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:14px;">Uno de los usos más valiosos del IF es como <strong style="color:var(--text);">guardián</strong>: evitar que el workflow continúe con datos incorrectos o incompletos antes de llamar a una API o actualizar una base de datos.</p>
+        <div class="g2" style="margin-bottom:0;">
+          <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="cm">// IF como guardián de email válido</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.email}}</span>
+<span class="ky">op:</span>     Regex
+<span class="ky">valor:</span>  <span class="str">"^[^@]+@[^@]+\.[^@]+$"</span>
+
+<span class="str">✓ True</span>  → continuar al siguiente nodo
+<span class="rd">✗ False</span> → guardar en hoja "Leads con error"
+            + notificar al equipo
+
+<span class="cm">// Nunca enviará un email a una dirección
+// inválida porque el IF lo bloquea antes</span>
+          </div>
+          <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="cm">// IF como guardián de duplicados</span>
+<span class="cm">// (después de buscar en Sheets)</span>
+<span class="ky">campo:</span>  <span class="kw">{{$json.ya_existe}}</span>
+<span class="ky">op:</span>     Is False  <span class="cm">← o Equals false</span>
+
+<span class="str">✓ True</span>  → es nuevo → continuar flujo completo
+<span class="rd">✗ False</span> → ya existe → solo actualizar
+            fecha de último contacto
+
+<span class="cm">// Evita crear registros duplicados en Sheets
+// y enviar emails de bienvenida dos veces</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('condiciones')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('caso')">Siguiente: Caso práctico →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · CASO PRÁCTICO ══ -->
+    <section id="caso" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 7</div>
+        <h1>Caso Práctico — <span>Router de Leads Inteligente</span></h1>
+        <p>Construyes un workflow completo que recibe un lead y lo enruta por el camino exacto según su perfil. Este es el tipo de sistema que los equipos comerciales pagan miles de dólares en plataformas externas.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🚀 El objetivo del ejercicio</div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:14px;">Cuando llega un lead, el sistema debe:</p>
+        <div class="g2" style="margin-bottom:0;">
+          <ul class="cl">
+            <li><span class="ck">1</span><div><strong style="color:var(--text);">Validar que tiene email válido</strong><br><span style="font-size:13px;">Si no es válido → guardar en hoja de errores y parar.</span></div></li>
+            <li><span class="ck">2</span><div><strong style="color:var(--text);">Verificar si ya existe en la base</strong><br><span style="font-size:13px;">Si ya existe → solo actualizar fecha. Si es nuevo → continuar.</span></div></li>
+            <li><span class="ck">3</span><div><strong style="color:var(--text);">Calcular su segmento</strong><br><span style="font-size:13px;">VIP, caliente, medio o frío según score y fuente.</span></div></li>
+            <li><span class="ck">4</span><div><strong style="color:var(--text);">Enrutar por el camino correcto</strong><br><span style="font-size:13px;">Cada segmento tiene una acción distinta.</span></div></li>
+          </ul>
+          <ul class="cl">
+            <li><span class="ck">5</span><div><strong style="color:var(--text);">Verificar el horario antes de notificar</strong><br><span style="font-size:13px;">Si es fuera de horario → encolar para el día siguiente.</span></div></li>
+            <li><span class="ck">6</span><div><strong style="color:var(--text);">Enviar el email correcto según el segmento</strong><br><span style="font-size:13px;">4 templates distintos, uno por segmento.</span></div></li>
+            <li><span class="ck">7</span><div><strong style="color:var(--text);">Actualizar estado en Sheets</strong><br><span style="font-size:13px;">El registro siempre refleja la acción más reciente.</span></div></li>
+            <li><span class="ck">8</span><div><strong style="color:var(--text);">Notificar solo si es urgente</strong><br><span style="font-size:13px;">VIP y caliente → Slack. Medio y frío → solo email.</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card proc ab" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Código completo del router — Nodo Code principal</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Code — Router de leads completo</span>
+<span class="kw">const</span> d = $input.first().json;
+
+<span class="cm">// ── PASO 1: VALIDAR EMAIL ─────────────────────────</span>
+<span class="kw">const</span> emailValido = /^[^@]+@[^@]+\.[^@]+$/.test(d.email);
+<span class="kw">if</span> (!emailValido) {
+  <span class="kw">return</span> [{ json: { ...d, <span class="ky">error</span>: <span class="str">'email_invalido'</span>, <span class="ky">accion</span>: <span class="str">'descartar'</span> } }];
+}
+
+<span class="cm">// ── PASO 2: DETECTAR TIPO DE EMAIL ───────────────</span>
+<span class="kw">const</span> emailsCorporativos = [<span class="str">'gmail'</span>,<span class="str">'hotmail'</span>,<span class="str">'yahoo'</span>,<span class="str">'outlook'</span>];
+<span class="kw">const</span> esB2B = !emailsCorporativos.some(dom =>
+  d.email.toLowerCase().includes(dom)
+);
+
+<span class="cm">// ── PASO 3: CALCULAR SEGMENTO ─────────────────────</span>
+<span class="kw">let</span> segmento;
+<span class="kw">if</span>     (d.score >= <span class="vl">80</span> && d.fuente === <span class="str">'referido'</span>) segmento = <span class="str">'vip'</span>;
+<span class="kw">else if</span>(d.score >= <span class="vl">80</span>)                              segmento = <span class="str">'caliente'</span>;
+<span class="kw">else if</span>(d.score >= <span class="vl">50</span>)                              segmento = <span class="str">'medio'</span>;
+<span class="kw">else</span>                                                 segmento = <span class="str">'frio'</span>;
+
+<span class="cm">// ── PASO 4: VERIFICAR HORARIO LABORAL ────────────</span>
+<span class="kw">const</span> hora = <span class="kw">new</span> Date().getHours();
+<span class="kw">const</span> dia  = <span class="kw">new</span> Date().getDay(); <span class="cm">// 0=dom, 6=sab</span>
+<span class="kw">const</span> horaLaboral = hora >= <span class="vl">9</span> && hora < <span class="vl">18</span> && dia > <span class="vl">0</span> && dia < <span class="vl">6</span>;
+
+<span class="cm">// ── PASO 5: DEFINIR ACCIÓN SEGÚN SEGMENTO ────────</span>
+<span class="kw">const</span> config = {
+  <span class="ky">vip</span>:      { notificar: <span class="kw">true</span>,  canal: <span class="str">'#ventas-vip'</span>,     urgente: <span class="kw">true</span>  },
+  <span class="ky">caliente</span>: { notificar: <span class="kw">true</span>,  canal: <span class="str">'#ventas-urgente'</span>, urgente: <span class="kw">true</span>  },
+  <span class="ky">medio</span>:    { notificar: <span class="kw">false</span>, canal: <span class="str">'#ventas-general'</span>, urgente: <span class="kw">false</span> },
+  <span class="ky">frio</span>:     { notificar: <span class="kw">false</span>, canal: <span class="str">''</span>,                urgente: <span class="kw">false</span> }
+}[segmento];
+
+<span class="kw">return</span> [{ json: {
+  ...d,
+  <span class="ky">segmento</span>,
+  <span class="ky">es_b2b</span>:        esB2B,
+  <span class="ky">hora_laboral</span>:  horaLaboral,
+  <span class="ky">notificar</span>:     config.notificar,
+  <span class="ky">canal_slack</span>:   config.canal,
+  <span class="ky">urgente</span>:       config.urgente,
+  <span class="ky">email_template</span>: <span class="str">`template_${segmento}`</span>
+}}];
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card val sb">
+          <div class="card-label">🔢 Switch sobre el segmento calculado</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Switch — después del Code</span>
+<span class="ky">Mode:</span>  Rules
+<span class="ky">Campo:</span> <span class="kw">{{$json.segmento}}</span>
+
+<span class="cm">// Regla 1</span>
+<span class="ky">Equals</span> <span class="str">"vip"</span>      → Output 0
+<span class="cm">// Acciones VIP:
+// - Email personalizado
+// - Slack #ventas-vip
+// - Tarea urgente en Calendar
+// - Asignar director comercial</span>
+
+<span class="cm">// Regla 2</span>
+<span class="ky">Equals</span> <span class="str">"caliente"</span>  → Output 1
+<span class="cm">// Acciones caliente:
+// - Email rápido
+// - Slack #ventas-urgente
+// - Tarea en 2h</span>
+
+<span class="cm">// Regla 3</span>
+<span class="ky">Equals</span> <span class="str">"medio"</span>     → Output 2
+<span class="cm">// Acciones medio:
+// - Email estándar
+// - Tarea en 24h</span>
+
+<span class="cm">// Fallback → Output 3 (frío → nurture)</span>
+          </div>
+        </div>
+
+        <div class="card gb">
+          <div class="card-label">✅ IF de horario — antes de notificar por Slack</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: IF — solo notificar en horario laboral</span>
+<span class="cm">// Va ANTES del nodo de Slack en cada rama</span>
+
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.hora_laboral}}</span>
+<span class="ky">Operation:</span> Is True
+
+<span class="str">✓ True</span>  → Enviar Slack inmediatamente
+<span class="rd">✗ False</span> → Guardar en cola de "pendientes"
+           que se envía al inicio del día siguiente
+           (cron 9am que lee la cola y envía todo)
+
+<span class="cm">// Así el equipo no recibe notificaciones
+// a las 2am por leads de otras zonas horarias</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">🔥</span><div class="tt"><strong>Este es el workflow más completo del curso hasta ahora.</strong> Combina validación, detección de duplicados, scoring, segmentación, enrutamiento por switch, verificación de horario y notificación selectiva. Todos los conceptos de las clases 1 a 6 en un solo sistema.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('combinaciones')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('practicas')">Siguiente: Buenas prácticas →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · PRÁCTICAS ══ -->
+    <section id="practicas" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Buenas Prácticas y <span>Errores Comunes</span></h1>
+        <p>La lógica condicional es donde los workflows se rompen con más frecuencia. Estos son los patrones que hacen la diferencia entre un sistema frágil y uno que funciona en producción.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">✅ Buenas prácticas</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Calcular variables de decisión en un Code previo</strong><br><span style="font-size:13px;">No pongas lógica compleja dentro del IF. Calcula el campo <code>segmento</code>, <code>prioridad</code> o <code>ruta</code> en un nodo Code antes, y que el IF o Switch solo evalúe ese campo simple.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Siempre conectar la salida False del IF</strong><br><span style="font-size:13px;">Aunque no hagas nada con los datos que no cumplen la condición, conéctalos a un nodo de log o de notificación. Nunca dejes datos desapareciendo silenciosamente.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Siempre activar el Fallback del Switch</strong><br><span style="font-size:13px;">Los valores inesperados siempre aparecen en producción. El fallback los captura antes de que causen un error silencioso en el sistema.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Nombrar los nodos con claridad</strong><br><span style="font-size:13px;">"IF — ¿score alto?" es mucho mejor que "IF1". Cuando el workflow tenga 30 nodos, los nombres son la única documentación que tienes.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probar cada rama individualmente</strong><br><span style="font-size:13px;">Usa el botón "Execute" con datos de prueba específicos para cada caso. Un lead con score 90, otro con 60, otro con 20. Verifica que cada uno va por la rama correcta.</span></div></li>
+          </ul>
+        </div>
+
+        <div class="card rb">
+          <div class="card-label">⚠️ Errores comunes</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Comparar tipos distintos</strong><br><span style="font-size:13px;"><code>score</code> como string vs como número: <code>"80" > 80</code> da un resultado inesperado en JavaScript. Usa <code>Number($json.score)</code> para asegurarte de comparar números con números.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Condición sobre campo que puede ser null</strong><br><span style="font-size:13px;"><code>$json.telefono.length > 7</code> lanza un error si <code>telefono</code> es null. Usa siempre <code>$json.telefono?.length > 7</code> o verifica existencia primero.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Usar OR cuando se necesita AND (y viceversa)</strong><br><span style="font-size:13px;">Confundir AND con OR en condiciones múltiples es el error más frecuente. Léelo en voz alta: "¿necesito que TODAS se cumplan, o basta con UNA?"</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Switch sin fallback en producción</strong><br><span style="font-size:13px;">Un valor nuevo (como un plan que se agregó después) hace que los datos desaparezcan sin error. Siempre activa el fallback y conéctalo a una notificación de revisión.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Más de 4 niveles de IFs anidados</strong><br><span style="font-size:13px;">El workflow se vuelve ilegible y difícil de depurar. Cuando necesites más de 3 niveles, refactoriza: usa un Code que calcule la decisión y un Switch limpio sobre el resultado.</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:0;">
+        <div class="card-label">🚀 Bonus nivel pro — extensiones avanzadas</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <div class="wtu"><span class="we">🧠</span><div class="wt"><strong>Lógica condicional con IA:</strong> en vez de reglas fijas, enviar el contenido del lead a Claude via API y pedirle que decida la ruta óptima. La IA puede evaluar el texto libre del campo "mensaje" y detectar intención de compra.</div></div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>A/B testing automático:</strong> usar <code>Math.random() > 0.5</code> como condición en un IF para dividir leads al 50% entre dos variantes de email. Medir tasas de apertura en Sheets y ajustar.</div></div>
+            <div class="wtu"><span class="we">🕐</span><div class="wt"><strong>Routing por timezone:</strong> detectar la zona horaria del lead por su dominio o código de país y enrutar a un equipo diferente para que siempre lo atienda alguien en su horario laboral.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">🔁</span><div class="wt"><strong>Re-routing dinámico:</strong> un workflow separado que corre cada noche y re-evalúa todos los leads "medio" con actividad reciente para ver si subieron de segmento y merecen acción inmediata.</div></div>
+            <div class="wtu"><span class="we">⚡</span><div class="wt"><strong>Condicionales sobre historial:</strong> buscar en Sheets si el email ya tuvo interacciones previas y usar ese historial como variable de decisión. Un lead que ya habló antes merece un trato diferente.</div></div>
+            <div class="wtu"><span class="we">🛡️</span><div class="wt"><strong>Guardianes en cadena:</strong> poner 3–4 IFs al inicio del workflow (email válido, no duplicado, no en lista negra, no bot) antes de ejecutar ninguna acción real. El workflow es así a prueba de datos sucios.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('caso')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · ENTREGABLE ══ -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable — <span>Router Inteligente</span></h1>
+        <p>Al terminar esta clase tienes un sistema que no solo procesa leads: los entiende, los evalúa y toma decisiones autónomas sobre cada uno.</p>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Checklist del entregable</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Nodo IF de validación funcionando</strong><br><span style="font-size:13px;">Un email inválido (sin @, sin dominio) va por la rama False y se guarda en la hoja de errores. Un email válido continúa el flujo.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Nodo Code calculando el segmento correctamente</strong><br><span style="font-size:13px;">Lead con score 85 y fuente "referido" → <code>segmento: "vip"</code>. Lead con score 85 sin referido → <code>segmento: "caliente"</code>. Lead con score 55 → <code>segmento: "medio"</code>. Lead con score 25 → <code>segmento: "frio"</code>.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Switch con 4 salidas y fallback activo</strong><br><span style="font-size:13px;">Cada segmento va por su output correspondiente. Un valor inesperado (por ejemplo <code>"enterprise"</code>) va al fallback y notifica al equipo.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">IF de horario laboral antes del Slack</strong><br><span style="font-size:13px;">Un lead que llega a las 2am no dispara la notificación de Slack. Se encola y se envía a las 9am del día siguiente.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">4 emails distintos según segmento</strong><br><span style="font-size:13px;">El lead VIP recibe un email con tono personal y urgente. El lead frío recibe contenido educativo. Los 4 templates están configurados y funcionan.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con un lead por cada segmento</strong><br><span style="font-size:13px;">4 ejecuciones de prueba con datos distintos. Cada una va por la rama correcta y ejecuta las acciones correspondientes. Los estados en Sheets son correctos después de cada prueba.</span></div></li>
+        </ul>
+      </div>
+
+      <!-- RESUMEN EVOLUTIVO -->
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏆 Evolución del sistema a lo largo del curso</div>
+        <div style="padding:8px 0;">
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);width:60px;flex-shrink:0;">Clase 1</span>
+            <div style="flex:1;height:6px;background:linear-gradient(90deg,var(--sky),var(--sky));border-radius:3px;width:20%;"></div>
+            <span style="font-size:13px;color:var(--text2);">Captura y guarda leads</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);width:60px;flex-shrink:0;">Clase 2</span>
+            <div style="flex:1;height:6px;background:linear-gradient(90deg,var(--sky),var(--accent));border-radius:3px;width:35%;"></div>
+            <span style="font-size:13px;color:var(--text2);">Score + asignación + secuencia de emails</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);width:60px;flex-shrink:0;">Clase 5</span>
+            <div style="flex:1;height:6px;background:linear-gradient(90deg,var(--sky),var(--teal));border-radius:3px;width:60%;"></div>
+            <span style="font-size:13px;color:var(--text2);">Mini CRM con pipeline y estados</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 0;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent2);width:60px;flex-shrink:0;">Clase 6</span>
+            <div style="flex:1;height:6px;background:linear-gradient(90deg,var(--accent),var(--lime));border-radius:3px;width:85%;"></div>
+            <span style="font-size:13px;color:var(--text);">Router inteligente — decisiones autónomas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGUIENTE CLASE -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(132,204,22,0.05) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">🤖</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Clase 7 — Integraciones con APIs Externas</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:540px;margin:0 auto 20px;">Con la lógica condicional dominada, el siguiente paso es conectar el sistema a servicios externos reales: APIs de envío de SMS, servicios de enriquecimiento de datos, plataformas de pago y CRMs profesionales como HubSpot.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">🔗 HTTP Request</span>
+            <span class="b bg">🏢 HubSpot API</span>
+            <span class="b bt">📱 Twilio SMS</span>
+            <span class="b ba">🔑 Auth & Headers</span>
+          </div>
+          <p style="color:var(--text3);font-size:13px;margin-top:16px;font-family:'JetBrains Mono',monospace;">Decisiones internas → Conexión con el mundo exterior</p>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('practicas')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','conceptos','nodo-if','nodo-switch','condiciones','combinaciones','caso','practicas','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(`.nav-item[onclick*="'${id}'"]`);go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Sección ${idx+1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>

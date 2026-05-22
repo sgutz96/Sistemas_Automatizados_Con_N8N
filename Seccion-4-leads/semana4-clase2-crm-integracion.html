@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semana 4 · Clase 2 — Integración con CRM Real</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --text:#f0eeff;--text2:#9b95b8;--text3:#5c577a;
+    --accent:#7c6ef5;--accent2:#a598ff;--accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a;--green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;--red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030;--amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;--teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;--pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;--sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;--lime-bg:rgba(132,204,22,0.1);
+    --oro:#f59e0b;--oro-bg:rgba(245,158,11,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .orb{border-color:rgba(245,158,11,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);}.str{color:var(--green);}.cm{color:var(--text3);}
+  .ky{color:var(--amber);}.vl{color:var(--teal);}.rd{color:var(--red);}
+  .pk{color:var(--pink);}.sk{color:var(--sky);}.lm{color:var(--lime);}.or{color:var(--oro);}
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;text-align:center;flex-shrink:0;min-width:100px;}
+  .fn .fi{font-size:18px;margin-bottom:4px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:2px;}
+  .fn .fn2{font-size:11px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);}.fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);}.fn.proc .ft{color:var(--accent2);}
+  .fn.act{border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}.fn.act .ft{color:var(--green);}
+  .fn.val{border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.05);}.fn.val .ft{color:var(--sky);}
+  .fn.out{border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}.fn.out .ft{color:var(--teal);}
+  .fn.crm{border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.05);}.fn.crm .ft{color:var(--oro);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bor{background:var(--oro-bg);color:var(--oro);}
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .io-row{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;align-items:start;margin-top:14px;}
+  .io-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8;}
+  .io-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+  .io-arr{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);padding-top:28px;}
+  .crm-card{border-radius:14px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .crm-card::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;opacity:0.07;pointer-events:none;}
+  .cc-hub{background:var(--bg2);border:1px solid rgba(245,158,11,0.4);}.cc-hub::before{background:var(--oro);}
+  .cc-pipe{background:var(--bg2);border:1px solid rgba(34,201,122,0.4);}.cc-pipe::before{background:var(--green);}
+  .cc-not{background:var(--bg2);border:1px solid rgba(232,121,160,0.4);}.cc-not::before{background:var(--pink);}
+  .cc-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;}
+  .cc-icon{font-size:30px;width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .cc-hub .cc-icon{background:rgba(245,158,11,0.12);}
+  .cc-pipe .cc-icon{background:rgba(34,201,122,0.12);}
+  .cc-not .cc-icon{background:rgba(232,121,160,0.12);}
+  .cc-type{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;}
+  .cc-hub .cc-type{color:var(--oro);}
+  .cc-pipe .cc-type{color:var(--green);}
+  .cc-not .cc-type{color:var(--pink);}
+  .cc-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .cc-desc{font-size:14px;color:var(--text2);line-height:1.6;}
+  .cc-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .cc-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;}
+  .cc-hub .cc-tag{background:var(--oro-bg);color:var(--oro);}
+  .cc-pipe .cc-tag{background:var(--green-bg);color:var(--green);}
+  .cc-not .cc-tag{background:var(--pink-bg);color:var(--pink);}
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;}.btn-p:hover{background:var(--accent2);}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);}.btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Semana 4 · Clase 2</div>
+      <h2>Integración con CRM Real</h2>
+      <p>n8n · HubSpot · Pipedrive · Notion</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> Introducción</a>
+    <a class="nav-item" onclick="go('comparativa',this)"><span class="ni">⚖️</span> ¿Qué CRM usar?</a>
+    <a class="nav-item" onclick="go('hubspot',this)"><span class="ni">🟠</span> HubSpot</a>
+    <a class="nav-item" onclick="go('pipedrive',this)"><span class="ni">🟢</span> Pipedrive</a>
+    <a class="nav-item" onclick="go('notion',this)"><span class="ni">⚫</span> Notion como CRM</a>
+    <a class="nav-item" onclick="go('logica',this)"><span class="ni">🔀</span> Lógica condicional</a>
+    <a class="nav-item" onclick="go('dedup',this)"><span class="ni">🔁</span> Deduplicación</a>
+    <a class="nav-item" onclick="go('flujo',this)"><span class="ni">🏗️</span> Flujo completo</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- 1 INTRO -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Semana 4 · Clase 2</div>
+        <h1>Integración con <span>CRM Real</span></h1>
+        <p>De Google Sheets al CRM profesional. Conecta n8n con HubSpot, Pipedrive o Notion y construye un pipeline de ventas que se actualiza solo.</p>
+      </div>
+      <div class="hl">
+        <div class="card-label">🎯 Objetivo de la clase</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">Conectar el sistema de leads de la Clase 1 directamente con un CRM real</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">En la Clase 1 guardamos leads en Sheets. Eso funciona para empezar, pero un equipo de ventas real necesita pipeline, etapas, historial y asignación. Hoy conectamos n8n a HubSpot, Pipedrive o Notion y agregamos <strong style="color:var(--text);">lógica condicional</strong> para que cada lead tome el camino correcto según su perfil.</p>
+      </div>
+      <div class="g4">
+        <div class="stat"><div class="sn">3</div><div class="sl">CRMs que cubres hoy</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">2x</div><div class="sl">acciones por lead — contacto Y deal en paralelo</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">IF</div><div class="sl">lógica condicional por perfil del lead</div></div>
+        <div class="stat"><div class="sn" style="color:var(--teal);">0</div><div class="sl">duplicados con deduplicación automática</div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">🧠 Qué vas a aprender</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Conectar n8n con HubSpot, Pipedrive y Notion</strong><br><span style="font-size:13px;">Autenticación, credenciales y las operaciones más útiles de cada CRM: nodo nativo listo para usar.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Crear contacto Y deal en el mismo flujo</strong><br><span style="font-size:13px;">Un lead genera dos registros asociados: el contacto (quién es) y el deal (la oportunidad de negocio).</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Lógica condicional por perfil del lead</strong><br><span style="font-size:13px;">Score alto → etapa "Calificado" + vendedor senior. Score bajo → "Nurturing" + secuencia automática.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Deduplicación — buscar antes de crear</strong><br><span style="font-size:13px;">Antes de crear, verificar si el email ya existe. Si existe: actualizar. Si no: crear. Cero duplicados.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Múltiples acciones desde un trigger</strong><br><span style="font-size:13px;">Un solo lead dispara: CRM + Slack + Gmail + Sheets + asignación de vendedor en paralelo.</span></div></li>
+        </ul>
+      </div>
+      <div class="card" style="background:var(--bg3);">
+        <div class="card-label">🔗 Conexión con la Clase 1</div>
+        <div class="flow-row" style="margin-top:12px;">
+          <div class="fn trig"><div class="fi">🌐</div><div class="ft">Clase 1</div><div class="fn2">Webhook</div></div>
+          <div class="fa">→</div>
+          <div class="fn val"><div class="fi">🛡️</div><div class="ft">Clase 1</div><div class="fn2">Validación</div></div>
+          <div class="fa">→</div>
+          <div class="fn proc"><div class="fi">🔧</div><div class="ft">Clase 1</div><div class="fn2">Set + Score</div></div>
+          <div class="fa">→</div>
+          <div class="fn act"><div class="fi">📊</div><div class="ft">Clase 1</div><div class="fn2">Sheets</div></div>
+          <div class="fa" style="font-size:20px;color:var(--accent);font-weight:700;">→</div>
+          <div class="fn crm" style="box-shadow:0 0 20px rgba(245,158,11,0.15);min-width:120px;">
+            <div class="fi">🏢</div><div class="ft">Clase 2 ← hoy</div><div class="fn2">CRM Real</div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">La Clase 2 extiende el flujo — no lo reemplaza →</p>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-p" onclick="goTo('comparativa')">Siguiente: ¿Qué CRM usar? →</button>
+      </div>
+    </section>
+
+    <!-- 2 COMPARATIVA -->
+    <section id="comparativa" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>¿Qué <span>CRM usar?</span></h1>
+        <p>Tres opciones, tres perfiles distintos. La elección depende de tu equipo, presupuesto y nivel técnico.</p>
+      </div>
+      <div class="g3">
+        <div class="card orb">
+          <div style="font-size:28px;margin-bottom:8px;">🟠</div>
+          <div class="card-label" style="color:var(--oro);">HubSpot CRM</div>
+          <h3>El más completo</h3>
+          <p style="font-size:13px;">CRM gratuito con pipeline visual, historial de contactos, emails, deals y reportes. Nodo nativo en n8n. Ideal para cualquier empresa.</p>
+          <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="b bor">Plan gratuito</span><span class="b bac">Nodo nativo</span><span class="b bg">Pipeline visual</span>
+          </div>
+        </div>
+        <div class="card gb">
+          <div style="font-size:28px;margin-bottom:8px;">🟢</div>
+          <div class="card-label" style="color:var(--green);">Pipedrive</div>
+          <h3>El más orientado a ventas</h3>
+          <p style="font-size:13px;">CRM diseñado 100% para equipos de ventas. Pipeline drag-and-drop, automatizaciones nativas. Nodo nativo en n8n. De pago, con trial.</p>
+          <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="b bg">Nodo nativo</span><span class="b ba">Trial 14 días</span><span class="b bt">Foco en deals</span>
+          </div>
+        </div>
+        <div class="card pb">
+          <div style="font-size:28px;margin-bottom:8px;">⚫</div>
+          <div class="card-label" style="color:var(--pink);">Notion como CRM</div>
+          <h3>El más flexible</h3>
+          <p style="font-size:13px;">No es CRM nativo, pero con buena estructura funciona excelente para equipos que ya viven en Notion. Nodo nativo. Gratuito para equipos pequeños.</p>
+          <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="b bg">Plan gratuito</span><span class="b bac">Nodo nativo</span><span class="b bp">Muy flexible</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">⚖️ Tabla comparativa</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Criterio</th><th>🟠 HubSpot</th><th>🟢 Pipedrive</th><th>⚫ Notion</th></tr></thead>
+          <tbody>
+            <tr><td>Costo inicial</td><td><span class="b bg">Gratis</span></td><td><span class="b ba">De pago</span></td><td><span class="b bg">Gratis</span></td></tr>
+            <tr><td>Pipeline de ventas</td><td>✅ Completo</td><td>✅ Muy potente</td><td>⚠️ Manual</td></tr>
+            <tr><td>Nodo en n8n</td><td>✅ Nativo</td><td>✅ Nativo</td><td>✅ Nativo</td></tr>
+            <tr><td>Equipo no técnico</td><td>✅ UI muy clara</td><td>✅ Intuitivo</td><td>⚠️ Requiere setup</td></tr>
+            <tr><td>Reportes nativos</td><td>✅ Completos</td><td>✅ Buenos</td><td>❌ Limitados</td></tr>
+            <tr><td>Mejor para</td><td>Cualquier empresa</td><td>Equipos de ventas</td><td>Startups en Notion</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('hubspot')">Siguiente: HubSpot →</button>
+      </div>
+    </section>
+
+    <!-- 3 HUBSPOT -->
+    <section id="hubspot" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> CRM 1 de 3</div>
+        <h1>HubSpot <span>CRM</span></h1>
+        <p>El nodo nativo de HubSpot en n8n permite crear contactos, deals, empresas y notas directamente desde el workflow.</p>
+      </div>
+      <div class="crm-card cc-hub">
+        <div class="cc-top">
+          <div class="cc-icon">🟠</div>
+          <div>
+            <div class="cc-type">HubSpot · Nodo nativo n8n</div>
+            <div class="cc-title">Contactos, Deals y Companies en un nodo</div>
+            <div class="cc-desc">El nodo HubSpot de n8n tiene acceso completo al CRM: crear y actualizar contactos, abrir deals en el pipeline, asociar empresas y agregar notas. La autenticación es con OAuth2 o Private App Token.</div>
+          </div>
+        </div>
+        <div class="cc-tags">
+          <span class="cc-tag">👤 Create Contact</span><span class="cc-tag">💰 Create Deal</span>
+          <span class="cc-tag">🏢 Create Company</span><span class="cc-tag">📝 Add Note</span><span class="cc-tag">🔍 Search Contact</span>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card orb">
+          <div class="card-label">⚙️ Crear contacto en HubSpot</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: HubSpot → Create Contact</span>
+<span class="ky">firstname</span>: <span class="kw">{{$json.nombre.split(' ')[0]}}</span>
+<span class="ky">lastname</span>:  <span class="kw">{{$json.nombre.split(' ').slice(1).join(' ')}}</span>
+<span class="ky">email</span>:     <span class="kw">{{$json.email}}</span>
+<span class="ky">phone</span>:     <span class="kw">{{$json.telefono}}</span>
+<span class="ky">hs_lead_status</span>: <span class="str">"NEW"</span>
+<span class="ky">lifecyclestage</span>: <span class="str">"lead"</span>
+<span class="cm">// Retorna el ID → usar para el deal</span>
+          </div>
+        </div>
+        <div class="card orb">
+          <div class="card-label">⚙️ Crear deal asociado</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: HubSpot → Create Deal</span>
+<span class="ky">dealname</span>:  <span class="str">"{{$json.nombre}} — {{$json.interes}}"</span>
+<span class="ky">pipeline</span>:  <span class="str">"default"</span>
+<span class="ky">dealstage</span>: <span class="str">"{{
+  $json.score >= 80
+    ? 'qualifiedtobuy'
+    : 'appointmentscheduled'
+}}"</span>
+<span class="ky">closedate</span>: <span class="kw">{{$now.plus({days:30}).toMillis()}}</span>
+<span class="cm">// Asociar al contacto creado antes:</span>
+<span class="ky">contactId</span>: <span class="kw">{{$('HubSpot-Contacto').first().json.id}}</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--bg3);">
+        <div class="card-label">🔑 Autenticación — Private App Token</div>
+        <div class="code-block" style="font-size:12px;">
+<span class="cm">// En HubSpot: Settings → Integrations → Private Apps</span>
+→ Create a private app → nombre: <span class="str">"n8n Integration"</span>
+→ Scopes: crm.objects.contacts.write + crm.objects.deals.write
+→ Copiar el <span class="or">Access Token</span>
+<span class="cm">// En n8n: Credentials → HubSpot API → pegar token</span>
+        </div>
+      </div>
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>El ID del contacto es clave.</strong> Guarda el <code>id</code> que retorna "Crear Contacto" antes de crear el deal. Sin ese ID no puedes asociarlos y quedan huérfanos en HubSpot.</div></div>
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('comparativa')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('pipedrive')">Siguiente: Pipedrive →</button>
+      </div>
+    </section>
+
+    <!-- 4 PIPEDRIVE -->
+    <section id="pipedrive" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> CRM 2 de 3</div>
+        <h1>Pipedrive</h1>
+        <p>CRM 100% orientado a ventas. Personas, deals y organizaciones con un pipeline visual potente. Nodo nativo en n8n.</p>
+      </div>
+      <div class="crm-card cc-pipe">
+        <div class="cc-top">
+          <div class="cc-icon">🟢</div>
+          <div>
+            <div class="cc-type">Pipedrive · Nodo nativo n8n</div>
+            <div class="cc-title">Persons, Deals y Organizations desde n8n</div>
+            <div class="cc-desc">Pipedrive separa sus entidades en Persons (contactos), Deals (oportunidades) y Organizations (empresas). El nodo n8n cubre las tres. Primero creas la persona, luego el deal, y los asocias con el ID del person.</div>
+          </div>
+        </div>
+        <div class="cc-tags">
+          <span class="cc-tag">👤 Create Person</span><span class="cc-tag">💰 Create Deal</span>
+          <span class="cc-tag">🏢 Create Organization</span><span class="cc-tag">🔍 Search Person</span>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">⚙️ Crear persona en Pipedrive</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Pipedrive → Create Person</span>
+<span class="ky">name</span>:   <span class="kw">{{$json.nombre}}</span>
+<span class="ky">email</span>:  <span class="kw">{{$json.email}}</span>
+<span class="ky">phone</span>:  <span class="kw">{{$json.telefono}}</span>
+<span class="cm">// Retorna: { id: 12345, name: "Juan" }
+// → personId para el deal</span>
+          </div>
+        </div>
+        <div class="card gb">
+          <div class="card-label">⚙️ Crear deal en Pipedrive</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Pipedrive → Create Deal</span>
+<span class="ky">title</span>:       <span class="str">"{{$json.nombre}} — {{$json.interes}}"</span>
+<span class="ky">person_id</span>:   <span class="kw">{{$('Pipedrive-Persona').first().json.id}}</span>
+<span class="ky">pipeline_id</span>: <span class="vl">1</span>
+<span class="ky">stage_id</span>:    <span class="str">{{
+  $json.score >= 80 ? 2
+  : $json.score >= 50 ? 1 : 3
+}}</span>
+<span class="ky">currency</span>:    <span class="str">"COP"</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--bg3);">
+        <div class="card-label">🔑 Autenticación API Token</div>
+        <div class="code-block" style="font-size:12px;">
+<span class="cm">// En Pipedrive: Perfil → Personal preferences → API
+// → Copiar el Personal API Token
+// En n8n: Credentials → Pipedrive API → pegar token</span>
+        </div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('hubspot')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('notion')">Siguiente: Notion como CRM →</button>
+      </div>
+    </section>
+
+    <!-- 5 NOTION -->
+    <section id="notion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> CRM 3 de 3</div>
+        <h1>Notion <span>como CRM</span></h1>
+        <p>Para equipos que ya viven en Notion. Con una base de datos bien diseñada y el nodo nativo, funciona como un CRM ligero y personalizable.</p>
+      </div>
+      <div class="crm-card cc-not">
+        <div class="cc-top">
+          <div class="cc-icon">⚫</div>
+          <div>
+            <div class="cc-type">Notion · Base de datos como CRM</div>
+            <div class="cc-title">Crea páginas de leads en Notion desde n8n</div>
+            <div class="cc-desc">Una base de datos con las propiedades correctas convierte Notion en un CRM flexible y visual. n8n puede crear páginas, actualizar propiedades y buscar registros. Perfecto para equipos que no quieren otra herramienta.</div>
+          </div>
+        </div>
+        <div class="cc-tags">
+          <span class="cc-tag">📄 Create Page</span><span class="cc-tag">✏️ Update Properties</span>
+          <span class="cc-tag">🔍 Query Database</span><span class="cc-tag">📋 Kanban nativo</span>
+        </div>
+      </div>
+      <div class="card pb" style="margin-bottom:16px;">
+        <div class="card-label">📋 Estructura recomendada de la DB en Notion</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Propiedad</th><th>Tipo</th><th>Uso</th></tr></thead>
+          <tbody>
+            <tr><td>Nombre</td><td>Title</td><td>Nombre completo del lead</td></tr>
+            <tr><td>Email</td><td>Email</td><td>Identificador único</td></tr>
+            <tr><td>Teléfono</td><td>Phone</td><td>Número de contacto</td></tr>
+            <tr><td>Interés</td><td>Select</td><td>Servicio A / B / Otro</td></tr>
+            <tr><td>Estado</td><td>Select</td><td>Nuevo / Contactado / Calificado / Cerrado</td></tr>
+            <tr><td>Score</td><td>Number</td><td>0-100 calculado por n8n</td></tr>
+            <tr><td>Asignado a</td><td>Person</td><td>Vendedor responsable</td></tr>
+            <tr><td>Fecha entrada</td><td>Date</td><td>Timestamp automático</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="g2">
+        <div class="card pb">
+          <div class="card-label">⚙️ Crear página en Notion</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Notion → Create a page</span>
+<span class="ky">Database:</span> <span class="str">"CRM Leads"</span>
+<span class="ky">Nombre</span>:   <span class="kw">{{$json.nombre}}</span>   <span class="cm">title</span>
+<span class="ky">Email</span>:    <span class="kw">{{$json.email}}</span>    <span class="cm">email</span>
+<span class="ky">Estado</span>:   <span class="str">"Nuevo"</span>          <span class="cm">select</span>
+<span class="ky">Score</span>:    <span class="kw">{{$json.score}}</span>    <span class="cm">number</span>
+<span class="ky">Fuente</span>:   <span class="kw">{{$json.fuente}}</span>   <span class="cm">select</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">🔑 Autenticación — Integration Token</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// En Notion: Settings → Integrations → New integration
+// → nombre: "n8n CRM" → Copiar Internal Token
+// ⚠️ CRÍTICO: Compartir la DB con la integración:
+//   Abrir DB → Share → Invite → "n8n CRM"
+// En n8n: Credentials → Notion API → pegar token</span>
+          </div>
+        </div>
+      </div>
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>El error más común con Notion:</strong> aunque la credencial esté bien, si la DB no está compartida con la integración, n8n no puede verla. El paso de compartir es obligatorio.</div></div>
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('pipedrive')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('logica')">Siguiente: Lógica condicional →</button>
+      </div>
+    </section>
+
+    <!-- 6 LÓGICA -->
+    <section id="logica" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6</div>
+        <h1>Lógica <span>Condicional</span></h1>
+        <p>El mismo lead, caminos distintos. Según el score y el perfil, el workflow enruta automáticamente: etapa del pipeline, vendedor asignado y acciones paralelas.</p>
+      </div>
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🔀 Switch por score — tres caminos distintos</div>
+        <div class="code-block">
+<span class="cm">// SWITCH por score del lead</span>
+
+<span class="ky">score >= 80</span>  → <span class="str">"Lead calificado"</span>
+  ├─ CRM: etapa <span class="str">"Calificado"</span>    <span class="cm">pipeline stage = qualified</span>
+  ├─ Asignar: vendedor senior    <span class="cm">Round Robin senior</span>
+  ├─ Slack #leads-urgentes: <span class="rd">"🔴 Contactar HOY — Score: {{score}}"</span>
+  └─ Gmail cliente: <span class="str">"Te llamamos hoy"</span>
+
+<span class="ky">score 50-79</span> → <span class="str">"Lead interesante"</span>
+  ├─ CRM: etapa <span class="str">"Nuevo"</span>          <span class="cm">pipeline stage = new</span>
+  ├─ Asignar: vendedor junior    <span class="cm">Round Robin general</span>
+  ├─ Slack #leads: <span class="vl">"🟡 Nuevo lead — seguimiento esta semana"</span>
+  └─ Gmail cliente: <span class="str">"Recibimos tu consulta"</span>
+
+<span class="ky">score &lt; 50</span>  → <span class="str">"Lead frío"</span>
+  ├─ CRM: etapa <span class="str">"Nurturing"</span>
+  ├─ Solo registro, sin alerta urgente
+  └─ Execute Workflow: <span class="str">"Secuencia-Emails-Fríos"</span>
+       → Wait 3 días → email de valor
+       → Wait 7 días → email de oferta
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">⚙️ Asignación Round Robin</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Function: rotación automática de vendedores</span>
+<span class="kw">const</span> vendedores = [
+  <span class="str">"ana@empresa.com"</span>,
+  <span class="str">"carlos@empresa.com"</span>,
+  <span class="str">"lucia@empresa.com"</span>
+];
+<span class="kw">const</span> idx = Date.now() % vendedores.length;
+<span class="kw">return</span> [{ json: {
+  ...$input.first().json,
+  <span class="ky">asignado_a</span>: vendedores[idx]
+}}];
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">🏢 IF B2B vs B2C</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Dentro de la rama "Calificado"</span>
+<span class="kw">IF</span> empresa <span class="kw">no vacío</span> <span class="kw">AND</span> empresa.length > <span class="vl">2</span>
+  → <span class="vl">TRUE</span>  (B2B):
+    CRM: crear Company + asociar al Contact
+    Deal: monto estimado mayor
+    Slack: incluir empresa en el mensaje
+  → <span class="rd">FALSE</span> (B2C):
+    Sin empresa asociada
+    Deal: monto estándar
+          </div>
+        </div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('notion')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('dedup')">Siguiente: Deduplicación →</button>
+      </div>
+    </section>
+
+    <!-- 7 DEDUPLICACIÓN -->
+    <section id="dedup" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 7</div>
+        <h1><span>Deduplicación</span> Automática</h1>
+        <p>El mismo lead no debe entrar dos veces al CRM. Antes de crear, buscamos. Si existe: actualizar. Si no: crear. Cero duplicados.</p>
+      </div>
+      <div class="card sb" style="margin-bottom:16px;">
+        <div class="card-label">🔍 El patrón buscar → decidir → actuar</div>
+        <div class="code-block">
+<span class="cm">// Paso 1: Buscar por email en el CRM</span>
+CRM Search: email == <span class="str">"{{$json.email}}"</span>
+→ resultado: array vacío o con registros
+
+<span class="cm">// Paso 2: IF ¿existe?</span>
+<span class="kw">IF</span> resultados.length > <span class="vl">0</span>
+  → <span class="rd">TRUE</span> (ya existe):
+    CRM <span class="kw">Update Contact</span>: actualizar score, interés, fuente
+    Sheets log: <span class="str">"contacto_actualizado"</span>
+    Slack: <span class="str">"♻️ Lead repetido actualizado: {{email}}"</span>
+
+  → <span class="vl">FALSE</span> (no existe):
+    CRM <span class="kw">Create Contact</span> → flujo normal de creación
+    Sheets log: <span class="str">"contacto_creado"</span>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">⚙️ Búsqueda en HubSpot</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: HubSpot → Get All Contacts</span>
+<span class="ky">Filter:</span> email EQ <span class="kw">{{$json.email}}</span>
+<span class="ky">Limit:</span>  <span class="vl">1</span>
+<span class="cm">// → [] no existe → crear
+// → [{id,...}] existe → actualizar</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">⚙️ Búsqueda en Notion</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Notion → Get Many Pages</span>
+<span class="ky">Filter:</span>
+  Property: Email
+  Condition: equals
+  Value: <span class="kw">{{$json.email}}</span>
+<span class="cm">// IF results.length > 0:
+// existe → Update Page
+// no existe → Create Page</span>
+          </div>
+        </div>
+      </div>
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Si el score mejoró, actualiza.</strong> Un lead que ya existe pero ahora tiene score más alto puede ser el mismo prospecto con mayor intención de compra. No lo descartes — actualiza y notifica al vendedor asignado.</div></div>
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>La búsqueda agrega ~500ms.</strong> Para evitar timeouts del formulario, usa el patrón "Respond to Webhook primero" de la Clase 1 y procesa la deduplicación en segundo plano.</div></div>
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('logica')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('flujo')">Siguiente: Flujo completo →</button>
+      </div>
+    </section>
+
+    <!-- 8 FLUJO COMPLETO -->
+    <section id="flujo" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Flujo <span>Completo</span></h1>
+        <p>Todo integrado. Desde el webhook hasta el CRM, con deduplicación, lógica condicional y múltiples acciones paralelas.</p>
+      </div>
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Arquitectura completa — Clase 1 + Clase 2</div>
+        <div class="code-block">
+<span class="cm">═══ CAPTURA Y VALIDACIÓN (Clase 1) ══════════════</span>
+<span class="kw">WEBHOOK POST</span> /captura-lead
+<span class="kw">Respond to Webhook</span>: 200 OK inmediato
+<span class="kw">Filter</span>: email válido AND nombre no vacío → falla: STOP
+
+<span class="cm">═══ PROCESAMIENTO (Clase 1) ══════════════════════</span>
+<span class="kw">Set</span>: limpiar + enriquecer + calcular score (0-100)
+
+<span class="cm">═══ DEDUPLICACIÓN (Clase 2 — NUEVO) ═════════════</span>
+<span class="kw">CRM Search</span>: buscar por email
+<span class="kw">IF</span> ya existe:
+  → <span class="rd">TRUE</span>:  <span class="kw">CRM Update</span> + Slack discreta + log "actualizado"
+  → <span class="vl">FALSE</span>: continuar con creación
+
+<span class="cm">═══ ENRUTAMIENTO POR SCORE (Clase 2 — NUEVO) ════</span>
+<span class="kw">SWITCH</span> score: Calificado / Interesante / Frío
+
+<span class="cm">═══ ACCIONES PARALELAS por rama ══════════════════</span>
+
+[Calificado ≥80]
+  ├─ <span class="kw">CRM</span>: Create Contact → Create Deal (etapa: Calificado)
+  ├─ <span class="kw">IF B2B</span>: Create Company + asociar
+  ├─ <span class="kw">Function</span>: Round Robin vendedor senior
+  ├─ <span class="kw">Slack</span> #urgentes: 🔴 alerta + datos
+  ├─ <span class="kw">Gmail</span> cliente: "te llamamos hoy"
+  └─ <span class="kw">Sheets</span>: log estado "calificado"
+
+[Interesante 50-79]
+  ├─ <span class="kw">CRM</span>: Create Contact → Create Deal (etapa: Nuevo)
+  ├─ <span class="kw">Function</span>: Round Robin general
+  ├─ <span class="kw">Slack</span> #leads: 🟡 alerta normal
+  └─ <span class="kw">Sheets</span>: log estado "nuevo"
+
+[Frío &lt;50]
+  ├─ <span class="kw">CRM</span>: Create Contact (etapa: Nurturing)
+  ├─ <span class="kw">Sheets</span>: log estado "nurturing"
+  └─ <span class="kw">Execute Workflow</span>: Secuencia-Emails-Fríos
+       → Wait 3d → email → Wait 7d → email
+        </div>
+      </div>
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📊 Resumen de nodos</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Nodo</th><th>Tipo</th><th>Función</th></tr></thead>
+          <tbody>
+            <tr><td>Webhook</td><td><span class="b ba">Trigger</span></td><td>Punto de entrada</td></tr>
+            <tr><td>Respond to Webhook</td><td><span class="b bac">Output</span></td><td>Respuesta 200 inmediata</td></tr>
+            <tr><td>Filter</td><td><span class="b bs">Lógica</span></td><td>Descartar inválidos</td></tr>
+            <tr><td>Set</td><td><span class="b bac">Proceso</span></td><td>Limpiar + score</td></tr>
+            <tr><td>CRM Search</td><td><span class="b bor">CRM</span></td><td>Verificar duplicado</td></tr>
+            <tr><td>IF duplicado</td><td><span class="b bs">Lógica</span></td><td>Crear vs actualizar</td></tr>
+            <tr><td>Switch score</td><td><span class="b bs">Lógica</span></td><td>3 caminos por perfil</td></tr>
+            <tr><td>CRM Create Contact</td><td><span class="b bor">CRM</span></td><td>Nuevo contacto</td></tr>
+            <tr><td>CRM Create Deal</td><td><span class="b bor">CRM</span></td><td>Deal en etapa correcta</td></tr>
+            <tr><td>Function asignación</td><td><span class="b bac">Proceso</span></td><td>Round Robin vendedores</td></tr>
+            <tr><td>Slack / Gmail</td><td><span class="b bg">Acción</span></td><td>Notificaciones</td></tr>
+            <tr><td>Sheets log</td><td><span class="b bg">Output</span></td><td>Trazabilidad</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('dedup')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- 9 ENTREGABLE -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable y <span>Cierre</span></h1>
+        <p>El sistema completo de captura y gestión conectado a un CRM real. Esto ya es producción.</p>
+      </div>
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Entregable</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">CRM conectado y autenticado en n8n</strong><br><span style="font-size:13px;">HubSpot, Pipedrive o Notion con credenciales configuradas y conexión probada.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Deduplicación funcionando</strong><br><span style="font-size:13px;">Mismo email dos veces: primera crea, segunda actualiza. Verificado en el CRM.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Contacto Y deal creados y asociados</strong><br><span style="font-size:13px;">Cada lead válido genera dos registros vinculados en el CRM.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Lógica condicional por score activa</strong><br><span style="font-size:13px;">Score ≥80 → Calificado. Score &lt;50 → Nurturing. Probado con 3 perfiles distintos.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Asignación automática de vendedor</strong><br><span style="font-size:13px;">Campo "asignado a" en el CRM se llena automáticamente con Round Robin.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Múltiples acciones paralelas en rama calificada</strong><br><span style="font-size:13px;">CRM + Slack + Gmail + Sheets ejecutan simultáneamente para lead de alto score.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con 5 leads distintos</strong><br><span style="font-size:13px;">Score alto, medio, bajo, duplicado e inválido — todos con el comportamiento esperado.</span></div></li>
+        </ul>
+      </div>
+      <div class="card rb" style="margin-bottom:16px;">
+        <div class="card-label">⚠️ Errores frecuentes</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">No compartir la DB de Notion</strong><br><span style="font-size:13px;">Aunque la credencial esté bien, sin el paso de compartir la DB con la integración, n8n no puede acceder.</span></div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">Crear deal sin esperar el ID del contacto</strong><br><span style="font-size:13px;">Los nodos de contacto y deal deben ser secuenciales. Si corren en paralelo, el deal no tiene el ID para asociarse.</span></div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">IF con resultado vacío de búsqueda</strong><br><span style="font-size:13px;">La búsqueda retorna <code>[]</code> cuando no hay resultados. El IF debe comparar <code>resultados.length</code>, no el objeto directo.</span></div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">IDs de pipeline/etapa hardcodeados sin verificar</strong><br><span style="font-size:13px;">Los IDs varían por cuenta en Pipedrive y HubSpot. Cópialos de tu CRM real, no uses los del ejemplo.</span></div></li>
+        </ul>
+      </div>
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🚀 Bonus nivel pro</div>
+        <div class="g2" style="margin-top:12px;">
+          <div>
+            <div class="wtu"><span class="we">🤖</span><div class="wt"><strong>Clasificación con IA:</strong> enviar el campo "interés" a Claude API y recibir categoría automática del lead para asignación más precisa.</div></div>
+            <div class="wtu"><span class="we">📅</span><div class="wt"><strong>Tarea de seguimiento automática:</strong> después del deal, crear tarea en el CRM asignada al vendedor con vencimiento a 24h.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">🔄</span><div class="wt"><strong>Sincronización bidireccional:</strong> cuando el vendedor cambia el estado en el CRM, un webhook notifica a n8n que actualiza Sheets.</div></div>
+            <div class="wtu"><span class="we">⏳</span><div class="wt"><strong>Alerta de leads sin contacto:</strong> Schedule diario → buscar deals sin actividad en 48h → Slack al vendedor asignado.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">📊</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Semana 4 · Clase 3 — Dashboard y Reportes Automáticos</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:500px;margin:0 auto 20px;">Con el CRM conectado, la Clase 3 construye el sistema de inteligencia: reportes automáticos, alertas de anomalías, métricas de conversión y dashboard en tiempo real.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">📈 Métricas automáticas</span>
+            <span class="b bg">🔔 Alertas de anomalías</span>
+            <span class="b bt">📊 Dashboard RT</span>
+            <span class="b ba">🤖 IA en reportes</span>
+          </div>
+        </div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('flujo')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script>
+  const sections=['intro','comparativa','hubspot','pipedrive','notion','logica','dedup','flujo','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(".nav-item[onclick*=\"'"+id+"'\"]");go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent='Sección '+(idx+1)+' de '+sections.length;
+  }
+</script>
+</body>
+</html>

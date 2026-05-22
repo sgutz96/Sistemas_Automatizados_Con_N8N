@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 5 — CRM y Seguimiento Automatizado</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);}
+  .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;text-align:center;flex-shrink:0;min-width:110px;}
+  .fn .fi{font-size:20px;margin-bottom:5px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:3px;}
+  .fn .fn2{font-size:12px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.val {border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.05);}  .fn.val .ft{color:var(--sky);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fn.err {border-color:rgba(240,90,90,0.4);background:rgba(240,90,90,0.05);}   .fn.err .ft{color:var(--red);}
+  .fn.wait{border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.05);} .fn.wait .ft{color:var(--pink);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* PIPELINE STAGES */
+  .pipeline{display:flex;gap:0;margin-top:14px;overflow-x:auto;}
+  .pipe-stage{flex:1;min-width:100px;text-align:center;position:relative;}
+  .pipe-stage:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;z-index:1;}
+  .ps-inner{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 10px;margin:0 4px;}
+  .ps-icon{font-size:20px;margin-bottom:6px;}
+  .ps-label{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:3px;}
+  .ps-name{font-size:12px;font-weight:700;color:var(--text);}
+  .ps-action{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4;}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* TIMELINE */
+  .timeline{position:relative;padding-left:28px;}
+  .timeline::before{content:'';position:absolute;left:10px;top:8px;bottom:8px;width:1px;background:var(--border2);}
+  .tl-item{position:relative;padding:0 0 22px 20px;}
+  .tl-item:last-child{padding-bottom:0;}
+  .tl-dot{position:absolute;left:-28px;top:3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--accent);background:var(--bg);}
+  .tl-item.done .tl-dot{background:var(--green);border-color:var(--green);}
+  .tl-item.pend .tl-dot{background:var(--amber);border-color:var(--amber);animation:pulse 2s infinite;}
+  .tl-item.wait-dot .tl-dot{background:var(--pink);border-color:var(--pink);}
+  .tl-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:4px;}
+  .tl-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;}
+  .tl-body{font-size:12px;color:var(--text2);line-height:1.55;}
+
+  /* ESTADO BADGE */
+  .estado{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
+  .e-nuevo{background:var(--sky-bg);color:var(--sky);border:1px solid rgba(56,189,248,0.3);}
+  .e-contactado{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(240,160,48,0.3);}
+  .e-interesado{background:var(--pink-bg);color:var(--pink);border:1px solid rgba(232,121,160,0.3);}
+  .e-cliente{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,201,122,0.3);}
+  .e-inactivo{background:var(--bg4);color:var(--text3);border:1px solid var(--border);}
+
+  /* PROBLEM BLOCK */
+  .prob-row{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;align-items:center;margin-top:14px;}
+  .prob-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:18px;font-size:13px;color:var(--text2);line-height:1.8;}
+  .prob-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;}
+  .prob-arr{display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--accent);}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{opacity:0.85;}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Clase 5</div>
+      <h2>CRM y Seguimiento Automatizado</h2>
+      <p>n8n · gestión de clientes</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> Introducción</a>
+    <a class="nav-item" onclick="go('conceptos',this)"><span class="ni">🧠</span> Conceptos clave</a>
+    <a class="nav-item" onclick="go('arquitectura',this)"><span class="ni">🏗️</span> Arquitectura del sistema</a>
+    <a class="nav-item" onclick="go('pipeline',this)"><span class="ni">🔀</span> Paso 1 — Pipeline</a>
+    <a class="nav-item" onclick="go('email',this)"><span class="ni">📧</span> Paso 2 — Email automático</a>
+    <a class="nav-item" onclick="go('delay',this)"><span class="ni">⏳</span> Paso 3 — Delay y follow-up</a>
+    <a class="nav-item" onclick="go('estado',this)"><span class="ni">🔄</span> Paso 4 — Estado del lead</a>
+    <a class="nav-item" onclick="go('practicas',this)"><span class="ni">✅</span> Buenas prácticas</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Clase 5</div>
+        <h1>CRM y <span>Seguimiento Automatizado</span></h1>
+        <p>Transformas tu sistema de captura en un mini CRM que hace seguimiento solo, clasifica contactos por estado y mantiene la comunicación activa sin que nadie tenga que acordarse.</p>
+      </div>
+
+      <!-- PROBLEMA → SOLUCIÓN -->
+      <div class="card rb" style="margin-bottom:16px;">
+        <div class="card-label">🚨 El problema real que resuelve esta clase</div>
+        <div class="prob-row">
+          <div class="prob-box">
+            <div class="prob-lbl" style="color:var(--red);">Sin CRM automatizado</div>
+            <div style="color:var(--red);margin-bottom:6px;font-weight:700;">Leads que se pierden</div>
+            Llega un lead → nadie lo sigue → se olvida<br>
+            Respuesta tarde o nunca → cliente se va<br>
+            No hay organización ni estados<br>
+            El vendedor depende de su memoria<br>
+            <span style="color:var(--text3);font-size:12px;">→ leads que nunca se convierten en clientes</span>
+          </div>
+          <div class="prob-arr">→</div>
+          <div class="prob-box">
+            <div class="prob-lbl" style="color:var(--green);">Con esta clase</div>
+            <div style="color:var(--green);margin-bottom:6px;font-weight:700;">Gestión inteligente</div>
+            Lead llega → se clasifica automáticamente<br>
+            Email de bienvenida en segundos<br>
+            Follow-up programado sin intervención<br>
+            Estado siempre actualizado en la base<br>
+            <span style="color:var(--text3);font-size:12px;">→ sistema que trabaja mientras no estás</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn">4</div><div class="sl">estados del ciclo de vida del cliente</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">0s</div><div class="sl">tiempo de respuesta al primer contacto</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">3</div><div class="sl">emails automáticos por lead</div></div>
+        <div class="stat"><div class="sn" style="color:var(--teal);">100%</div><div class="sl">de leads con seguimiento garantizado</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🧠 Qué vas a aprender en esta clase</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Qué es un CRM y cómo estructurarlo en n8n</strong><br><span style="font-size:13px;">No necesitas HubSpot para empezar. Aprenderás a construir la lógica CRM desde cero usando Google Sheets como base de datos y n8n como motor de automatización.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Pipeline de estados: Nuevo → Contactado → Interesado → Cliente</strong><br><span style="font-size:13px;">Cada lead tiene un estado que cambia automáticamente según las acciones del sistema. El pipeline es el corazón del CRM.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Emails automáticos personalizados</strong><br><span style="font-size:13px;">Bienvenida inmediata, follow-up a las 24h y recordatorio a los 3 días. Cada mensaje usa los datos del lead para sentirse personal.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Delays y secuencias temporales</strong><br><span style="font-size:13px;">El nodo Wait pausa el workflow el tiempo exacto que necesites y lo reanuda solo. Sin servidores adicionales, sin cron jobs manuales.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Gestión del ciclo de vida del cliente</strong><br><span style="font-size:13px;">El sistema actualiza el estado de cada lead en tiempo real según lo que ocurre: email enviado, respuesta recibida, propuesta enviada.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="hl" style="margin-bottom:0;">
+        <div class="card-label">💡 El cambio de mentalidad de esta clase</div>
+        <h3 style="font-size:20px;font-weight:800;margin:10px 0 10px;">De captura de leads → a gestión inteligente de clientes</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">Hasta ahora el sistema <strong style="color:var(--text);">reaccionaba</strong>: cuando llegaba un dato, lo guardaba. A partir de esta clase el sistema también <strong style="color:var(--text);">proactúa</strong>: programa acciones futuras, cambia estados y mantiene la relación activa sin que nadie se lo pida.</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" disabled style="opacity:0.3;cursor:default;">← Clase 4</button>
+        <button class="btn btn-p" onclick="goTo('conceptos')">Siguiente: Conceptos →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · CONCEPTOS ══ -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Conceptos <span>Clave</span></h1>
+        <p>Tres conceptos que definen cómo funciona cualquier CRM, desde Salesforce hasta lo que vas a construir hoy.</p>
+      </div>
+
+      <!-- CRM -->
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🔸 CRM — Customer Relationship Management</div>
+        <h3 style="margin-bottom:10px;">Un sistema para no perder ninguna relación con un cliente o prospecto</h3>
+        <p style="margin-bottom:16px;">Un CRM no es solo una base de datos. Es la <strong style="color:var(--text);">lógica que conecta</strong> cada interacción con un contacto: cuándo llegó, qué se le envió, cuándo respondió, quién lo atiende y qué paso viene después.</p>
+        <div class="g3" style="margin-bottom:0;">
+          <div class="stat">
+            <div style="font-size:28px;margin-bottom:8px;">🗃️</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">Base de datos</div>
+            <div class="sl">Todos los contactos con su historial completo</div>
+          </div>
+          <div class="stat">
+            <div style="font-size:28px;margin-bottom:8px;">🔄</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">Estados y ciclo</div>
+            <div class="sl">Cada contacto sabe exactamente en qué etapa está</div>
+          </div>
+          <div class="stat">
+            <div style="font-size:28px;margin-bottom:8px;">⚡</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">Automatización</div>
+            <div class="sl">Las acciones ocurren solas según las reglas definidas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PIPELINE -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">🔸 Pipeline — los 4 estados del ciclo de vida</div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:16px;">Cada lead pasa por etapas. Cada etapa tiene una acción automática diferente. El sistema actualiza el estado según lo que ocurre.</p>
+        <div class="pipeline">
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(56,189,248,0.3);background:rgba(56,189,248,0.05);">
+              <div class="ps-icon">🆕</div>
+              <div class="ps-label" style="color:var(--sky);">Estado 1</div>
+              <div class="ps-name">Nuevo</div>
+              <div class="ps-action">Email de bienvenida inmediato</div>
+            </div>
+          </div>
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(240,160,48,0.3);background:rgba(240,160,48,0.05);">
+              <div class="ps-icon">📞</div>
+              <div class="ps-label" style="color:var(--amber);">Estado 2</div>
+              <div class="ps-name">Contactado</div>
+              <div class="ps-action">Follow-up a las 24h</div>
+            </div>
+          </div>
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(232,121,160,0.3);background:rgba(232,121,160,0.05);">
+              <div class="ps-icon">🤝</div>
+              <div class="ps-label" style="color:var(--pink);">Estado 3</div>
+              <div class="ps-name">Interesado</div>
+              <div class="ps-action">Propuesta y recordatorio</div>
+            </div>
+          </div>
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(34,201,122,0.3);background:rgba(34,201,122,0.05);">
+              <div class="ps-icon">🏆</div>
+              <div class="ps-label" style="color:var(--green);">Estado 4</div>
+              <div class="ps-name">Cliente</div>
+              <div class="ps-action">Onboarding y retención</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip" style="margin-top:16px;margin-bottom:0;">
+          <span class="ti">💡</span>
+          <div class="tt"><strong>El estado vive en Google Sheets.</strong> La columna "Estado" de tu hoja de leads es la fuente de verdad. El sistema la actualiza automáticamente. Cualquier persona del equipo puede ver en tiempo real en qué punto está cada lead.</div>
+        </div>
+      </div>
+
+      <!-- FOLLOW-UP -->
+      <div class="card gb" style="margin-bottom:0;">
+        <div class="card-label">🔸 Follow-up — por qué el seguimiento es más importante que el primer contacto</div>
+        <h3 style="margin-bottom:10px;">El 80% de las ventas ocurren entre el 5° y el 12° contacto</h3>
+        <p style="margin-bottom:16px;">La mayoría de sistemas captura leads y envía un email. Ahí se acaba. Pero la venta rara vez ocurre en el primer contacto: el seguimiento automático es lo que convierte los leads en clientes mientras tú te ocupas de otra cosa.</p>
+        <div class="g2" style="margin-bottom:0;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Sin follow-up</div>
+            <div class="timeline">
+              <div class="tl-item done"><div class="tl-dot"></div><div class="tl-time">Día 0</div><div class="tl-title">Lead llega</div><div class="tl-body">Un email. Quizás.</div></div>
+              <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">Día 1, 2, 3…</div><div class="tl-title" style="color:var(--red);">Silencio</div><div class="tl-body">El lead se enfría. Nadie lo recuerda.</div></div>
+              <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">Semana 2</div><div class="tl-title" style="color:var(--text3);">Lead perdido</div><div class="tl-body">Ya compró con la competencia.</div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Con follow-up automático ✓</div>
+            <div class="timeline">
+              <div class="tl-item done"><div class="tl-dot"></div><div class="tl-time">Día 0 — inmediato</div><div class="tl-title">Email 1: Bienvenida</div><div class="tl-body">Confirmación y contexto.</div></div>
+              <div class="tl-item pend"><div class="tl-dot"></div><div class="tl-time">Día 1 — 24h</div><div class="tl-title">Email 2: Follow-up</div><div class="tl-body">"¿Pudiste revisar la info?"</div></div>
+              <div class="tl-item wait-dot"><div class="tl-dot"></div><div class="tl-time">Día 3 — sin respuesta</div><div class="tl-title">Email 3: Último intento</div><div class="tl-body">Alerta al equipo + email final.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('arquitectura')">Siguiente: Arquitectura →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · ARQUITECTURA ══ -->
+    <section id="arquitectura" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Arquitectura del <span>Mini CRM</span></h1>
+        <p>Antes de abrir n8n, el flujo debe estar claro. Esta es la arquitectura completa del sistema que vas a construir en esta clase.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Flujo completo del sistema CRM</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="fn trig">
+            <div class="fi">📥</div>
+            <div class="ft">Trigger</div>
+            <div class="fn2">Lead nuevo</div>
+            <div class="fn3">Webhook / Sheets</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn proc">
+            <div class="fi">🔀</div>
+            <div class="ft">Clasificar</div>
+            <div class="fn2">Set estado</div>
+            <div class="fn3">"Nuevo"</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn act">
+            <div class="fi">💾</div>
+            <div class="ft">Guardar</div>
+            <div class="fn2">Google Sheets</div>
+            <div class="fn3">Append/Update</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn out">
+            <div class="fi">📧</div>
+            <div class="ft">Email 1</div>
+            <div class="fn2">Bienvenida</div>
+            <div class="fn3">inmediato</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn wait">
+            <div class="fi">⏳</div>
+            <div class="ft">Wait</div>
+            <div class="fn2">1 día</div>
+            <div class="fn3">pausa auto</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn val">
+            <div class="fi">📧</div>
+            <div class="ft">Email 2</div>
+            <div class="fn2">Follow-up</div>
+            <div class="fn3">+ update</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn wait">
+            <div class="fi">⏳</div>
+            <div class="ft">Wait</div>
+            <div class="fn2">2 días</div>
+            <div class="fn3">pausa auto</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn err">
+            <div class="fi">🔔</div>
+            <div class="ft">Seguimiento</div>
+            <div class="fn2">Alerta</div>
+            <div class="fn3">equipo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">📊 Estructura de la hoja de Google Sheets — CRM</div>
+          <table class="ct" style="margin-top:0;">
+            <thead>
+              <tr><th>Col</th><th>Campo</th><th>Descripción</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>A</td><td>Fecha</td><td>Timestamp automático de captura</td></tr>
+              <tr><td>B</td><td>Nombre</td><td>Nombre completo del lead</td></tr>
+              <tr><td>C</td><td>Email</td><td>Correo (minúsculas, sin espacios)</td></tr>
+              <tr><td>D</td><td>Teléfono</td><td>Contacto directo (opcional)</td></tr>
+              <tr><td>E</td><td>Interés</td><td>Producto o servicio solicitado</td></tr>
+              <tr><td>F</td><td>Estado</td><td><span class="estado e-nuevo">Nuevo</span> → <span class="estado e-contactado">Contactado</span> → <span class="estado e-cliente">Cliente</span></td></tr>
+              <tr><td>G</td><td>Último contacto</td><td>Fecha del último email enviado</td></tr>
+              <tr><td>H</td><td>Notas</td><td>Observaciones del seguimiento</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card gb">
+          <div class="card-label">✅ Los 4 pasos que vas a construir hoy</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">1</span><div><strong style="color:var(--text);">Paso 1 — Pipeline</strong><br><span style="font-size:13px;">Reutilizar el workflow de leads, agregar la columna Estado y asignar "Nuevo" a cada lead que llega.</span></div></li>
+            <li><span class="ck">2</span><div><strong style="color:var(--text);">Paso 2 — Email automático</strong><br><span style="font-size:13px;">Configurar el email de bienvenida con los datos del lead, enviarlo al instante y actualizar el estado a "Contactado".</span></div></li>
+            <li><span class="ck">3</span><div><strong style="color:var(--text);">Paso 3 — Delay y follow-up</strong><br><span style="font-size:13px;">Usar el nodo Wait para programar el seguimiento a 24h y el recordatorio final a 3 días.</span></div></li>
+            <li><span class="ck">4</span><div><strong style="color:var(--text);">Paso 4 — Actualizar estado</strong><br><span style="font-size:13px;">Cada acción del sistema actualiza automáticamente el estado en Sheets: Nuevo → Contactado → Interesado.</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Reutiliza el workflow de la clase anterior.</strong> El sistema de captura de leads que ya tienes es el punto de partida. Esta clase lo extiende: en vez de solo guardar y notificar, ahora el workflow continúa con la secuencia de seguimiento.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('pipeline')">Siguiente: Paso 1 — Pipeline →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · PIPELINE ══ -->
+    <section id="pipeline" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 1 de 4</div>
+        <h1>Pipeline — <span>Clasificar el Lead</span></h1>
+        <p>El primer paso del CRM es asignar un estado inicial a cada lead que llega. Desde ahí, el sistema sabe exactamente qué hacer con él.</p>
+      </div>
+
+      <div class="card proc ab">
+        <div class="card-label">🔀 Nodo Set — asignar estado inicial al lead</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Set — enriquecer el lead con metadatos CRM</span>
+
+<span class="cm">// ── ESTADO INICIAL ────────────────────────────────</span>
+<span class="ky">estado</span>            → <span class="str">"Nuevo"</span>
+<span class="ky">fecha_captura</span>     → <span class="kw">{{$now.toFormat('dd/MM/yyyy HH:mm')}}</span>
+<span class="ky">ultimo_contacto</span>   → <span class="str">""</span>  <span class="cm">← vacío hasta el primer email</span>
+<span class="ky">cantidad_contactos</span>→ <span class="vl">0</span>
+
+<span class="cm">// ── LIMPIEZA (reutilizado de clase anterior) ──────</span>
+<span class="ky">nombre</span>            → <span class="kw">{{$json.nombre.trim()}}</span>
+<span class="ky">email</span>             → <span class="kw">{{$json.email.toLowerCase().trim()}}</span>
+<span class="ky">telefono</span>          → <span class="kw">{{$json.telefono ?? 'Sin teléfono'}}</span>
+<span class="ky">interes</span>           → <span class="kw">{{$json.interes ?? 'No especificado'}}</span>
+
+<span class="cm">// ── ACTIVAR "Keep Only Set" ───────────────────────</span>
+<span class="cm">// Para que solo pasen los campos definidos aquí</span>
+<span class="cm">// y no los datos crudos del webhook</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">💾 Guardar en Google Sheets con estado</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Google Sheets — Append Row</span>
+<span class="ky">Operation:</span>   Append
+<span class="ky">Sheet:</span>       Leads
+<span class="ky">Column Mapping:</span>
+
+A → <span class="kw">{{$json.fecha_captura}}</span>
+B → <span class="kw">{{$json.nombre}}</span>
+C → <span class="kw">{{$json.email}}</span>
+D → <span class="kw">{{$json.telefono}}</span>
+E → <span class="kw">{{$json.interes}}</span>
+F → <span class="kw">{{$json.estado}}</span>       <span class="cm">← "Nuevo"</span>
+G → <span class="kw">{{$json.ultimo_contacto}}</span> <span class="cm">← vacío</span>
+H → <span class="str">""</span>                     <span class="cm">← notas vacías</span>
+
+<span class="cm">// El lead queda registrado y listo
+// para que el sistema actúe sobre él</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🔀 Cómo evolucionan los estados</div>
+          <div style="padding:8px 0;">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+              <span class="estado e-nuevo">Nuevo</span>
+              <span style="font-size:12px;color:var(--text2);">Al llegar el lead — email de bienvenida pendiente</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+              <span class="estado e-contactado">Contactado</span>
+              <span style="font-size:12px;color:var(--text2);">Al enviar el primer email automático</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+              <span class="estado e-interesado">Interesado</span>
+              <span style="font-size:12px;color:var(--text2);">Cuando el lead responde o interactúa</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+              <span class="estado e-cliente">Cliente</span>
+              <span style="font-size:12px;color:var(--text2);">Al confirmar la compra o contrato</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;">
+              <span class="estado e-inactivo">Inactivo</span>
+              <span style="font-size:12px;color:var(--text2);">Sin respuesta después del seguimiento completo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>El estado es la fuente de verdad.</strong> Nunca actualices el estado manualmente si puedes automatizarlo. Cada nodo que envía un email debe también actualizar el estado en Sheets inmediatamente después. Así el registro siempre refleja la realidad.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('arquitectura')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('email')">Siguiente: Paso 2 — Email →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · EMAIL ══ -->
+    <section id="email" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 2 de 4</div>
+        <h1>Email Automático — <span>Bienvenida Inmediata</span></h1>
+        <p>El primer email define la primera impresión. Debe llegar en segundos, usar el nombre del lead y sentirse personal aunque sea completamente automático.</p>
+      </div>
+
+      <div class="card out tb">
+        <div class="card-label">📧 Configuración del email de bienvenida</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Gmail — Send Email (o SMTP)</span>
+
+<span class="ky">To:</span>       <span class="kw">{{$json.email}}</span>
+<span class="ky">Subject:</span>  <span class="str">"Gracias por tu interés, {{$json.nombre}}"</span>
+
+<span class="cm">// ── BODY (HTML recomendado) ───────────────────────</span>
+<span class="ky">Body:</span>
+<span class="str">Hola {{$json.nombre}},</span>
+
+<span class="str">Gracias por contactarnos. Recibimos tu consulta
+sobre {{$json.interes}} y uno de nuestros
+especialistas revisará tu solicitud pronto.</span>
+
+<span class="str">Mientras tanto, aquí tienes información útil:
+• ¿Qué hacemos exactamente? → [Link]
+• Preguntas frecuentes → [Link]
+• Casos de clientes similares → [Link]</span>
+
+<span class="str">Si tienes alguna pregunta urgente, responde
+este email o escríbenos directamente.</span>
+
+<span class="str">Saludos,
+[Nombre del equipo]
+[Empresa] · [Teléfono]</span>
+
+<span class="cm">// ── CONFIGURACIÓN TÉCNICA ────────────────────────</span>
+<span class="ky">From Name:</span>   <span class="str">"Equipo Comercial"</span>
+<span class="ky">Reply-To:</span>    <span class="str">"ventas@empresa.com"</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card amb">
+          <div class="card-label">✍️ Personalización avanzada según el interés</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Code — elegir template según interés</span>
+<span class="kw">const</span> d = $input.first().json;
+
+<span class="cm">// Templates diferentes por tipo de producto</span>
+<span class="kw">const</span> templates = {
+  <span class="ky">'plan-basico'</span>: {
+    subject: <span class="str">"Tu Plan Básico está listo, {{nombre}}"</span>,
+    cta:     <span class="str">"Ver precios del Plan Básico →"</span>
+  },
+  <span class="ky">'consultoria'</span>: {
+    subject: <span class="str">"Hablemos de tu proyecto, {{nombre}}"</span>,
+    cta:     <span class="str">"Agenda una llamada de 15 min →"</span>
+  },
+  <span class="ky">default</span>: {
+    subject: <span class="str">"Gracias por tu interés, {{nombre}}"</span>,
+    cta:     <span class="str">"Conoce más sobre nosotros →"</span>
+  }
+};
+
+<span class="kw">const</span> t = templates[d.interes] ?? templates.default;
+
+<span class="kw">return</span> [{ json: { ...d,
+  <span class="ky">email_subject</span>: t.subject.replace(<span class="str">'{{nombre}}'</span>, d.nombre),
+  <span class="ky">email_cta</span>: t.cta
+}}];
+          </div>
+        </div>
+
+        <div class="card gb">
+          <div class="card-label">✅ Actualizar estado después del email</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Google Sheets — Update Row</span>
+<span class="cm">// Se ejecuta DESPUÉS de Send Email</span>
+
+<span class="ky">Operation:</span>  Update
+<span class="ky">Sheet:</span>      Leads
+<span class="ky">Match by:</span>  Column C (Email)
+<span class="ky">Value:</span>     <span class="kw">{{$json.email}}</span>
+
+<span class="cm">// Campos a actualizar</span>
+<span class="ky">F (Estado):</span>          <span class="str">"Contactado"</span>
+<span class="ky">G (Último contacto):</span> <span class="kw">{{$now.toFormat('dd/MM/yyyy HH:mm')}}</span>
+<span class="ky">H (Notas):</span>
+  <span class="str">"Email bienvenida enviado: {{$now}}"</span>
+
+<span class="cm">// El estado pasa de "Nuevo" → "Contactado"
+// automáticamente tras cada email enviado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Usa el nombre en el asunto.</strong> Los emails con el nombre del destinatario en el asunto tienen entre un 20% y un 50% más de tasa de apertura. Con <code>{{$json.nombre}}</code> en el campo Subject lo consigues gratis.</div></div>
+        <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Siempre actualiza el estado después del email.</strong> El nodo de actualización de Sheets debe ir conectado directamente después del nodo de email. Si el email falla, el estado no debería actualizarse. Usa la rama de error del nodo para manejarlo.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('pipeline')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('delay')">Siguiente: Paso 3 — Delay →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · DELAY ══ -->
+    <section id="delay" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 3 de 4</div>
+        <h1>Delay y <span>Follow-up Automático</span></h1>
+        <p>El nodo Wait es la pieza más poderosa de esta clase. Con él construyes secuencias que se ejecutan solas a lo largo de días, sin ningún servidor corriendo en segundo plano.</p>
+      </div>
+
+      <div class="card wait pb" style="margin-bottom:16px;">
+        <div class="card-label">⏳ El nodo Wait — cómo funciona realmente</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:14px;">El nodo <strong style="color:var(--text);">Wait</strong> pausa la ejecución del workflow por el tiempo exacto que definas. Durante esa pausa el workflow queda guardado en los servidores de n8n, sin consumir recursos ni necesitar que el editor esté abierto.</p>
+            <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Wait — configuración básica</span>
+<span class="ky">Resume:</span> After time interval
+
+<span class="cm">// Para el follow-up del día 1:</span>
+<span class="kw">Amount:</span> 1
+<span class="kw">Unit:</span>   Days
+
+<span class="cm">// Para el seguimiento del día 3:</span>
+<span class="kw">Amount:</span> 2  <span class="cm">← 2 días más después del email 2</span>
+<span class="kw">Unit:</span>   Days
+
+<span class="cm">// Para probar sin esperar un día real:</span>
+<span class="kw">Amount:</span> 1
+<span class="kw">Unit:</span>   Minutes  <span class="cm">← usar en tests</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">Secuencia completa de 3 días</div>
+            <div class="timeline">
+              <div class="tl-item done">
+                <div class="tl-dot"></div>
+                <div class="tl-time">T+0 — inmediato</div>
+                <div class="tl-title">📧 Email 1: Bienvenida</div>
+                <div class="tl-body">Estado → "Contactado"</div>
+              </div>
+              <div class="tl-item wait-dot" style="padding-bottom:18px;">
+                <div class="tl-dot"></div>
+                <div class="tl-time">⏳ Wait — 1 día</div>
+                <div class="tl-title" style="color:var(--pink);">Workflow en pausa</div>
+                <div class="tl-body">n8n guarda el estado. Sin consumo.</div>
+              </div>
+              <div class="tl-item done">
+                <div class="tl-dot"></div>
+                <div class="tl-time">T+24h</div>
+                <div class="tl-title">📧 Email 2: Follow-up</div>
+                <div class="tl-body">"¿Pudiste revisar la info?"</div>
+              </div>
+              <div class="tl-item wait-dot" style="padding-bottom:18px;">
+                <div class="tl-dot"></div>
+                <div class="tl-time">⏳ Wait — 2 días más</div>
+                <div class="tl-title" style="color:var(--pink);">Segunda pausa</div>
+                <div class="tl-body">Esperando respuesta del lead.</div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot"></div>
+                <div class="tl-time">T+72h — sin respuesta</div>
+                <div class="tl-title">🔔 Alerta al equipo</div>
+                <div class="tl-body">Notificación + estado "Inactivo".</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card amb">
+          <div class="card-label">📧 Email 2 — Follow-up (24 horas)</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Después del primer nodo Wait (1 día)</span>
+<span class="ky">To:</span>      <span class="kw">{{$json.email}}</span>
+<span class="ky">Subject:</span> <span class="str">"{{$json.nombre}}, ¿pudiste revisarlo?"</span>
+
+<span class="ky">Body:</span>
+<span class="str">Hola {{$json.nombre}},</span>
+
+<span class="str">Ayer te escribimos sobre {{$json.interes}}.
+¿Tuviste oportunidad de revisar la información?</span>
+
+<span class="str">Si quieres hablar con alguien del equipo,
+puedes responder este email directamente
+o agendar una llamada en [link calendario].</span>
+
+<span class="str">¡Estamos aquí para ayudarte!</span>
+
+<span class="cm">// Después de este email:
+// → Actualizar "Último contacto" en Sheets
+// → Incrementar cantidad_contactos a 2</span>
+          </div>
+        </div>
+
+        <div class="card rb">
+          <div class="card-label">🔔 Alerta final — sin respuesta en 3 días</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Después del segundo Wait (2 días más)</span>
+<span class="cm">// El lead lleva 3 días sin responder</span>
+
+<span class="cm">// 1. Email final al lead</span>
+<span class="ky">Subject:</span> <span class="str">"Un último mensaje, {{$json.nombre}}"</span>
+<span class="ky">Body:</span>    <span class="str">"Entendemos que estás ocupado.
+Cuando estés listo, aquí estaremos."</span>
+
+<span class="cm">// 2. Notificación interna al equipo</span>
+<span class="ky">Slack:</span> <span class="str">"⚠️ Lead sin respuesta: {{$json.nombre}}
+Email: {{$json.email}}
+Interés: {{$json.interes}}
+Acción requerida: revisión manual"</span>
+
+<span class="cm">// 3. Actualizar estado en Sheets</span>
+<span class="ky">Estado:</span> <span class="str">"Inactivo"</span>
+<span class="ky">Notas:</span>  <span class="str">"3 emails enviados, sin respuesta"</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Usa Wait de 1 minuto para probar.</strong> Un Wait de 1 día no se reanudará si reinicias n8n en modo test. Para verificar que la secuencia funciona, configura el Wait a 1 minuto durante las pruebas, verifica que los emails llegan, luego cámbialo a 1 día para producción.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('email')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('estado')">Siguiente: Paso 4 — Estado →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · ESTADO ══ -->
+    <section id="estado" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 4 de 4</div>
+        <h1>Gestión del <span>Estado del Lead</span></h1>
+        <p>El estado es la columna vertebral del CRM. Cada acción del sistema lo actualiza. Cualquier persona del equipo puede ver en tiempo real en qué punto está cada contacto.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🔄 Mapa completo de transiciones de estado</div>
+        <table class="ct" style="margin-top:0;">
+          <thead>
+            <tr><th>Desde</th><th>Trigger</th><th>Hacia</th><th>Quién lo hace</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>—</td>
+              <td>Lead capturado por webhook</td>
+              <td><span class="estado e-nuevo">Nuevo</span></td>
+              <td>Nodo Set automático</td>
+            </tr>
+            <tr>
+              <td><span class="estado e-nuevo">Nuevo</span></td>
+              <td>Email de bienvenida enviado</td>
+              <td><span class="estado e-contactado">Contactado</span></td>
+              <td>Nodo Sheets Update (post-email)</td>
+            </tr>
+            <tr>
+              <td><span class="estado e-contactado">Contactado</span></td>
+              <td>Lead responde cualquier email</td>
+              <td><span class="estado e-interesado">Interesado</span></td>
+              <td>Webhook de respuesta (o manual)</td>
+            </tr>
+            <tr>
+              <td><span class="estado e-interesado">Interesado</span></td>
+              <td>Propuesta enviada y aceptada</td>
+              <td><span class="estado e-cliente">Cliente</span></td>
+              <td>Acción del vendedor + Update</td>
+            </tr>
+            <tr>
+              <td><span class="estado e-contactado">Contactado</span></td>
+              <td>3 emails sin respuesta</td>
+              <td><span class="estado e-inactivo">Inactivo</span></td>
+              <td>Nodo final de la secuencia</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">✅ Nodo Update — patrón reutilizable</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Patrón que se repite en cada transición</span>
+<span class="cm">// Nodo: Google Sheets — Update Row</span>
+
+<span class="ky">Sheet:</span>     Leads
+<span class="ky">Match by:</span> Email  <span class="cm">← clave única</span>
+<span class="ky">Value:</span>    <span class="kw">{{$json.email}}</span>
+
+<span class="cm">// ── Variables que siempre se actualizan ──</span>
+<span class="ky">Estado:</span>          <span class="str">"Contactado"</span>  <span class="cm">← cambia por estado</span>
+<span class="ky">Último contacto:</span> <span class="kw">{{$now.toFormat('dd/MM/yyyy HH:mm')}}</span>
+
+<span class="cm">// ── Variables opcionales según el momento ─</span>
+<span class="ky">Notas:</span>
+  <span class="str">"{{$json.accion_realizada}} — {{$now}}"</span>
+
+<span class="cm">// Usar este mismo nodo configurado diferente
+// en cada punto del flujo donde cambia el estado</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📊 Vista de la hoja en tiempo real</div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px;">
+              <thead>
+                <tr>
+                  <th style="color:var(--text3);padding:4px 8px;text-align:left;border-bottom:1px solid var(--border2);">Nombre</th>
+                  <th style="color:var(--text3);padding:4px 8px;text-align:left;border-bottom:1px solid var(--border2);">Email</th>
+                  <th style="color:var(--text3);padding:4px 8px;text-align:left;border-bottom:1px solid var(--border2);">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:6px 8px;color:var(--text);border-bottom:1px solid var(--border);">Juan Pérez</td>
+                  <td style="padding:6px 8px;color:var(--text2);border-bottom:1px solid var(--border);">juan@…</td>
+                  <td style="padding:6px 8px;border-bottom:1px solid var(--border);"><span class="estado e-cliente" style="font-size:10px;padding:2px 8px;">Cliente</span></td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 8px;color:var(--text);border-bottom:1px solid var(--border);">Ana Torres</td>
+                  <td style="padding:6px 8px;color:var(--text2);border-bottom:1px solid var(--border);">ana@…</td>
+                  <td style="padding:6px 8px;border-bottom:1px solid var(--border);"><span class="estado e-interesado" style="font-size:10px;padding:2px 8px;">Interesado</span></td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 8px;color:var(--text);border-bottom:1px solid var(--border);">Carlos R.</td>
+                  <td style="padding:6px 8px;color:var(--text2);border-bottom:1px solid var(--border);">carlos@…</td>
+                  <td style="padding:6px 8px;border-bottom:1px solid var(--border);"><span class="estado e-contactado" style="font-size:10px;padding:2px 8px;">Contactado</span></td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 8px;color:var(--text);">María G.</td>
+                  <td style="padding:6px 8px;color:var(--text2);">maria@…</td>
+                  <td style="padding:6px 8px;"><span class="estado e-nuevo" style="font-size:10px;padding:2px 8px;">Nuevo</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:12px;color:var(--text3);margin-top:10px;">Así se ve la hoja después de que el sistema actualiza los estados automáticamente.</p>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">🔥</span><div class="tt"><strong>Esto ya es un CRM funcionando.</strong> Leads organizados con estados, historial de contactos, fechas y notas actualizadas automáticamente. Google Sheets como base de datos + n8n como motor = 90% de lo que hace HubSpot en su plan gratuito, pero construido por ti.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('delay')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('practicas')">Siguiente: Buenas prácticas →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · BUENAS PRÁCTICAS ══ -->
+    <section id="practicas" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Buenas Prácticas y <span>Errores Comunes</span></h1>
+        <p>Lo que hacen los sistemas CRM que funcionan y los errores que comete casi todo el mundo la primera vez que construye esto.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">✅ Buenas prácticas — lo que hace la diferencia</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Personalizar cada mensaje</strong><br><span style="font-size:13px;">Usa siempre <code>{{$json.nombre}}</code> en el asunto y el cuerpo. Usa <code>{{$json.interes}}</code> para contextualizar. Un mensaje genérico se nota y reduce la tasa de respuesta.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Espaciar las comunicaciones</strong><br><span style="font-size:13px;">Mínimo 24h entre emails. No envíes 3 emails en el mismo día. El lead necesita tiempo para responder y tú necesitas no llegar al spam.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Usar estados claros y consistentes</strong><br><span style="font-size:13px;">Define los estados una vez y no los cambies. "Nuevo", "Contactado", "Interesado", "Cliente", "Inactivo". Todos en el equipo deben saber qué significa cada uno.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probar cada etapa antes de activar</strong><br><span style="font-size:13px;">Usa tu propio email para recibir los mensajes de prueba. Verifica que el estado se actualiza en Sheets. Confirma que los Waits se reanudan. Solo entonces activa el workflow.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Mantener la lógica simple</strong><br><span style="font-size:13px;">Un workflow de 10 nodos claro siempre supera a uno de 40 nodos confuso. Agrega complejidad solo cuando la simplicidad ya no alcance.</span></div></li>
+          </ul>
+        </div>
+
+        <div class="card rb">
+          <div class="card-label">⚠️ Errores comunes — y cómo evitarlos</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Email mal configurado o sin Reply-To</strong><br><span style="font-size:13px;">Si el lead responde al email pero el Reply-To apunta al email de n8n o está vacío, nunca sabrás que respondió. Siempre configura Reply-To con el email del equipo de ventas.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">No usar delays correctamente en tests</strong><br><span style="font-size:13px;">Wait de 1 día en modo test = el workflow nunca se reanuda si cierras el editor. Siempre prueba con 1 minuto y cambia a 1 día antes de activar en producción.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Mensajes genéricos sin personalización</strong><br><span style="font-size:13px;">"Hola, gracias por contactarnos" sin nombre ni contexto. El lead siente que es un número más. Siempre usa al menos el nombre y el producto de interés.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">No actualizar el estado tras cada acción</strong><br><span style="font-size:13px;">El nodo de email sin nodo de Update después. El estado queda como "Nuevo" aunque ya se enviaron 3 emails. El equipo ve datos incorrectos y pierde confianza en el sistema.</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:0;">
+        <div class="card-label">🚀 Bonus nivel pro — para cuando el sistema básico ya funcione</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <div class="wtu"><span class="we">📨</span><div class="wt"><strong>Secuencias de múltiples emails:</strong> extender la secuencia a 5–7 emails con contenido de valor diferente en cada uno (caso de éxito, demo, oferta limitada). El nodo Wait entre cada uno.</div></div>
+            <div class="wtu"><span class="we">🔗</span><div class="wt"><strong>Integración con HubSpot o Notion:</strong> reemplazar Google Sheets por un CRM real. Los nodos nativos de n8n para HubSpot permiten crear contactos, actualizar propiedades y mover deals entre stages.</div></div>
+            <div class="wtu"><span class="we">🔄</span><div class="wt"><strong>Cambio automático de estado por comportamiento:</strong> webhook que recibe el evento "email abierto" o "link clicado" y actualiza el estado de "Contactado" a "Interesado" sin intervención humana.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">🤖</span><div class="wt"><strong>Automatización basada en comportamiento:</strong> si el lead abre el email pero no responde, enviarle un email diferente. Si hace clic en el link de precios, alertar al vendedor inmediatamente.</div></div>
+            <div class="wtu"><span class="we">📱</span><div class="wt"><strong>WhatsApp al lead:</strong> si tiene teléfono, enviar el mismo mensaje de bienvenida por WhatsApp Business API. La tasa de apertura es del 98% vs el 20% del email.</div></div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>Dashboard de métricas:</strong> segunda hoja en Sheets con fórmulas que cuentan leads por estado, tasa de conversión por fuente y tiempo promedio de respuesta.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('estado')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · ENTREGABLE ══ -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable — <span>Mini CRM Funcionando</span></h1>
+        <p>Lo que debe estar funcionando al terminar esta clase. Si todas estas casillas están marcadas, tienes un sistema CRM automatizado real.</p>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Checklist del entregable</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Lead llega y se guarda con estado "Nuevo"</strong><br><span style="font-size:13px;">El nodo Set asigna el estado inicial, la fecha y los campos limpios. La fila aparece en Google Sheets con todos los campos en su columna correcta.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Email de bienvenida llega en segundos</strong><br><span style="font-size:13px;">Usa el nombre y el interés del lead. El asunto está personalizado. Llega desde la dirección correcta con Reply-To configurado.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Estado actualizado a "Contactado" en Sheets</strong><br><span style="font-size:13px;">Inmediatamente después del primer email, la columna Estado y "Último contacto" se actualizan automáticamente.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Follow-up enviado a las 24h (probado con 1 min)</strong><br><span style="font-size:13px;">El nodo Wait funciona correctamente. El segundo email llega después del tiempo definido con el mensaje de seguimiento.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Alerta al equipo si no hay respuesta en 3 días</strong><br><span style="font-size:13px;">Notificación por Slack o email interno. El estado cambia a "Inactivo". Las notas en Sheets reflejan los intentos realizados.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con 3 leads de prueba distintos</strong><br><span style="font-size:13px;">Un lead con todos los datos, uno con solo nombre y email, uno con interés especificado. Los tres pasan por el flujo completo correctamente.</span></div></li>
+        </ul>
+      </div>
+
+      <!-- RESUMEN -->
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏆 Lo que construiste en esta clase</div>
+        <div class="g4" style="margin-top:12px;">
+          <div class="stat"><div style="font-size:22px;margin-bottom:6px;">📥</div><div class="sl" style="font-weight:600;color:var(--text);margin-bottom:4px;">Captura</div><div class="sl">Leads entran al sistema y se clasifican automáticamente</div></div>
+          <div class="stat"><div style="font-size:22px;margin-bottom:6px;">📧</div><div class="sl" style="font-weight:600;color:var(--text);margin-bottom:4px;">Respuesta</div><div class="sl">Email personalizado en segundos sin intervención humana</div></div>
+          <div class="stat"><div style="font-size:22px;margin-bottom:6px;">⏳</div><div class="sl" style="font-weight:600;color:var(--text);margin-bottom:4px;">Seguimiento</div><div class="sl">Secuencia de 3 contactos automáticos en 3 días</div></div>
+          <div class="stat"><div style="font-size:22px;margin-bottom:6px;">🔄</div><div class="sl" style="font-weight:600;color:var(--text);margin-bottom:4px;">Pipeline</div><div class="sl">Estados siempre actualizados en tiempo real</div></div>
+        </div>
+      </div>
+
+      <!-- SIGUIENTE CLASE -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">🧠</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Clase 6 — Automatizaciones con Lógica Condicional</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:520px;margin:0 auto 20px;">Con el CRM construido, el siguiente paso es agregar inteligencia: flujos que toman decisiones automáticamente según lo que hace el lead, condiciones múltiples con Switch y lógica que se adapta al comportamiento real.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">🔀 Lógica condicional</span>
+            <span class="b bg">🤖 Decisiones auto</span>
+            <span class="b bt">📊 Switch avanzado</span>
+            <span class="b ba">⚡ Flujos inteligentes</span>
+          </div>
+          <p style="color:var(--text3);font-size:13px;margin-top:16px;font-family:'JetBrains Mono',monospace;">Seguimiento → Inteligencia</p>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('practicas')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','conceptos','arquitectura','pipeline','email','delay','estado','practicas','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(`.nav-item[onclick*="'${id}'"]`);go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Sección ${idx+1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>

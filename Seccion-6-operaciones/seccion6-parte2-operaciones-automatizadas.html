@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sección 6 · Parte 2 — Operaciones Automatizadas</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);}
+  .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;text-align:center;flex-shrink:0;min-width:110px;}
+  .fn .fi{font-size:20px;margin-bottom:5px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:3px;}
+  .fn .fn2{font-size:12px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.val {border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.05);}  .fn.val .ft{color:var(--sky);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fn.err {border-color:rgba(240,90,90,0.4);background:rgba(240,90,90,0.05);}   .fn.err .ft{color:var(--red);}
+  .fn.wait{border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.05);} .fn.wait .ft{color:var(--pink);}
+  .fn.cond{border-color:rgba(132,204,22,0.4);background:rgba(132,204,22,0.05);}  .fn.cond .ft{color:var(--lime);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* RAMA VISUAL */
+  .rama-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px;}
+  .rama{border-radius:10px;padding:16px;border:1px solid var(--border);}
+  .rama-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+  .rama-tipo{font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;}
+  .rama-acc{font-size:12px;color:var(--text2);line-height:1.6;}
+  .rama.ventas  {border-color:rgba(34,201,122,0.3);background:rgba(34,201,122,0.04);}  .rama.ventas  .rama-lbl{color:var(--green);}
+  .rama.soporte {border-color:rgba(56,189,248,0.3);background:rgba(56,189,248,0.04);}  .rama.soporte .rama-lbl{color:var(--sky);}
+  .rama.factura {border-color:rgba(240,160,48,0.3);background:rgba(240,160,48,0.04);}  .rama.factura .rama-lbl{color:var(--amber);}
+  .rama.escalado{border-color:rgba(240,90,90,0.3);background:rgba(240,90,90,0.04);}   .rama.escalado .rama-lbl{color:var(--red);}
+  .rama.info    {border-color:rgba(124,110,245,0.3);background:rgba(124,110,245,0.04);}  .rama.info    .rama-lbl{color:var(--accent2);}
+  .rama.fb      {border-color:rgba(32,212,176,0.3);background:rgba(32,212,176,0.04);}  .rama.fb      .rama-lbl{color:var(--teal);}
+
+  /* PRIORIDAD */
+  .prio{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
+  .p-alta  {background:var(--red-bg);color:var(--red);border:1px solid rgba(240,90,90,0.3);}
+  .p-media {background:var(--amber-bg);color:var(--amber);border:1px solid rgba(240,160,48,0.3);}
+  .p-baja  {background:var(--sky-bg);color:var(--sky);border:1px solid rgba(56,189,248,0.3);}
+  .p-auto  {background:var(--lime-bg);color:var(--lime);border:1px solid rgba(132,204,22,0.3);}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* STEP LIST */
+  .step-list{list-style:none;}
+  .step-item{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .step-item:last-child{border-bottom:none;}
+  .step-num{width:32px;height:32px;border-radius:9px;background:var(--accent-glow);border:1px solid rgba(124,110,245,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--accent2);flex-shrink:0;margin-top:1px;}
+  .step-body h4{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .step-body p{font-size:13px;color:var(--text2);line-height:1.6;}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{opacity:0.85;}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Sección 6 · Parte 2</div>
+      <h2>Operaciones Automatizadas</h2>
+      <p>n8n · flujos end-to-end</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> Introducción</a>
+    <a class="nav-item" onclick="go('conceptos',this)"><span class="ni">🧠</span> Conceptos clave</a>
+    <a class="nav-item" onclick="go('arquitectura',this)"><span class="ni">🏗️</span> Arquitectura del sistema</a>
+    <a class="nav-item" onclick="go('clasificacion',this)"><span class="ni">🔀</span> Paso 1 — Clasificación</a>
+    <a class="nav-item" onclick="go('ramas',this)"><span class="ni">🌿</span> Paso 2 — Ramas y acciones</a>
+    <a class="nav-item" onclick="go('prioridades',this)"><span class="ni">🎯</span> Paso 3 — Prioridades</a>
+    <a class="nav-item" onclick="go('registro',this)"><span class="ni">💾</span> Paso 4 — Registro y errores</a>
+    <a class="nav-item" onclick="go('practicas',this)"><span class="ni">✅</span> Buenas prácticas</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6 · Parte 2</div>
+        <h1>Operaciones <span>Automatizadas</span></h1>
+        <p>Automatizar una tarea es útil. Automatizar un proceso completo es transformador. Esta clase construye sistemas que reciben una solicitud, deciden qué hacer y ejecutan sin intervención humana de principio a fin.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🔥 El salto de esta clase</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div style="background:var(--bg4);border-radius:10px;padding:18px;border:1px solid var(--border);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Antes — Automatizaciones parciales</div>
+            <div style="font-size:17px;font-weight:800;color:var(--text2);margin-bottom:8px;">"Automatizar partes"</div>
+            <p style="font-size:13px;color:var(--text3);line-height:1.6;">Un webhook guarda datos. Otro envía un email. Pero alguien tiene que leer el email, decidir qué hacer y ejecutar la siguiente acción manualmente. El humano sigue en el loop.</p>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(32,212,176,0.07),rgba(124,110,245,0.07));border-radius:10px;padding:18px;border:1px solid rgba(32,212,176,0.3);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Ahora — Operaciones end-to-end</div>
+            <div style="font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:8px;">"Automatizar el proceso completo"</div>
+            <p style="font-size:13px;color:var(--text2);line-height:1.6;">La solicitud llega → el sistema la entiende → decide la ruta → ejecuta todas las acciones → registra el resultado. Sin intervención humana en ningún punto del flujo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn" style="color:var(--teal);">E2E</div><div class="sl">flujos completos sin intervención humana</div></div>
+        <div class="stat"><div class="sn" style="color:var(--lime);">5</div><div class="sl">tipos de solicitud manejados automáticamente</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">3</div><div class="sl">niveles de prioridad con rutas distintas</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">0</div><div class="sl">solicitudes sin procesar ni registrar</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🧠 Qué vas a aprender en esta clase</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Automatización de procesos internos completos</strong><br><span style="font-size:13px;">No solo notificaciones o guardado de datos. Flujos que leen una solicitud, la entienden, toman una decisión y ejecutan la cadena de acciones correcta.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Clasificación automática con Switch multi-ruta</strong><br><span style="font-size:13px;">Un solo nodo Switch que enruta solicitudes de soporte, ventas, facturación, información y escalados por caminos completamente distintos.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Sistema de prioridades automático</strong><br><span style="font-size:13px;">Detectar urgencia según palabras clave, tipo de cliente o SLA. Alta prioridad activa el equipo en 15 minutos; baja prioridad entra a la cola estándar.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Registro de resultados y manejo de errores</strong><br><span style="font-size:13px;">Cada solicitud procesada queda registrada con timestamp, acción tomada y resultado. Los errores no detienen el flujo: se capturan, se registran y se notifican.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Reintentos automáticos y fallbacks</strong><br><span style="font-size:13px;">Si una acción falla (el email no sale, la API no responde), el sistema reintenta antes de escalar a revisión manual. Los flujos frágiles no sirven en producción.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" disabled style="opacity:0.3;cursor:default;">← Parte 1</button>
+        <button class="btn btn-p" onclick="goTo('conceptos')">Siguiente: Conceptos →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · CONCEPTOS ══ -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Conceptos <span>Clave</span></h1>
+        <p>Tres ideas que definen cómo funcionan los sistemas de operaciones automatizadas y por qué son cualitativamente distintos a un workflow de captura de datos.</p>
+      </div>
+
+      <div class="card tb" style="margin-bottom:16px;">
+        <div class="card-label">🔸 Operaciones — procesos internos del negocio</div>
+        <h3 style="margin-bottom:10px;">Todo lo que el equipo hace de forma repetitiva es candidato a automatizar</h3>
+        <p style="margin-bottom:16px;">Las "operaciones" son los procesos que mantienen funcionando el negocio: responder solicitudes de soporte, asignar tareas al equipo correcto, actualizar estados en el CRM, enviar facturas, escalar incidencias. Todos tienen algo en común: siguen reglas predecibles.</p>
+        <div class="g3" style="margin-bottom:0;">
+          <div class="stat">
+            <div style="font-size:26px;margin-bottom:8px;">🎧</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">Soporte al cliente</div>
+            <div class="sl">Clasificar, asignar, responder y escalar tickets automáticamente</div>
+          </div>
+          <div class="stat">
+            <div style="font-size:26px;margin-bottom:8px;">💼</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">Ventas internas</div>
+            <div class="sl">Procesar solicitudes, actualizar pipeline, notificar al equipo</div>
+          </div>
+          <div class="stat">
+            <div style="font-size:26px;margin-bottom:8px;">🧾</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">Operaciones financieras</div>
+            <div class="sl">Verificar pagos, emitir facturas, actualizar cuentas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card lmb">
+          <div class="card-label">🔸 Lógica condicional en operaciones</div>
+          <p style="margin-bottom:14px;">El mismo IF/Switch que aprendiste antes, ahora aplicado a procesos de negocio reales. La pregunta no es "¿tiene teléfono?" sino "¿cuál es el tipo de solicitud?"</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Decisiones típicas en operaciones</span>
+
+<span class="kw">si</span> tipo = <span class="str">"soporte"</span>
+  → asignar al equipo de soporte
+  → crear ticket en el sistema
+  → confirmar recepción al usuario
+
+<span class="kw">si</span> tipo = <span class="str">"ventas"</span>
+  → notificar al equipo comercial
+  → actualizar pipeline en CRM
+  → enviar propuesta automática
+
+<span class="kw">si</span> tipo = <span class="str">"facturacion"</span>
+  → verificar datos fiscales
+  → generar factura
+  → enviar por email
+
+<span class="kw">si no</span> → escalar a revisión manual
+          </div>
+        </div>
+
+        <div class="card ab">
+          <div class="card-label">🔸 Automatización end-to-end — la diferencia real</div>
+          <p style="margin-bottom:14px;">End-to-end significa que el sistema completa el proceso sin que nadie tenga que intervenir en ningún punto. El humano solo aparece cuando el sistema explícitamente lo decide (escalado).</p>
+          <table class="ct" style="margin-top:0;">
+            <thead><tr><th>Parcial</th><th>End-to-end</th></tr></thead>
+            <tbody>
+              <tr><td>Recibe solicitud</td><td>Recibe + clasifica</td></tr>
+              <tr><td>Envía email</td><td>Clasifica + decide + actúa</td></tr>
+              <tr><td>Alguien lee y actúa</td><td>Actúa automáticamente</td></tr>
+              <tr><td>Resultado manual</td><td>Registra + confirma solo</td></tr>
+              <tr><td>Sin manejo de error</td><td>Error → reintento → fallback</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>La regla del proceso automatizable:</strong> si una persona puede describir en 5 pasos o menos lo que hace cada vez que llega una solicitud, ese proceso se puede automatizar. El workflow replica exactamente esos 5 pasos. Si la descripción necesita más de 5 pasos, empieza por los primeros 3 y agrega el resto progresivamente.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('arquitectura')">Siguiente: Arquitectura →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · ARQUITECTURA ══ -->
+    <section id="arquitectura" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Arquitectura del <span>Sistema de Operaciones</span></h1>
+        <p>El sistema completo que vas a construir. Cada caja es un nodo en n8n. Cada flecha es una conexión. Al terminar la clase este diagrama estará funcionando en vivo.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Flujo completo end-to-end</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="fn trig">
+            <div class="fi">📥</div>
+            <div class="ft">Trigger</div>
+            <div class="fn2">Webhook</div>
+            <div class="fn3">solicitud</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn proc">
+            <div class="fi">⚙️</div>
+            <div class="ft">Code</div>
+            <div class="fn2">Procesar</div>
+            <div class="fn3">limpiar + enriquecer</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn cond">
+            <div class="fi">🔀</div>
+            <div class="ft">IF</div>
+            <div class="fn2">Válida</div>
+            <div class="fn3">guardianes</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn proc">
+            <div class="fi">🎯</div>
+            <div class="ft">Code</div>
+            <div class="fn2">Prioridad</div>
+            <div class="fn3">+ categoría</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn val">
+            <div class="fi">🔢</div>
+            <div class="ft">Switch</div>
+            <div class="fn2">Tipo</div>
+            <div class="fn3">5 rutas</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn act">
+            <div class="fi">⚡</div>
+            <div class="ft">Acciones</div>
+            <div class="fn2">Por rama</div>
+            <div class="fn3">específicas</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn out">
+            <div class="fi">💾</div>
+            <div class="ft">Registro</div>
+            <div class="fn2">Sheets</div>
+            <div class="fn3">+ confirmación</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">📊 Estructura del payload de entrada</div>
+          <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="cm">// Input esperado del webhook</span>
+{
+  <span class="ky">"tipo"</span>:     <span class="str">"soporte"</span>,
+  <span class="ky">"mensaje"</span>:  <span class="str">"No puedo acceder a mi cuenta"</span>,
+  <span class="ky">"nombre"</span>:   <span class="str">"Ana Torres"</span>,
+  <span class="ky">"email"</span>:    <span class="str">"ana@empresa.com"</span>,
+  <span class="ky">"telefono"</span>: <span class="str">"+52 55 1234 5678"</span>,
+  <span class="ky">"cliente_id"</span>: <span class="str">"CLI-0042"</span>,
+  <span class="ky">"plan"</span>:     <span class="str">"premium"</span>
+}
+
+<span class="cm">// Tipos válidos:</span>
+<span class="cm">// "soporte" | "ventas" | "facturacion"</span>
+<span class="cm">// | "informacion" | "escalado"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📊 Estructura del registro de salida</div>
+          <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="cm">// Lo que queda guardado en Sheets</span>
+{
+  <span class="ky">"timestamp"</span>:   <span class="str">"2024-01-15 14:32:10"</span>,
+  <span class="ky">"tipo"</span>:         <span class="str">"soporte"</span>,
+  <span class="ky">"cliente"</span>:      <span class="str">"Ana Torres"</span>,
+  <span class="ky">"email"</span>:         <span class="str">"ana@empresa.com"</span>,
+  <span class="ky">"prioridad"</span>:    <span class="str">"alta"</span>,
+  <span class="ky">"ruta_tomada"</span>:  <span class="str">"soporte_urgente"</span>,
+  <span class="ky">"acciones"</span>:     <span class="str">"ticket_creado, email_enviado, slack_notif"</span>,
+  <span class="ky">"estado"</span>:       <span class="str">"procesado"</span>,
+  <span class="ky">"tiempo_ms"</span>:    <span class="vl">847</span>
+}
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>El registro es tan importante como la acción.</strong> Sin un log de cada solicitud procesada, el sistema es una caja negra: no sabes qué pasó, qué falló ni cuántas solicitudes llegaron. La hoja de registro es el panel de control de tu sistema de operaciones.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('clasificacion')">Siguiente: Paso 1 — Clasificación →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · CLASIFICACIÓN ══ -->
+    <section id="clasificacion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 1 de 4</div>
+        <h1>Clasificación — <span>Entender la Solicitud</span></h1>
+        <p>Antes de enrutar, el sistema necesita entender qué llegó. Este paso limpia los datos, valida la solicitud y enriquece el payload con todo lo que los nodos siguientes van a necesitar.</p>
+      </div>
+
+      <div class="card proc ab">
+        <div class="card-label">⚙️ Nodo Code — procesar y enriquecer la solicitud</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Code — procesamiento inicial</span>
+<span class="kw">const</span> d = $input.first().json;
+
+<span class="cm">// ── PASO 1: NORMALIZAR CAMPOS ─────────────────────</span>
+<span class="kw">const</span> tipo    = (d.tipo    || <span class="str">''</span>).toLowerCase().trim();
+<span class="kw">const</span> mensaje = (d.mensaje || <span class="str">''</span>).trim();
+<span class="kw">const</span> email   = (d.email   || <span class="str">''</span>).toLowerCase().trim();
+<span class="kw">const</span> nombre  = (d.nombre  || <span class="str">'Cliente'</span>).trim();
+
+<span class="cm">// ── PASO 2: VALIDAR CAMPOS OBLIGATORIOS ───────────</span>
+<span class="kw">const</span> errores = [];
+<span class="kw">if</span> (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email))
+  errores.push(<span class="str">'email_invalido'</span>);
+<span class="kw">if</span> (!tipo)
+  errores.push(<span class="str">'tipo_faltante'</span>);
+<span class="kw">if</span> (!mensaje || mensaje.length < <span class="vl">5</span>)
+  errores.push(<span class="str">'mensaje_vacio'</span>);
+
+<span class="cm">// ── PASO 3: TIPOS VÁLIDOS ─────────────────────────</span>
+<span class="kw">const</span> tiposValidos = [<span class="str">'soporte'</span>,<span class="str">'ventas'</span>,<span class="str">'facturacion'</span>,<span class="str">'informacion'</span>,<span class="str">'escalado'</span>];
+<span class="kw">const</span> tipoFinal = tiposValidos.includes(tipo) ? tipo : <span class="str">'desconocido'</span>;
+
+<span class="cm">// ── PASO 4: METADATOS ─────────────────────────────</span>
+<span class="kw">const</span> esClientePremium = [<span class="str">'premium'</span>,<span class="str">'enterprise'</span>].includes(d.plan);
+<span class="kw">const</span> timestamp = <span class="kw">new</span> Date().toISOString();
+<span class="kw">const</span> solicitudId = <span class="str">`SOL-${Date.now()}`</span>;
+
+<span class="kw">return</span> [{ json: {
+  ...d,
+  <span class="ky">tipo</span>: tipoFinal, <span class="ky">email</span>, <span class="ky">nombre</span>, <span class="ky">mensaje</span>,
+  <span class="ky">errores</span>, <span class="ky">es_valida</span>: errores.length === <span class="vl">0</span>,
+  <span class="ky">es_premium</span>: esClientePremium,
+  <span class="ky">timestamp</span>, <span class="ky">solicitud_id</span>: solicitudId
+}}];
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card lmb">
+          <div class="card-label">🔀 IF guardián — detener solicitudes inválidas</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: IF — validar antes de continuar</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.es_valida}}</span>
+<span class="ky">Operation:</span> Is True
+
+<span class="str">✓ True</span>  → continuar al nodo de prioridad
+<span class="rd">✗ False</span> → rama de error:
+  <span class="cm">// 1. Guardar en Sheets (hoja "Errores")</span>
+  <span class="cm">//    con campo errores y timestamp</span>
+  <span class="cm">// 2. Responder al webhook con 400</span>
+  <span class="cm">// 3. (Opcional) Email al remitente:</span>
+  <span class="cm">//    "Tu solicitud tiene campos faltantes"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📋 Tipos de solicitud soportados</div>
+          <table class="ct" style="margin-top:0;">
+            <thead><tr><th>Tipo</th><th>Descripción</th><th>Destino</th></tr></thead>
+            <tbody>
+              <tr><td><code>soporte</code></td><td>Problemas técnicos o de acceso</td><td>Equipo soporte</td></tr>
+              <tr><td><code>ventas</code></td><td>Consultas de precio o demo</td><td>Equipo comercial</td></tr>
+              <tr><td><code>facturacion</code></td><td>Facturas, pagos, recibos</td><td>Equipo finanzas</td></tr>
+              <tr><td><code>informacion</code></td><td>Preguntas generales del producto</td><td>Respuesta automática</td></tr>
+              <tr><td><code>escalado</code></td><td>Queja grave o urgencia crítica</td><td>Gerencia directa</td></tr>
+              <tr><td><code>desconocido</code></td><td>Tipo no reconocido</td><td>Revisión manual</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('arquitectura')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('ramas')">Siguiente: Paso 2 — Ramas →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · RAMAS ══ -->
+    <section id="ramas" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 2 de 4</div>
+        <h1>Ramas y <span>Acciones por Tipo</span></h1>
+        <p>El Switch divide el flujo en 6 caminos independientes. Cada rama tiene su propia cadena de acciones pensada específicamente para ese tipo de solicitud.</p>
+      </div>
+
+      <div class="card sb" style="margin-bottom:16px;">
+        <div class="card-label">🔢 Switch — 6 salidas desde un punto</div>
+        <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-top:12px;text-align:center;border:1px solid rgba(56,189,248,0.3);">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sky);margin-bottom:14px;">Switch — campo: <code style="color:var(--text);">{{$json.tipo}}</code></div>
+          <div class="rama-grid">
+            <div class="rama ventas">
+              <div class="rama-lbl">Output 0</div>
+              <div class="rama-tipo">💼 ventas</div>
+              <div class="rama-acc">CRM + Slack #ventas + Email propuesta</div>
+            </div>
+            <div class="rama soporte">
+              <div class="rama-lbl">Output 1</div>
+              <div class="rama-tipo">🎧 soporte</div>
+              <div class="rama-acc">Ticket + Slack #soporte + Confirmar al usuario</div>
+            </div>
+            <div class="rama factura">
+              <div class="rama-lbl">Output 2</div>
+              <div class="rama-tipo">🧾 facturación</div>
+              <div class="rama-acc">Verificar datos + Generar factura + Email</div>
+            </div>
+            <div class="rama info">
+              <div class="rama-lbl">Output 3</div>
+              <div class="rama-tipo">ℹ️ información</div>
+              <div class="rama-acc">Respuesta automática con FAQ + nurture</div>
+            </div>
+            <div class="rama escalado">
+              <div class="rama-lbl">Output 4</div>
+              <div class="rama-tipo">🚨 escalado</div>
+              <div class="rama-acc">Alerta gerencia + WhatsApp + Ticket urgente</div>
+            </div>
+            <div class="rama fb">
+              <div class="rama-lbl">Fallback</div>
+              <div class="rama-tipo">❓ desconocido</div>
+              <div class="rama-acc">Registrar + Notificar equipo para revisión</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card act gb">
+          <div class="card-label">🎧 Rama soporte — acciones completas</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo 1: HTTP Request — crear ticket</span>
+<span class="ky">Method:</span> POST
+<span class="ky">URL:</span>    <span class="str">"https://api.tucrm.com/tickets"</span>
+<span class="ky">Body:</span>   {
+  <span class="ky">titulo</span>:    <span class="str">"{{$json.mensaje.slice(0,60)}}"</span>,
+  <span class="ky">descripcion</span>: <span class="str">"{{$json.mensaje}}"</span>,
+  <span class="ky">email</span>:     <span class="str">"{{$json.email}}"</span>,
+  <span class="ky">prioridad</span>: <span class="str">"{{$json.prioridad}}"</span>
+}
+
+<span class="cm">// Nodo 2: Slack — notificar equipo de soporte</span>
+<span class="ky">Channel:</span> <span class="str">"#soporte"</span>
+<span class="ky">Mensaje:</span> <span class="str">"🎧 Nuevo ticket — {{$json.nombre}}
+Tipo: {{$json.tipo}} | Prio: {{$json.prioridad}}
+'{{$json.mensaje}}'"</span>
+
+<span class="cm">// Nodo 3: Gmail — confirmar al usuario</span>
+<span class="ky">To:</span>       <span class="str">"{{$json.email}}"</span>
+<span class="ky">Subject:</span>  <span class="str">"Recibimos tu solicitud, {{$json.nombre}}"</span>
+<span class="ky">Body:</span>     <span class="str">"Tu ticket #{{$json.solicitud_id}}
+fue creado. Tiempo estimado: 4h."</span>
+          </div>
+        </div>
+
+        <div class="card err rb">
+          <div class="card-label">🚨 Rama escalado — urgencia máxima</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo 1: Slack — alerta directa a gerencia</span>
+<span class="ky">Channel:</span> <span class="str">"@gerente_general"</span>
+<span class="ky">Mensaje:</span> <span class="str">"🚨 *ESCALADO URGENTE*
+Cliente: {{$json.nombre}} ({{$json.plan}})
+Email: {{$json.email}}
+Mensaje: {{$json.mensaje}}
+ID: {{$json.solicitud_id}}"</span>
+
+<span class="cm">// Nodo 2: HTTP → WhatsApp Business API</span>
+<span class="ky">To:</span>   <span class="str">"{{$json.telefono}}"</span>
+<span class="ky">Msg:</span>  <span class="str">"Hola {{$json.nombre}}, recibimos
+tu solicitud urgente. Alguien del
+equipo directivo te contactará en 15min."</span>
+
+<span class="cm">// Nodo 3: Google Sheets — registrar escalado</span>
+<span class="ky">Hoja:</span> <span class="str">"Escalados"</span>
+<span class="cm">// Con timestamp, cliente y SLA de 15min</span>
+
+<span class="cm">// Nodo 4: Wait 15min → IF sin respuesta
+// → segunda alerta automática</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">ℹ️ Rama información — respuesta 100% automática</div>
+        <div class="g2" style="margin-bottom:0;">
+          <div class="code-block" style="margin-top:0;font-size:12px;">
+<span class="cm">// Nodo Code — elegir respuesta según mensaje</span>
+<span class="kw">const</span> msg = $json.mensaje.toLowerCase();
+<span class="kw">let</span> respuesta;
+
+<span class="kw">if</span>      (msg.includes(<span class="str">'precio'</span>) || msg.includes(<span class="str">'costo'</span>))
+  respuesta = <span class="str">'pricing'</span>;
+<span class="kw">else if</span> (msg.includes(<span class="str">'demo'</span>) || msg.includes(<span class="str">'prueba'</span>))
+  respuesta = <span class="str">'demo'</span>;
+<span class="kw">else if</span> (msg.includes(<span class="str">'integra'</span>))
+  respuesta = <span class="str">'integraciones'</span>;
+<span class="kw">else</span>
+  respuesta = <span class="str">'general'</span>;
+
+<span class="kw">return</span> [{ json: { ...$json, <span class="ky">faq_tipo</span>: respuesta }}];
+          </div>
+          <div class="code-block" style="margin-top:0;font-size:12px;">
+<span class="cm">// Email automático según faq_tipo</span>
+<span class="cm">// Switch sobre {{$json.faq_tipo}}</span>
+
+<span class="cm">// pricing:</span>
+<span class="ky">Subject:</span> <span class="str">"Planes y precios para {{$json.nombre}}"</span>
+<span class="ky">Body:</span>    <span class="str">"Link a página de precios + comparativa"</span>
+
+<span class="cm">// demo:</span>
+<span class="ky">Subject:</span> <span class="str">"Agenda tu demo, {{$json.nombre}}"</span>
+<span class="ky">Body:</span>    <span class="str">"Link a Calendly del equipo de ventas"</span>
+
+<span class="cm">// general:</span>
+<span class="ky">Subject:</span> <span class="str">"Respuesta a tu consulta"</span>
+<span class="ky">Body:</span>    <span class="str">"Link a FAQ completa + soporte chat"</span>
+
+<span class="cm">// 0 intervención humana necesaria</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>La rama "información" es la más valiosa a largo plazo.</strong> Con el tiempo, el 60–70% de las solicitudes suelen ser preguntas que ya tienen respuesta. Automatizar completamente esa rama libera al equipo para las solicitudes que realmente necesitan atención humana.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('clasificacion')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('prioridades')">Siguiente: Paso 3 — Prioridades →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · PRIORIDADES ══ -->
+    <section id="prioridades" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 3 de 4</div>
+        <h1>Sistema de <span>Prioridades Automático</span></h1>
+        <p>No todas las solicitudes son igual de urgentes. El sistema detecta la prioridad según múltiples señales y actúa diferente: la prioridad alta activa al equipo en minutos; la baja entra a la cola estándar.</p>
+      </div>
+
+      <div class="card proc ab" style="margin-bottom:16px;">
+        <div class="card-label">🎯 Nodo Code — calcular prioridad automáticamente</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Code — motor de prioridades</span>
+<span class="kw">const</span> d = $input.first().json;
+<span class="kw">let</span> puntos = <span class="vl">0</span>;
+<span class="kw">const</span> razones = [];
+<span class="kw">const</span> msg = (d.mensaje || <span class="str">''</span>).toLowerCase();
+
+<span class="cm">// ── SEÑALES DE URGENCIA EN EL MENSAJE ────────────</span>
+<span class="kw">const</span> palabrasUrgentes = [<span class="str">'urgente'</span>,<span class="str">'crítico'</span>,<span class="str">'no funciona'</span>,
+  <span class="str">'caído'</span>,<span class="str">'perdí acceso'</span>,<span class="str">'bloqueado'</span>,<span class="str">'emergencia'</span>];
+<span class="kw">const</span> palabrasAltas = [<span class="str">'problema'</span>,<span class="str">'error'</span>,<span class="str">'falla'</span>,<span class="str">'no puedo'</span>];
+
+<span class="kw">if</span> (palabrasUrgentes.some(p => msg.includes(p))) {
+  puntos += <span class="vl">50</span>; razones.push(<span class="str">'palabra_urgente'</span>);
+}
+<span class="kw">if</span> (palabrasAltas.some(p => msg.includes(p))) {
+  puntos += <span class="vl">25</span>; razones.push(<span class="str">'palabra_alta'</span>);
+}
+
+<span class="cm">// ── TIPO DE CLIENTE ───────────────────────────────</span>
+<span class="kw">if</span> (d.plan === <span class="str">'enterprise'</span>) { puntos += <span class="vl">40</span>; razones.push(<span class="str">'enterprise'</span>); }
+<span class="kw">if</span> (d.plan === <span class="str">'premium'</span>)    { puntos += <span class="vl">20</span>; razones.push(<span class="str">'premium'</span>);    }
+
+<span class="cm">// ── TIPO DE SOLICITUD ─────────────────────────────</span>
+<span class="kw">if</span> (d.tipo === <span class="str">'escalado'</span>)    { puntos += <span class="vl">60</span>; razones.push(<span class="str">'tipo_escalado'</span>); }
+<span class="kw">if</span> (d.tipo === <span class="str">'soporte'</span>)     { puntos += <span class="vl">15</span>; razones.push(<span class="str">'tipo_soporte'</span>);  }
+
+<span class="cm">// ── CLASIFICAR ────────────────────────────────────</span>
+<span class="kw">const</span> prioridad = puntos >= <span class="vl">60</span> ? <span class="str">'alta'</span>
+                : puntos >= <span class="vl">30</span> ? <span class="str">'media'</span>
+                :                  <span class="str">'baja'</span>;
+
+<span class="cm">// SLA según prioridad (en minutos)</span>
+<span class="kw">const</span> sla = { <span class="ky">alta</span>: <span class="vl">15</span>, <span class="ky">media</span>: <span class="vl">120</span>, <span class="ky">baja</span>: <span class="vl">480</span> }[prioridad];
+
+<span class="kw">return</span> [{ json: {
+  ...d, <span class="ky">prioridad</span>, <span class="ky">puntos_prioridad</span>: puntos,
+  <span class="ky">razones_prioridad</span>: razones.join(<span class="str">', '</span>),
+  <span class="ky">sla_minutos</span>: sla
+}}];
+        </div>
+      </div>
+
+      <div class="g3">
+        <div style="background:var(--red-bg);border:1px solid rgba(240,90,90,0.3);border-radius:10px;padding:20px;">
+          <div style="text-align:center;margin-bottom:12px;"><span class="prio p-alta">🔴 Alta</span></div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">≥ 60 puntos</div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(240,90,90,0.15);"><span class="we">⚡</span><div class="wt" style="font-size:12px;"><strong>SLA: 15 minutos</strong></div></div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(240,90,90,0.15);"><span class="we">📱</span><div class="wt" style="font-size:12px;">Slack urgente + WhatsApp</div></div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(240,90,90,0.15);"><span class="we">👤</span><div class="wt" style="font-size:12px;">Asignar senior inmediato</div></div>
+          <div class="wtu" style="padding:8px 0;"><span class="we">⏰</span><div class="wt" style="font-size:12px;">Alerta si no se atiende en 15min</div></div>
+        </div>
+
+        <div style="background:var(--amber-bg);border:1px solid rgba(240,160,48,0.3);border-radius:10px;padding:20px;">
+          <div style="text-align:center;margin-bottom:12px;"><span class="prio p-media">🟡 Media</span></div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">30–59 puntos</div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(240,160,48,0.15);"><span class="we">⏱️</span><div class="wt" style="font-size:12px;"><strong>SLA: 2 horas</strong></div></div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(240,160,48,0.15);"><span class="we">💬</span><div class="wt" style="font-size:12px;">Slack canal general</div></div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(240,160,48,0.15);"><span class="we">👥</span><div class="wt" style="font-size:12px;">Cola del equipo estándar</div></div>
+          <div class="wtu" style="padding:8px 0;"><span class="we">📧</span><div class="wt" style="font-size:12px;">Email confirmación al usuario</div></div>
+        </div>
+
+        <div style="background:var(--sky-bg);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:20px;">
+          <div style="text-align:center;margin-bottom:12px;"><span class="prio p-baja">🔵 Baja</span></div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">&lt; 30 puntos</div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(56,189,248,0.15);"><span class="we">🕐</span><div class="wt" style="font-size:12px;"><strong>SLA: 8 horas (día laboral)</strong></div></div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(56,189,248,0.15);"><span class="we">📋</span><div class="wt" style="font-size:12px;">Entra a la cola estándar</div></div>
+          <div class="wtu" style="padding:8px 0;border-bottom:1px solid rgba(56,189,248,0.15);"><span class="we">🤖</span><div class="wt" style="font-size:12px;">Respuesta automática FAQ</div></div>
+          <div class="wtu" style="padding:8px 0;"><span class="we">📧</span><div class="wt" style="font-size:12px;">Email con tiempo de espera</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:0;">
+        <div class="card-label">🔀 IF de prioridad — bifurcar antes de cada acción clave</div>
+        <div class="g2" style="margin-bottom:0;">
+          <div class="code-block" style="margin-top:0;font-size:12px;">
+<span class="cm">// IF antes de enviar Slack</span>
+<span class="cm">// Solo notificar urgente si es prioridad alta</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.prioridad}}</span>
+<span class="ky">Operation:</span> Equals
+<span class="ky">Value 2:</span>   <span class="str">"alta"</span>
+
+<span class="str">✓ True</span>  → Slack #urgente + DM al responsable
+<span class="rd">✗ False</span> → Slack #general (o nada si es baja)
+          </div>
+          <div class="code-block" style="margin-top:0;font-size:12px;">
+<span class="cm">// IF para activar escalado por SLA</span>
+<span class="cm">// Después de Wait según sla_minutos</span>
+<span class="ky">Value 1:</span>
+<span class="kw">{{$json.estado_ticket === 'sin_atender'}}</span>
+<span class="ky">Operation:</span> Is True
+
+<span class="str">✓ True</span>  → Segunda alerta + escalar un nivel
+<span class="rd">✗ False</span> → Ya fue atendido, no hacer nada
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('ramas')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('registro')">Siguiente: Paso 4 — Registro →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · REGISTRO ══ -->
+    <section id="registro" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 4 de 4</div>
+        <h1>Registro de Resultados y <span>Manejo de Errores</span></h1>
+        <p>El sistema no está completo sin un registro de todo lo que procesa y sin un plan para cuando algo sale mal. Los errores son inevitables en producción; la diferencia está en cómo los manejas.</p>
+      </div>
+
+      <div class="card out tb" style="margin-bottom:16px;">
+        <div class="card-label">💾 Registro en Google Sheets — al final de cada rama</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Code — preparar registro final</span>
+<span class="cm">// Se ejecuta al final de TODAS las ramas antes de Sheets</span>
+<span class="kw">const</span> d = $input.first().json;
+
+<span class="kw">return</span> [{ json: {
+  <span class="cm">// ── IDENTIFICACIÓN ──────────────────────────────</span>
+  <span class="ky">solicitud_id</span>:    d.solicitud_id,
+  <span class="ky">timestamp</span>:       d.timestamp,
+  <span class="ky">timestamp_fin</span>:   <span class="kw">new</span> Date().toISOString(),
+
+  <span class="cm">// ── DATOS DEL SOLICITANTE ───────────────────────</span>
+  <span class="ky">nombre</span>:          d.nombre,
+  <span class="ky">email</span>:           d.email,
+  <span class="ky">plan</span>:            d.plan || <span class="str">'free'</span>,
+
+  <span class="cm">// ── CLASIFICACIÓN ───────────────────────────────</span>
+  <span class="ky">tipo</span>:            d.tipo,
+  <span class="ky">prioridad</span>:       d.prioridad,
+  <span class="ky">puntos</span>:          d.puntos_prioridad,
+
+  <span class="cm">// ── RESULTADO ───────────────────────────────────</span>
+  <span class="ky">ruta_tomada</span>:     d.ruta_tomada || d.tipo,
+  <span class="ky">acciones</span>:        d.acciones_realizadas || <span class="str">'completadas'</span>,
+  <span class="ky">estado</span>:          <span class="str">'procesado'</span>,
+  <span class="ky">sla_minutos</span>:     d.sla_minutos,
+
+  <span class="cm">// ── MENSAJE (para referencia) ───────────────────</span>
+  <span class="ky">mensaje</span>:         d.mensaje.slice(<span class="vl">0</span>, <span class="vl">200</span>)
+}}];
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card rb">
+          <div class="card-label">⚠️ Manejo de errores — el nodo Error Trigger</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Workflow separado: manejador de errores</span>
+<span class="cm">// Trigger: Error Trigger (se activa si algún</span>
+<span class="cm">// nodo falla en el workflow principal)</span>
+
+<span class="ky">Nodo 1:</span> Error Trigger
+<span class="cm">// Recibe: nombre del workflow, nombre del nodo,
+// mensaje de error y los datos que fallaron</span>
+
+<span class="ky">Nodo 2:</span> Code — extraer info del error
+<span class="kw">const</span> err = $input.first().json;
+<span class="kw">return</span> [{ json: {
+  <span class="ky">workflow</span>: err.workflow.name,
+  <span class="ky">nodo</span>:     err.execution.lastNodeExecuted,
+  <span class="ky">mensaje</span>: err.execution.error.message,
+  <span class="ky">datos</span>:   JSON.stringify(err.execution.data)
+                  .slice(<span class="vl">0</span>,<span class="vl">500</span>)
+}}]
+
+<span class="ky">Nodo 3:</span> Slack → canal #errores-automatizacion
+<span class="ky">Nodo 4:</span> Sheets → hoja "Errores" → registrar
+          </div>
+        </div>
+
+        <div class="card amb">
+          <div class="card-label">🔁 Reintentos automáticos — patrón reintento</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Patrón: reintentar una acción fallida</span>
+<span class="cm">// Nodo Code — contador de reintentos</span>
+<span class="kw">const</span> d = $input.first().json;
+<span class="kw">const</span> intentos = (d.intentos || <span class="vl">0</span>) + <span class="vl">1</span>;
+
+<span class="kw">return</span> [{ json: { ...d, <span class="ky">intentos</span> } }];
+
+<span class="cm">// Nodo IF — ¿aún tenemos reintentos?</span>
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.intentos}}</span>
+<span class="ky">Operation:</span> Smaller Than Or Equal
+<span class="ky">Value 2:</span>   <span class="vl">3</span>  <span class="cm">← máximo 3 intentos</span>
+
+<span class="str">✓ True</span>  → Wait 30s → volver al nodo que falló
+<span class="rd">✗ False</span> → registrar fallo definitivo
+            + notificar al equipo
+            + estado = "error_manual_requerido"
+
+<span class="cm">// El workflow no se detiene:
+// el error queda registrado y el equipo
+// puede ver qué solicitudes fallaron</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card gb" style="margin-bottom:0;">
+        <div class="card-label">✅ Las 4 hojas de Google Sheets del sistema</div>
+        <table class="ct" style="margin-top:0;">
+          <thead><tr><th>Hoja</th><th>Qué registra</th><th>Quién la usa</th></tr></thead>
+          <tbody>
+            <tr><td>📋 Solicitudes</td><td>Cada solicitud procesada con timestamp, tipo, prioridad, estado y acciones tomadas</td><td>Equipo operaciones — panel diario</td></tr>
+            <tr><td>❌ Errores</td><td>Solicitudes inválidas (email malo, tipo faltante) con el campo de error específico</td><td>Dev / QA — para mejorar validaciones</td></tr>
+            <tr><td>🚨 Escalados</td><td>Solo las solicitudes de tipo escalado con SLA, tiempo de respuesta y estado</td><td>Gerencia — seguimiento de críticos</td></tr>
+            <tr><td>⚠️ Fallos</td><td>Errores técnicos del workflow (nodo caído, API no disponible) con datos del error</td><td>Dev — monitoreo de producción</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('prioridades')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('practicas')">Siguiente: Buenas prácticas →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · PRÁCTICAS ══ -->
+    <section id="practicas" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Buenas Prácticas y <span>Errores Comunes</span></h1>
+        <p>Los sistemas de operaciones tienen que funcionar en producción, bajo carga real, con datos sucios y con el equipo dependiendo de ellos. Estos son los principios que los hacen robustos.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">✅ Buenas prácticas</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Mantener la lógica clara y documentada</strong><br><span style="font-size:13px;">Nombra cada nodo con su función exacta: "Code — calcular prioridad", "IF — validar email", "Switch — enrutar por tipo". En 3 meses, tú mismo no recordarás qué hace "Function 4".</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Nombrar bien todas las ramas del Switch</strong><br><span style="font-size:13px;">En el campo "Output Name" del Switch, escribe el nombre del caso: "soporte", "ventas", "escalado". Hace el diagrama legible de un vistazo.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probar todos los casos posibles</strong><br><span style="font-size:13px;">Crea un dataset de prueba con una solicitud por cada tipo y por cada nivel de prioridad. 15 casos mínimo. Ejecuta cada uno y verifica que la ruta y el registro son correctos.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Registrar siempre el resultado</strong><br><span style="font-size:13px;">Cada rama termina en el nodo de registro de Sheets. Sin excepción. Incluso los fallbacks y los errores se registran. Un sistema sin log no existe en producción.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Evitar complejidad innecesaria</strong><br><span style="font-size:13px;">Si el workflow tiene más de 40 nodos, divídelo en sub-workflows. n8n permite llamar a otros workflows como si fueran funciones. Un workflow por proceso, no un megaworkflow que hace todo.</span></div></li>
+          </ul>
+        </div>
+
+        <div class="card rb">
+          <div class="card-label">⚠️ Errores comunes</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Condiciones mal configuradas sin prueba</strong><br><span style="font-size:13px;">Un Switch con la regla <code>tipo = "Soporte"</code> (con mayúscula) no captura las solicitudes con <code>tipo = "soporte"</code> (minúscula). Siempre normaliza a minúsculas en el nodo Code antes del Switch.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">No cubrir todos los casos con fallback</strong><br><span style="font-size:13px;">Un tipo de solicitud que nadie anticipó llega y el dato se pierde sin ruido. El fallback es la red de seguridad; siempre actívalo y conéctalo a un registro de "casos no cubiertos" para mejorar el sistema.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Flujos difíciles de entender (spaghetti)</strong><br><span style="font-size:13px;">Conexiones que cruzan el canvas en todas direcciones, nodos sin nombrar, lógica mezclada con acciones. Organiza de izquierda a derecha, agrupa por función, y usa colores de nodo para diferenciar etapas.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">No manejar errores de las APIs externas</strong><br><span style="font-size:13px;">La API de tu CRM puede estar caída 5 minutos. Si no tienes Error Trigger + reintento, esas solicitudes se pierden para siempre. Configura el Error Trigger en un workflow separado para todos tus workflows de producción.</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:0;">
+        <div class="card-label">🚀 Bonus nivel pro — extensiones del sistema</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <div class="wtu"><span class="we">🔗</span><div class="wt"><strong>Múltiples condiciones encadenadas:</strong> después del Switch de tipo, cada rama tiene su propio IF de prioridad. El soporte urgente de un cliente enterprise activa una ruta completamente distinta al soporte estándar de un cliente free.</div></div>
+            <div class="wtu"><span class="we">🤖</span><div class="wt"><strong>Clasificación automática con IA:</strong> en vez de reglas basadas en palabras clave, enviar el campo "mensaje" a Claude API y pedir que devuelva el tipo y la prioridad. La IA entiende el contexto mejor que cualquier regex.</div></div>
+            <div class="wtu"><span class="we">🔁</span><div class="wt"><strong>Sub-workflows reutilizables:</strong> el bloque de "enviar confirmación al usuario" es el mismo en todas las ramas. Conviértelo en un sub-workflow y llámalo desde cada rama. Si cambias el template, cambia en todos los lugares a la vez.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>Dashboard de operaciones:</strong> una hoja de Sheets con fórmulas que muestran solicitudes por tipo, por prioridad, tiempo promedio de resolución y tasa de error. Actualizado en tiempo real por el workflow.</div></div>
+            <div class="wtu"><span class="we">⏰</span><div class="wt"><strong>SLA enforcement automático:</strong> después de crear cada solicitud, lanzar un workflow paralelo con Wait del SLA correspondiente. Si al volver el estado sigue siendo "sin_atender", escalar automáticamente sin que nadie tenga que monitorear.</div></div>
+            <div class="wtu"><span class="we">🔌</span><div class="wt"><strong>Integraciones con herramientas internas:</strong> conectar directamente con Jira (tickets de soporte), HubSpot (oportunidades de ventas) o QuickBooks (facturación) vía sus nodos nativos de n8n o el nodo HTTP Request.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('registro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · ENTREGABLE ══ -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable — <span>Sistema de Operaciones</span></h1>
+        <p>Lo que debe estar funcionando al terminar la clase. Un sistema que recibe solicitudes, decide qué hacer y las procesa de principio a fin sin intervención humana.</p>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Checklist del entregable</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Webhook activo recibiendo solicitudes</strong><br><span style="font-size:13px;">El endpoint acepta el JSON con campos tipo, mensaje, nombre, email y plan. Devuelve 200 con el ID de la solicitud creada.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Nodo Code normalizando y validando</strong><br><span style="font-size:13px;">Solicitudes con email inválido van a la hoja "Errores" y no continúan. Solicitudes válidas tienen el campo <code>es_valida: true</code>, <code>solicitud_id</code> y <code>timestamp</code>.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Sistema de prioridades funcionando</strong><br><span style="font-size:13px;">Una solicitud con la palabra "urgente" de un cliente premium tiene prioridad alta. Una consulta de información estándar tiene prioridad baja. El campo <code>prioridad</code> es correcto en ambos casos.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Switch con 5 ramas + fallback conectadas</strong><br><span style="font-size:13px;">Cada tipo de solicitud va por su output. Una solicitud de tipo "soporte" llega al canal #soporte de Slack. Una de "escalado" notifica directamente al responsable.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Email de confirmación enviado al usuario</strong><br><span style="font-size:13px;">El solicitante recibe un email con el ID de solicitud y el tiempo estimado de respuesta según la prioridad calculada.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Registro en Sheets completo</strong><br><span style="font-size:13px;">Después de cada solicitud procesada, aparece una fila nueva en la hoja "Solicitudes" con todos los campos: ID, tipo, prioridad, ruta, estado y timestamp.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con 6 solicitudes de prueba</strong><br><span style="font-size:13px;">Una por cada tipo (soporte, ventas, facturación, información, escalado) más una con datos inválidos. Todos van por la ruta correcta y quedan registrados.</span></div></li>
+        </ul>
+      </div>
+
+      <!-- RESUMEN EVOLUTIVO -->
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏆 De automatización simple a orquestación de operaciones</div>
+        <ul class="step-list" style="margin-top:12px;">
+          <li class="step-item">
+            <div class="step-num">①</div>
+            <div class="step-body">
+              <h4>Captura y guardado</h4>
+              <p>Webhook → validar → guardar en Sheets → notificar. Un proceso lineal, siempre igual.</p>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">②</div>
+            <div class="step-body">
+              <h4>Seguimiento con estados</h4>
+              <p>Emails automáticos, delays, actualización de estado. El workflow actúa en el tiempo.</p>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">③</div>
+            <div class="step-body">
+              <h4>Decisiones con lógica condicional</h4>
+              <p>IF y Switch dividen el flujo. Cada caso recibe un trato distinto. El sistema empieza a "pensar".</p>
+            </div>
+          </li>
+          <li class="step-item" style="border-bottom:none;">
+            <div class="step-num" style="background:rgba(32,212,176,0.15);border-color:rgba(32,212,176,0.4);color:var(--teal);">④</div>
+            <div class="step-body">
+              <h4 style="color:var(--teal);">Orquestación de operaciones end-to-end</h4>
+              <p>Validación → clasificación → prioridades → múltiples ramas → acciones específicas → registro → manejo de errores. Un proceso completo sin intervención humana.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- SIGUIENTE CLASE -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">🔌</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Siguiente — Integrar APIs Externas</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:540px;margin:0 auto 20px;">Con el sistema de operaciones construido internamente, el siguiente paso es conectarlo al mundo exterior: APIs externas, CRMs, sistemas de pago y servicios en la nube. El nodo HTTP Request lo hace posible.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">🔗 HTTP Request</span>
+            <span class="b bg">🏢 CRMs reales</span>
+            <span class="b bt">🔑 Auth & tokens</span>
+            <span class="b ba">⚡ Webhooks bidireccionales</span>
+          </div>
+          <p style="color:var(--text3);font-size:13px;margin-top:16px;font-family:'JetBrains Mono',monospace;">Automatización interna → Conexión con el mundo exterior</p>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('practicas')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','conceptos','arquitectura','clasificacion','ramas','prioridades','registro','practicas','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(`.nav-item[onclick*="'${id}'"]`);go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Sección ${idx+1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>

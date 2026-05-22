@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semana 4 · Clase 1 — Sistema de Leads Automatizados</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);}
+  .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;text-align:center;flex-shrink:0;min-width:110px;}
+  .fn .fi{font-size:20px;margin-bottom:5px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:3px;}
+  .fn .fn2{font-size:12px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.val {border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.05);}  .fn.val .ft{color:var(--sky);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fn.err {border-color:rgba(240,90,90,0.4);background:rgba(240,90,90,0.05);}   .fn.err .ft{color:var(--red);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+  .fork{display:flex;flex-direction:column;padding:0 6px;gap:6px;flex-shrink:0;}
+
+  /* STEP LIST */
+  .step-list{list-style:none;}
+  .step-item{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .step-item:last-child{border-bottom:none;}
+  .step-num{width:32px;height:32px;border-radius:9px;background:var(--accent-glow);border:1px solid rgba(124,110,245,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--accent2);flex-shrink:0;margin-top:1px;}
+  .step-content h4{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px;}
+  .step-content p{font-size:13px;color:var(--text2);line-height:1.6;}
+  .step-tag{display:inline-block;margin-top:6px;padding:2px 9px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--bg4);color:var(--text3);border:1px solid var(--border);}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* IO */
+  .io-row{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;align-items:start;margin-top:14px;}
+  .io-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8;}
+  .io-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+  .io-arr{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);padding-top:30px;}
+
+  /* SCHEMA COLUMNS */
+  .schema-col{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:8px;}
+  .sc-name{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:3px;}
+  .sc-type{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);margin-bottom:4px;}
+  .sc-desc{font-size:12px;color:var(--text2);}
+
+  /* STAGE PIPELINE */
+  .pipeline{display:flex;gap:0;margin-top:14px;overflow-x:auto;}
+  .pipe-stage{flex:1;min-width:100px;text-align:center;position:relative;}
+  .pipe-stage:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;z-index:1;}
+  .ps-inner{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 10px;margin:0 4px;}
+  .ps-icon{font-size:20px;margin-bottom:6px;}
+  .ps-label{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:3px;}
+  .ps-name{font-size:12px;font-weight:700;color:var(--text);}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{background:var(--accent2);}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Semana 4 · Clase 1</div>
+      <h2>Sistema de Leads Automatizados</h2>
+      <p>n8n · caso real</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> Introducción</a>
+    <a class="nav-item" onclick="go('conceptos',this)"><span class="ni">🧠</span> Conceptos clave</a>
+    <a class="nav-item" onclick="go('arquitectura',this)"><span class="ni">🏗️</span> Arquitectura del sistema</a>
+    <a class="nav-item" onclick="go('webhook',this)"><span class="ni">🌐</span> Paso 1 — Webhook</a>
+    <a class="nav-item" onclick="go('validacion',this)"><span class="ni">🛡️</span> Paso 2 — Validación</a>
+    <a class="nav-item" onclick="go('procesamiento',this)"><span class="ni">🔧</span> Paso 3 — Procesamiento</a>
+    <a class="nav-item" onclick="go('almacenamiento',this)"><span class="ni">💾</span> Paso 4 — Almacenamiento</a>
+    <a class="nav-item" onclick="go('notificacion',this)"><span class="ni">🔔</span> Paso 5 — Notificación</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Semana 4 · Clase 1</div>
+        <h1>Sistema de <span>Leads Automatizados</span></h1>
+        <p>El primer sistema real de negocio. Captura, valida, almacena y notifica cada lead de forma automática, sin intervención humana.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🎯 Objetivo de la clase</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">Crear un flujo automatizado que recibe datos, los procesa y los almacena para seguimiento</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">Pasamos de workflows de práctica a un <strong style="color:var(--text);">sistema funcional de negocio</strong>. Cada vez que alguien envíe sus datos — desde un formulario, una app o una API — el sistema los captura, valida, organiza y guarda sin que nadie tenga que hacer nada.</p>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn">5</div><div class="sl">etapas del sistema de leads</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">0</div><div class="sl">intervención humana para capturar</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">100%</div><div class="sl">de leads validados antes de guardarse</div></div>
+        <div class="stat"><div class="sn" style="color:var(--teal);">∞</div><div class="sl">leads que puede procesar en paralelo</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🧠 Qué vas a aprender en esta clase</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Cómo capturar leads automáticamente</strong><br><span style="font-size:13px;">Webhook como punto de entrada universal: cualquier formulario, app o sistema puede enviar leads al workflow.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Integración con herramientas externas</strong><br><span style="font-size:13px;">Google Sheets como base de datos operativa, Airtable como CRM ligero, con estructura profesional para seguimiento.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Validación y limpieza de datos</strong><br><span style="font-size:13px;">Verificar campos obligatorios, limpiar formatos, detectar duplicados y responder con errores específicos al origen.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Organización para seguimiento</strong><br><span style="font-size:13px;">Estructura de datos que permite filtrar, priorizar y asignar leads sin editar manualmente ninguna hoja.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Estructura de un flujo de negocio real</strong><br><span style="font-size:13px;">El patrón captura → validar → procesar → almacenar → notificar que aplica al 80% de los casos de automatización comercial.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card" style="background:var(--bg3);">
+        <div class="card-label">🗺️ Las 5 etapas del sistema</div>
+        <div class="pipeline" style="margin-top:16px;">
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(240,160,48,0.4);">
+              <div class="ps-icon">🌐</div>
+              <div class="ps-label" style="color:var(--amber);">Etapa 1</div>
+              <div class="ps-name">Captura</div>
+            </div>
+          </div>
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(56,189,248,0.4);">
+              <div class="ps-icon">🛡️</div>
+              <div class="ps-label" style="color:var(--sky);">Etapa 2</div>
+              <div class="ps-name">Validación</div>
+            </div>
+          </div>
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(124,110,245,0.4);">
+              <div class="ps-icon">🔧</div>
+              <div class="ps-label" style="color:var(--accent2);">Etapa 3</div>
+              <div class="ps-name">Procesamiento</div>
+            </div>
+          </div>
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(34,201,122,0.4);">
+              <div class="ps-icon">💾</div>
+              <div class="ps-label" style="color:var(--green);">Etapa 4</div>
+              <div class="ps-name">Almacenamiento</div>
+            </div>
+          </div>
+          <div class="pipe-stage">
+            <div class="ps-inner" style="border-color:rgba(32,212,176,0.4);">
+              <div class="ps-icon">🔔</div>
+              <div class="ps-label" style="color:var(--teal);">Etapa 5</div>
+              <div class="ps-name">Notificación</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-p" onclick="goTo('conceptos')">Siguiente: Conceptos clave →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · CONCEPTOS ══ -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Conceptos <span>Clave</span></h1>
+        <p>Los tres pilares conceptuales del sistema. Entenderlos define cómo diseñas el flujo y qué decisiones tomas en cada etapa.</p>
+      </div>
+
+      <div class="g3">
+        <div class="card ab">
+          <div class="card-label">🔸 Lead</div>
+          <h3>Persona interesada con datos</h3>
+          <p>Un lead es una persona que dejó sus datos porque tiene interés en un producto o servicio. No es solo un contacto — es una oportunidad de negocio que necesita seguimiento. Cada lead tiene un valor y merece ser tratado correctamente desde el primer segundo.</p>
+          <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="b bac">👤 Persona real</span>
+            <span class="b ba">💰 Oportunidad</span>
+            <span class="b bg">📋 Con datos</span>
+          </div>
+        </div>
+
+        <div class="card sb">
+          <div class="card-label">🔸 Captura de datos</div>
+          <h3>Cómo llegan los datos al sistema</h3>
+          <p>Los datos pueden llegar desde múltiples fuentes. El sistema debe ser agnóstico al origen — no importa si viene de un formulario web, una app móvil o una integración directa. El webhook es el punto de entrada universal que los recibe todos.</p>
+          <div style="margin-top:14px;">
+            <div class="wtu" style="padding:8px 0;"><span class="we">📋</span><div class="wt">Formularios web (Typeform, Google Forms)</div></div>
+            <div class="wtu" style="padding:8px 0;"><span class="we">🌐</span><div class="wt">Webhooks de apps y plataformas</div></div>
+            <div class="wtu" style="padding:8px 0;border-bottom:none;"><span class="we">🔗</span><div class="wt">APIs y sistemas externos directos</div></div>
+          </div>
+        </div>
+
+        <div class="card gb">
+          <div class="card-label">🔸 Persistencia</div>
+          <h3>Guardar para uso futuro</h3>
+          <p>Persistir significa guardar los datos en un sistema externo que sobrevive más allá del workflow. n8n procesa pero no almacena — el almacenamiento es siempre externo: Sheets, Airtable, una DB. Sin persistencia, el lead existe solo durante la ejecución y se pierde.</p>
+          <div style="margin-top:14px;">
+            <div class="wtu" style="padding:8px 0;"><span class="we">📊</span><div class="wt">Google Sheets — equipo no técnico</div></div>
+            <div class="wtu" style="padding:8px 0;"><span class="we">📋</span><div class="wt">Airtable — CRM visual y flexible</div></div>
+            <div class="wtu" style="padding:8px 0;border-bottom:none;"><span class="we">🗄️</span><div class="wt">Base de datos — producción real</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ La estructura de datos de un lead — lo mínimo y lo ideal</div>
+        <div class="io-row">
+          <div>
+            <div class="io-lbl" style="color:var(--red);">📦 Datos mínimos obligatorios</div>
+            <div class="io-box">
+<span class="ky">{</span>
+  <span class="ky">"nombre"</span>:   <span class="str">"Juan Pérez"</span>,
+  <span class="ky">"email"</span>:    <span class="str">"juan@email.com"</span>
+<span class="ky">}</span>
+<span class="cm">// Sin estos dos campos
+// el lead no puede
+// ser contactado</span>
+            </div>
+          </div>
+          <div class="io-arr">→</div>
+          <div>
+            <div class="io-lbl" style="color:var(--green);">📦 Datos ideales para seguimiento</div>
+            <div class="io-box">
+<span class="ky">{</span>
+  <span class="ky">"nombre"</span>:   <span class="str">"Juan Pérez"</span>,
+  <span class="ky">"email"</span>:    <span class="str">"juan@email.com"</span>,
+  <span class="ky">"telefono"</span>: <span class="str">"3001234567"</span>,
+  <span class="ky">"interes"</span>:  <span class="str">"Servicio X"</span>,
+  <span class="ky">"fuente"</span>:   <span class="str">"formulario-web"</span>,
+  <span class="ky">"fecha"</span>:    <span class="str">"2025-01-15T10:30Z"</span>,
+  <span class="ky">"estado"</span>:   <span class="str">"nuevo"</span>
+<span class="ky">}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('arquitectura')">Siguiente: Arquitectura →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · ARQUITECTURA ══ -->
+    <section id="arquitectura" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Arquitectura del <span>Sistema</span></h1>
+        <p>Antes de abrir n8n, el flujo debe estar claro en papel. Esta es la arquitectura completa del sistema de leads que vas a construir.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Flujo completo del sistema</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="fn trig">
+            <div class="fi">🌐</div>
+            <div class="ft">Trigger</div>
+            <div class="fn2">Webhook</div>
+            <div class="fn3">POST /leads</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn val">
+            <div class="fi">🛡️</div>
+            <div class="ft">Validación</div>
+            <div class="fn2">IF / Filter</div>
+            <div class="fn3">Campos ok?</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn proc">
+            <div class="fi">🔧</div>
+            <div class="ft">Proceso</div>
+            <div class="fn2">Set / Fn</div>
+            <div class="fn3">Formatear</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn act">
+            <div class="fi">💾</div>
+            <div class="ft">Almacenar</div>
+            <div class="fn2">Sheets</div>
+            <div class="fn3">Append row</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn out">
+            <div class="fi">🔔</div>
+            <div class="ft">Notificar</div>
+            <div class="fn2">Slack / Email</div>
+            <div class="fn3">Equipo</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn out" style="border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);">
+            <div class="fi">↩️</div>
+            <div class="ft" style="color:var(--accent2);">Output</div>
+            <div class="fn2">Respond</div>
+            <div class="fn3">200 OK</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">🌿 Rama de error — datos inválidos</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// IF validación falla</span>
+IF email vacío <span class="kw">OR</span> nombre vacío
+  ↓ rama FALSE
+  <span class="kw">Respond to Webhook</span>:
+  {
+    <span class="ky">"success"</span>: <span class="vl">false</span>,
+    <span class="ky">"error"</span>:   <span class="str">"Campos obligatorios faltantes"</span>,
+    <span class="ky">"campos"</span>:  <span class="str">["nombre","email"]</span>
+  }
+  status: <span class="rd">400</span>
+  ↓
+  Sheets log: <span class="str">"lead_invalido"</span>
+  <span class="cm">← flujo termina aquí</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🟢 Rama exitosa — lead válido</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// IF validación pasa</span>
+IF email válido <span class="kw">AND</span> nombre no vacío
+  ↓ rama TRUE
+  Set → formatear datos
+  ↓
+  Sheets → append fila
+  ↓
+  Slack → alerta equipo
+  Email → confirmación cliente (opcional)
+  ↓
+  <span class="kw">Respond to Webhook</span>:
+  {
+    <span class="ky">"success"</span>: <span class="vl">true</span>,
+    <span class="ky">"message"</span>: <span class="str">"Lead registrado"</span>
+  }
+  status: <span class="vl">200</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📊 Estructura de la hoja de Google Sheets</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Columna</th><th>Campo</th><th>Tipo</th><th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>A</td><td>Fecha</td><td>DateTime</td><td>Timestamp automático del momento de captura</td></tr>
+            <tr><td>B</td><td>Nombre</td><td>Texto</td><td>Nombre completo del lead</td></tr>
+            <tr><td>C</td><td>Email</td><td>Email</td><td>Correo electrónico (minúsculas, sin espacios)</td></tr>
+            <tr><td>D</td><td>Teléfono</td><td>Texto</td><td>Número de contacto (opcional)</td></tr>
+            <tr><td>E</td><td>Interés</td><td>Texto</td><td>Producto o servicio de interés</td></tr>
+            <tr><td>F</td><td>Fuente</td><td>Texto</td><td>Origen del lead: formulario-web, api, etc.</td></tr>
+            <tr><td>G</td><td>Estado</td><td>Texto</td><td>nuevo / contactado / calificado / cerrado</td></tr>
+            <tr><td>H</td><td>Asignado a</td><td>Texto</td><td>Vendedor responsable (vacío = sin asignar)</td></tr>
+            <tr><td>I</td><td>Notas</td><td>Texto</td><td>Notas adicionales del seguimiento</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Crea la hoja antes de construir el workflow.</strong> Abre Google Sheets, crea una hoja llamada "Leads" con los encabezados de la tabla arriba. El nodo de n8n la referenciará por nombre de columna, así los datos van exactamente donde deben ir.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('webhook')">Siguiente: Paso 1 — Webhook →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · WEBHOOK ══ -->
+    <section id="webhook" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 1 de 5</div>
+        <h1>Captura — <span>Webhook Trigger</span></h1>
+        <p>El punto de entrada del sistema. Configura el webhook, obtén la URL y prueba que los datos llegan correctamente antes de continuar.</p>
+      </div>
+
+      <div class="card trig amb" style="border-color:rgba(240,160,48,0.4);">
+        <div class="card-label" style="color:var(--amber);">🌐 Configuración del nodo Webhook</div>
+        <div class="code-block">
+<span class="cm">// Configuración en n8n</span>
+<span class="ky">Nodo:</span>        Webhook
+<span class="ky">HTTP Method:</span> POST
+<span class="ky">Path:</span>        <span class="str">/captura-lead</span>
+<span class="ky">Auth:</span>        None (o Header Auth para producción)
+<span class="ky">Respond:</span>     Using 'Respond to Webhook' Node
+
+<span class="cm">// URL generada por n8n (ejemplo)</span>
+https://tu-n8n.com/webhook/<span class="str">captura-lead</span>
+
+<span class="cm">// En modo Test (para desarrollo)</span>
+https://tu-n8n.com/webhook-test/<span class="str">captura-lead</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">🧪 Enviar datos de prueba con cURL</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm"># Prueba básica — lead completo</span>
+curl -X POST <span class="str">\</span>
+  <span class="str">'https://tu-n8n.com/webhook-test/captura-lead'</span> <span class="str">\</span>
+  -H <span class="str">'Content-Type: application/json'</span> <span class="str">\</span>
+  -d <span class="str">'{
+    "nombre": "Juan Pérez",
+    "email": "juan@email.com",
+    "telefono": "3001234567",
+    "interes": "Servicio X",
+    "fuente": "formulario-web"
+  }'</span>
+
+<span class="cm"># Prueba con datos faltantes (para probar validación)</span>
+curl -X POST <span class="str">\</span>
+  <span class="str">'https://tu-n8n.com/webhook-test/captura-lead'</span> <span class="str">\</span>
+  -H <span class="str">'Content-Type: application/json'</span> <span class="str">\</span>
+  -d <span class="str">'{
+    "nombre": "Laura",
+    "email": ""
+  }'</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📦 Datos que llegan al primer nodo</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// n8n expone estos datos en $json</span>
+{
+  <span class="ky">"nombre"</span>:   <span class="str">"Juan Pérez"</span>,
+  <span class="ky">"email"</span>:    <span class="str">"juan@email.com"</span>,
+  <span class="ky">"telefono"</span>: <span class="str">"3001234567"</span>,
+  <span class="ky">"interes"</span>:  <span class="str">"Servicio X"</span>,
+  <span class="ky">"fuente"</span>:   <span class="str">"formulario-web"</span>
+}
+
+<span class="cm">// Acceder en nodos siguientes:</span>
+<span class="kw">{{$json.nombre}}</span>   → <span class="str">"Juan Pérez"</span>
+<span class="kw">{{$json.email}}</span>    → <span class="str">"juan@email.com"</span>
+<span class="kw">{{$json.telefono}}</span> → <span class="str">"3001234567"</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Activa "Listen for Test Event" primero.</strong> En n8n haz clic en el webhook y activa el modo escucha antes de enviar el cURL. Verás los datos en tiempo real en el panel de n8n y podrás confirmar que todo llega bien.</div></div>
+        <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Modo test vs producción:</strong> la URL con <code>/webhook-test/</code> solo funciona cuando el workflow está abierto en el editor. La URL con <code>/webhook/</code> funciona 24/7 cuando el workflow está activado.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('arquitectura')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('validacion')">Siguiente: Paso 2 — Validación →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · VALIDACIÓN ══ -->
+    <section id="validacion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 2 de 5</div>
+        <h1>Validación de <span>Datos</span></h1>
+        <p>Ningún lead inválido llega al almacenamiento. La validación protege la calidad de tu base de datos y responde con errores claros al sistema que envió los datos.</p>
+      </div>
+
+      <div class="card sb" style="margin-bottom:16px;">
+        <div class="card-label">🛡️ Nodo IF — validación de campos obligatorios</div>
+        <div class="code-block">
+<span class="cm">// Condición del nodo IF</span>
+<span class="cm">// Usando modo AND: TODAS deben cumplirse</span>
+
+<span class="kw">Condición 1:</span>
+  campo:     <span class="str">{{$json.nombre}}</span>
+  operador:  <span class="str">no está vacío</span>
+
+<span class="kw">Condición 2:</span>
+  campo:     <span class="str">{{$json.email}}</span>
+  operador:  <span class="str">no está vacío</span>
+
+<span class="kw">Condición 3:</span>
+  campo:     <span class="str">{{$json.email}}</span>
+  operador:  <span class="str">contiene</span>
+  valor:     <span class="str">"@"</span>
+
+<span class="cm">// ─────────────────────────────────</span>
+<span class="cm">// Rama TRUE:  datos válidos → continuar</span>
+<span class="cm">// Rama FALSE: datos inválidos → responder error</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card rb">
+          <div class="card-label">❌ Rama FALSE — responder con error 400</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Respond to Webhook</span>
+<span class="ky">Status Code:</span> <span class="rd">400</span>
+<span class="ky">Body:</span>
+{
+  <span class="ky">"success"</span>:  <span class="vl">false</span>,
+  <span class="ky">"error"</span>:
+    <span class="str">"{{$json.nombre ? '' : 'Nombre requerido. '}}"</span>
+    <span class="str">"{{$json.email ? '' : 'Email requerido.'}}"</span>,
+  <span class="ky">"code"</span>:    <span class="str">"VALIDATION_ERROR"</span>,
+  <span class="ky">"recibido"</span>: {
+    <span class="ky">"nombre"</span>: <span class="str">"{{$json.nombre}}"</span>,
+    <span class="ky">"email"</span>:  <span class="str">"{{$json.email}}"</span>
+  }
+}
+<span class="cm">// El flujo se detiene aquí.
+// El formulario muestra el error al usuario.</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">✅ Validaciones adicionales recomendadas</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Email con dominio</strong> — verificar que contiene "." después del "@"<br><code>email contiene "@" AND email contiene "."</code></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">No es email de prueba</strong> — descartar leads fake<br><code>email no contiene "test" AND email no contiene "example.com"</code></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Teléfono con longitud mínima</strong> — si viene, debe tener al menos 7 dígitos<br><code>telefono.length >= 7</code></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Nombre mínimo 2 caracteres</strong> — evitar caracteres sueltos<br><code>nombre.length >= 2</code></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🔬 Alternativa avanzada: validación con Function</div>
+        <div class="code-block" style="font-size:12px;">
+<span class="cm">// Para validaciones más complejas, usa Function</span>
+<span class="kw">const</span> data = $input.first().json;
+<span class="kw">const</span> errores = [];
+
+<span class="kw">if</span> (!data.nombre || data.nombre.trim().length < <span class="vl">2</span>)
+  errores.push(<span class="str">"Nombre requerido (mínimo 2 caracteres)"</span>);
+
+<span class="kw">if</span> (!data.email || !data.email.includes(<span class="str">'@'</span>))
+  errores.push(<span class="str">"Email inválido"</span>);
+
+<span class="kw">if</span> (data.telefono && data.telefono.replace(/\D/g,<span class="str">''</span>).length < <span class="vl">7</span>)
+  errores.push(<span class="str">"Teléfono debe tener al menos 7 dígitos"</span>);
+
+<span class="kw">return</span> [{
+  json: {
+    ...data,
+    <span class="ky">valido</span>: errores.length === <span class="vl">0</span>,
+    <span class="ky">errores</span>: errores,
+    <span class="ky">errores_texto</span>: errores.join(<span class="str">', '</span>)
+  }
+}];
+<span class="cm">// Luego IF: valido === true → continuar, false → error</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('webhook')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('procesamiento')">Siguiente: Paso 3 — Procesamiento →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · PROCESAMIENTO ══ -->
+    <section id="procesamiento" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 3 de 5</div>
+        <h1>Procesamiento y <span>Limpieza</span></h1>
+        <p>Los datos llegan crudos. El nodo Set los transforma en datos limpios, enriquecidos y listos para almacenar y usar.</p>
+      </div>
+
+      <div class="card proc ab" style="border-color:rgba(124,110,245,0.4);">
+        <div class="card-label">🔧 Nodo Set — formatear y enriquecer el lead</div>
+        <div class="code-block">
+<span class="cm">// ── LIMPIEZA ──────────────────────────────────────</span>
+<span class="ky">nombre</span>      → <span class="kw">{{$json.nombre.trim()}}</span>
+<span class="ky">email</span>       → <span class="kw">{{$json.email.toLowerCase().trim()}}</span>
+<span class="ky">telefono</span>    → <span class="kw">{{($json.telefono ?? '').replace(/\s/g, '')}}</span>
+<span class="ky">interes</span>     → <span class="kw">{{$json.interes ?? 'No especificado'}}</span>
+
+<span class="cm">// ── ENRIQUECIMIENTO ───────────────────────────────</span>
+<span class="ky">fuente</span>      → <span class="kw">{{$json.fuente ?? 'desconocida'}}</span>
+<span class="ky">fecha</span>       → <span class="kw">{{$now.toFormat('dd/MM/yyyy HH:mm')}}</span>
+<span class="ky">estado</span>      → <span class="str">"nuevo"</span>
+<span class="ky">asignado_a</span>  → <span class="str">"Sin asignar"</span>
+<span class="ky">notas</span>       → <span class="str">""</span>
+
+<span class="cm">// ── SCORE BÁSICO ──────────────────────────────────</span>
+<span class="ky">score</span>       → <span class="kw">{{
+  ($json.telefono ? 30 : 0) +
+  ($json.interes  ? 40 : 0) +
+  30
+}}</span>
+<span class="cm">// 30 base + 40 si tiene interés + 30 si tiene tel
+// Máximo 100 — prioridad para el equipo de ventas</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">📋 Antes vs después del Set</div>
+          <div class="io-row" style="margin-top:8px;">
+            <div>
+              <div class="io-lbl" style="color:var(--red);">Datos crudos del webhook</div>
+              <div class="io-box" style="font-size:11px;">
+<span class="ky">"nombre"</span>:   <span class="str">"  JUAN pérez  "</span>
+<span class="ky">"email"</span>:    <span class="str">"JUAN@Email.COM"</span>
+<span class="ky">"telefono"</span>: <span class="str">"300 123 4567"</span>
+<span class="ky">"interes"</span>:  <span class="cm">undefined</span>
+              </div>
+            </div>
+            <div class="io-arr">→</div>
+            <div>
+              <div class="io-lbl" style="color:var(--green);">Datos limpios del Set</div>
+              <div class="io-box" style="font-size:11px;">
+<span class="ky">"nombre"</span>:   <span class="str">"Juan pérez"</span>
+<span class="ky">"email"</span>:    <span class="str">"juan@email.com"</span>
+<span class="ky">"telefono"</span>: <span class="str">"3001234567"</span>
+<span class="ky">"interes"</span>:  <span class="str">"No especificado"</span>
+<span class="ky">"estado"</span>:   <span class="str">"nuevo"</span>
+<span class="ky">"score"</span>:    <span class="vl">60</span>
+<span class="ky">"fecha"</span>:    <span class="str">"15/01/2025 10:30"</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🎯 Clasificar por score — Switch opcional</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Después del Set, Switch por score</span>
+<span class="ky">score</span> >= <span class="vl">80</span>:
+  → prioridad = <span class="str">"alta"</span>
+  → asignar_vendedor()
+  → alerta_slack_urgente()
+
+<span class="ky">score</span> 50-79:
+  → prioridad = <span class="str">"media"</span>
+  → alerta_slack_normal()
+
+<span class="ky">score</span> < <span class="vl">50</span>:
+  → prioridad = <span class="str">"baja"</span>
+  → solo_registrar()
+
+<span class="cm">// Todos pasan al almacenamiento
+// pero con diferentes campos de prioridad</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Activa "Keep Only Set" en el nodo Set.</strong> Esto hace que solo pasen las variables que tú defines, eliminando el JSON original. El Sheets recibirá exactamente los campos que quieres en el orden correcto, sin basura adicional.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('validacion')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('almacenamiento')">Siguiente: Paso 4 — Almacenamiento →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · ALMACENAMIENTO ══ -->
+    <section id="almacenamiento" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 4 de 5</div>
+        <h1>Almacenamiento — <span>Google Sheets</span></h1>
+        <p>El lead limpio y procesado llega aquí para quedarse. La configuración correcta del nodo Sheets garantiza que cada campo cae en la columna exacta.</p>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">📊 Configuración del nodo Google Sheets</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Google Sheets</span>
+<span class="ky">Operation:</span>    <span class="kw">Append Row</span>
+<span class="ky">Document:</span>     <span class="str">"Sistema de Leads 2025"</span>  <span class="cm">← nombre de tu hoja</span>
+<span class="ky">Sheet:</span>        <span class="str">"Leads"</span>                  <span class="cm">← pestaña</span>
+<span class="ky">Data Mode:</span>    <span class="str">"Auto-map columns"</span>
+
+<span class="cm">// Mapeo de campos (columna = nombre del header en Sheets)</span>
+<span class="ky">Fecha</span>       ← <span class="kw">{{$json.fecha}}</span>
+<span class="ky">Nombre</span>      ← <span class="kw">{{$json.nombre}}</span>
+<span class="ky">Email</span>       ← <span class="kw">{{$json.email}}</span>
+<span class="ky">Teléfono</span>    ← <span class="kw">{{$json.telefono}}</span>
+<span class="ky">Interés</span>     ← <span class="kw">{{$json.interes}}</span>
+<span class="ky">Fuente</span>      ← <span class="kw">{{$json.fuente}}</span>
+<span class="ky">Estado</span>      ← <span class="kw">{{$json.estado}}</span>
+<span class="ky">Asignado a</span>  ← <span class="kw">{{$json.asignado_a}}</span>
+<span class="ky">Score</span>       ← <span class="kw">{{$json.score}}</span>
+<span class="ky">Notas</span>       ← <span class="kw">{{$json.notas}}</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">📋 Variante: guardar en Airtable</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Airtable</span>
+<span class="ky">Operation:</span>  <span class="kw">Create Record</span>
+<span class="ky">Base:</span>       <span class="str">"appXXXXXXXXXX"</span>  <span class="cm">← ID de tu base</span>
+<span class="ky">Table:</span>      <span class="str">"Leads"</span>
+
+<span class="cm">// Campos (mismo mapeo)</span>
+<span class="ky">Name</span>        ← <span class="kw">{{$json.nombre}}</span>
+<span class="ky">Email</span>       ← <span class="kw">{{$json.email}}</span>
+<span class="ky">Phone</span>       ← <span class="kw">{{$json.telefono}}</span>
+<span class="ky">Interest</span>    ← <span class="kw">{{$json.interes}}</span>
+<span class="ky">Source</span>      ← <span class="kw">{{$json.fuente}}</span>
+<span class="ky">Status</span>      ← <span class="str">"New"</span>
+<span class="ky">Score</span>       ← <span class="kw">{{$json.score}}</span>
+
+<span class="cm">// Airtable retorna el ID del nuevo registro</span>
+<span class="cm">// → usar en la notificación como referencia</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">⚠️ Manejo de error en almacenamiento</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Activar "Continue on Error" en el nodo Sheets</span>
+<span class="cm">// Para que el workflow no se detenga si Sheets falla</span>
+
+Sheets append
+  → <span class="vl">éxito</span>: continuar normal
+  → <span class="rd">error</span>: item con { error: "..." }
+    ↓
+    IF error no vacío:
+      Slack: <span class="rd">"⚠️ No se pudo guardar lead: {{email}}"</span>
+      Sheets-backup: guardar en hoja "Errores"
+      <span class="cm">← el lead no se pierde</span>
+
+<span class="cm">// Alternativa: guardar en 2 lugares al mismo tiempo
+// Sheets principal + Sheets backup en paralelo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">💡 Sheets vs Airtable — cuándo usar cada uno en leads</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Criterio</th><th>Google Sheets</th><th>Airtable</th></tr></thead>
+          <tbody>
+            <tr><td>Vista Kanban para ventas</td><td>❌ No nativo</td><td>✅ Nativo</td></tr>
+            <tr><td>Todo el equipo ya lo usa</td><td>✅ Probable</td><td>⚠️ Requiere cuentas</td></tr>
+            <tr><td>Fórmulas y reportes</td><td>✅ Muy potente</td><td>⚠️ Limitado</td></tr>
+            <tr><td>Campos de tipo "selección"</td><td>❌ Manual</td><td>✅ Nativo con colores</td></tr>
+            <tr><td>Automatización interna</td><td>⚠️ Scripts</td><td>✅ Automations nativo</td></tr>
+            <tr><td>Costo inicial</td><td>✅ Gratuito</td><td>⚠️ Gratis con límites</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('procesamiento')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('notificacion')">Siguiente: Paso 5 — Notificación →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · NOTIFICACIÓN ══ -->
+    <section id="notificacion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 5 de 5</div>
+        <h1>Notificación y <span>Cierre</span></h1>
+        <p>El lead está guardado. Ahora el sistema avisa al equipo, responde al origen y cierra el flujo correctamente. El ciclo completo se cierra aquí.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card amb">
+          <div class="card-label">💬 Notificación al equipo — Slack</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo Slack</span>
+<span class="ky">Canal:</span>   <span class="str">"#leads"</span>
+<span class="ky">Mensaje:</span>
+<span class="str">"🔔 *Nuevo lead recibido*
+
+👤 Nombre:  {{$json.nombre}}
+📧 Email:   {{$json.email}}
+📱 Tel:     {{$json.telefono || 'N/A'}}
+💡 Interés: {{$json.interes}}
+📊 Score:   {{$json.score}}/100
+🌐 Fuente:  {{$json.fuente}}
+🕐 Fecha:   {{$json.fecha}}
+
+{{$json.score >= 80
+  ? '🔴 *PRIORIDAD ALTA — contactar hoy*'
+  : $json.score >= 50
+  ? '🟡 Prioridad media'
+  : '🟢 Prioridad baja'
+}}"</span>
+          </div>
+        </div>
+
+        <div class="card tb">
+          <div class="card-label">📧 Email de confirmación al lead (opcional)</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo Gmail</span>
+<span class="ky">Para:</span>    <span class="kw">{{$json.email}}</span>
+<span class="ky">Asunto:</span>  <span class="str">"{{$json.nombre}}, recibimos tu información"</span>
+<span class="ky">Cuerpo:</span>
+<span class="str">"Hola {{$json.nombre}},
+
+Gracias por tu interés en {{$json.interes}}.
+
+Hemos recibido tu información y
+uno de nuestros asesores te contactará
+en las próximas 24 horas.
+
+¿Preguntas? Responde este email.
+
+Equipo de Ventas"</span>
+
+<span class="cm">// Solo activar si está en el plan del negocio
+// No todos los sistemas deben confirmar al lead</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">↩️ Respond to Webhook — cerrar el ciclo HTTP</div>
+        <div class="code-block">
+<span class="cm">// Respuesta al formulario / sistema que envió el lead</span>
+<span class="ky">Status Code:</span> <span class="vl">200</span>
+<span class="ky">Body:</span>
+{
+  <span class="ky">"success"</span>:  <span class="kw">true</span>,
+  <span class="ky">"message"</span>:  <span class="str">"Tu información fue recibida correctamente"</span>,
+  <span class="ky">"id"</span>:       <span class="str">"{{$json.email}}_{{$now.toMillis()}}"</span>,
+  <span class="ky">"siguiente"</span>:<span class="str">"Un asesor te contactará en 24 horas"</span>
+}
+
+<span class="cm">// El formulario web muestra este mensaje al usuario.
+// Confirma que todo salió bien de ambos lados.</span>
+        </div>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Flujo completo — resumen final</div>
+        <div class="flow-row" style="margin-top:14px;">
+          <div class="fn trig"><div class="fi">🌐</div><div class="ft">Trigger</div><div class="fn2">Webhook POST</div></div>
+          <div class="fa">→</div>
+          <div class="fn val"><div class="fi">🛡️</div><div class="ft">Validar</div><div class="fn2">IF campos ok</div></div>
+          <div class="fa">→</div>
+          <div class="fn proc"><div class="fi">🔧</div><div class="ft">Set</div><div class="fn2">Limpiar + score</div></div>
+          <div class="fa">→</div>
+          <div class="fn act"><div class="fi">📊</div><div class="ft">Sheets</div><div class="fn2">Append fila</div></div>
+          <div class="fa">→</div>
+          <div class="fn act"><div class="fi">💬</div><div class="ft">Slack</div><div class="fn2">Alerta equipo</div></div>
+          <div class="fa">→</div>
+          <div class="fn out"><div class="fi">↩️</div><div class="ft">Respond</div><div class="fn2">200 OK</div></div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">Un lead pasa por 6 nodos en &lt;2 segundos. El equipo ve la alerta, el lead está en Sheets, el formulario muestra confirmación →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('almacenamiento')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · ENTREGABLE ══ -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable y <span>Errores Comunes</span></h1>
+        <p>Lo que debes tener funcionando, los errores que debes evitar y el bonus para llevarte el sistema al siguiente nivel.</p>
+      </div>
+
+      <!-- ENTREGABLE -->
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Entregable — sistema de leads funcionando</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Webhook activo que recibe datos JSON</strong><br><span style="font-size:13px;">URL configurada, método POST, datos llegan al primer nodo correctamente.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Validación que rechaza leads inválidos</strong><br><span style="font-size:13px;">Leads sin nombre o email reciben respuesta 400 con mensaje claro. No llegan a Sheets.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Datos limpios y enriquecidos en el Set</strong><br><span style="font-size:13px;">Email en minúsculas, campos vacíos con fallback, timestamp automático, estado inicial.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Fila creada correctamente en Google Sheets</strong><br><span style="font-size:13px;">Cada lead válido aparece en la hoja con todos sus campos en la columna correcta.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Notificación enviada al equipo</strong><br><span style="font-size:13px;">Slack o email con los datos del lead y el score de prioridad.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Respond to Webhook con 200 OK</strong><br><span style="font-size:13px;">El formulario recibe confirmación. El ciclo HTTP queda cerrado correctamente.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con cURL o Postman</strong><br><span style="font-size:13px;">Al menos 3 pruebas: lead completo, lead sin email, lead sin nombre. Los tres responden correctamente.</span></div></li>
+        </ul>
+      </div>
+
+      <!-- ERRORES COMUNES -->
+      <div class="card rb" style="margin-bottom:16px;">
+        <div class="card-label">⚠️ Errores comunes al construir este sistema</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">No crear los headers en Sheets antes</strong><br><span style="font-size:13px;">El nodo de n8n busca las columnas por nombre. Si la hoja está vacía o los nombres no coinciden exactamente, los datos van a columnas equivocadas o da error.</span></div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">Olvidar el nodo Respond to Webhook</strong><br><span style="font-size:13px;">Sin él, el formulario queda esperando respuesta hasta el timeout (30s). El usuario ve una pantalla en blanco o un error genérico.</span></div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">No manejar la rama false del IF</strong><br><span style="font-size:13px;">Si el IF de validación no tiene la rama false conectada al Respond con 400, los leads inválidos simplemente desaparecen sin respuesta al origen.</span></div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">Confundir URL de test con URL de producción</strong><br><span style="font-size:13px;"><code>/webhook-test/</code> solo funciona con el editor abierto. Para producción activar el workflow y usar <code>/webhook/</code>.</span></div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">No activar "Keep Only Set"</strong><br><span style="font-size:13px;">Sin esta opción, el Set pasa todos los campos del webhook + los nuevos. Sheets recibe columnas extra no esperadas que descuadran el mapeo.</span></div></li>
+        </ul>
+      </div>
+
+      <!-- BONUS -->
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🚀 Bonus nivel pro — extensiones del sistema</div>
+        <div class="g2" style="margin-top:12px;">
+          <div>
+            <div class="wtu"><span class="we">🔁</span><div class="wt"><strong>Detección de duplicados:</strong> antes de guardar, buscar en Sheets si el email ya existe. Si existe, actualizar en vez de crear fila nueva.</div></div>
+            <div class="wtu"><span class="we">🤖</span><div class="wt"><strong>Clasificación con IA:</strong> enviar el campo "interés" a la API de Claude/OpenAI y clasificar automáticamente la categoría del lead.</div></div>
+            <div class="wtu"><span class="we">📅</span><div class="wt"><strong>Asignación automática:</strong> IF score alto → asignar al vendedor A, score medio → vendedor B, mediante lógica Round Robin.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">⏳</span><div class="wt"><strong>Secuencia de seguimiento:</strong> usar Wait para enviar email de seguimiento automático a los 2 días si el lead no fue contactado.</div></div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>Dashboard en tiempo real:</strong> segunda hoja con fórmulas que muestran leads por día, por fuente, por estado y conversión.</div></div>
+            <div class="wtu"><span class="we">📱</span><div class="wt"><strong>WhatsApp al lead:</strong> si tiene teléfono, enviar confirmación automática por WhatsApp Business API al instante.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CIERRE -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">🎯</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Semana 4 · Clase 2 — Sistema de Notificaciones Avanzado</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:500px;margin:0 auto 20px;">Con el sistema de leads construido, la siguiente clase escala la notificación: canales múltiples, mensajes personalizados por segmento, priorización inteligente y dashboards de métricas en tiempo real.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">📢 Multi-canal</span>
+            <span class="b bg">🎯 Segmentación</span>
+            <span class="b bt">📊 Métricas RT</span>
+            <span class="b ba">🤖 IA en el flujo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('notificacion')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','conceptos','arquitectura','webhook','validacion','procesamiento','almacenamiento','notificacion','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(`.nav-item[onclick*="'${id}'"]`);go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Sección ${idx+1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>
