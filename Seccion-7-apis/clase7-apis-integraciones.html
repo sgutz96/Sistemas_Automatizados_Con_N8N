@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 7 — APIs e Integraciones Externas</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --text:#f0eeff;--text2:#9b95b8;--text3:#5c577a;
+    --accent:#7c6ef5;--accent2:#a598ff;--accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a;--green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;--red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030;--amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;--teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;--pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;--sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;--lime-bg:rgba(132,204,22,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);}.str{color:var(--green);}.cm{color:var(--text3);}
+  .ky{color:var(--amber);}.vl{color:var(--teal);}.rd{color:var(--red);}
+  .pk{color:var(--pink);}.sk{color:var(--sky);}.lm{color:var(--lime);}
+
+  /* HTTP METHOD BADGES */
+  .method{display:inline-flex;align-items:center;padding:3px 10px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.05em;}
+  .m-get  {background:rgba(34,201,122,0.15);color:var(--green);border:1px solid rgba(34,201,122,0.3);}
+  .m-post {background:rgba(124,110,245,0.15);color:var(--accent2);border:1px solid rgba(124,110,245,0.3);}
+  .m-put  {background:rgba(240,160,48,0.15);color:var(--amber);border:1px solid rgba(240,160,48,0.3);}
+  .m-del  {background:rgba(240,90,90,0.15);color:var(--red);border:1px solid rgba(240,90,90,0.3);}
+  .m-patch{background:rgba(56,189,248,0.15);color:var(--sky);border:1px solid rgba(56,189,248,0.3);}
+
+  /* STATUS CODES */
+  .status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;}
+  .s2xx{background:rgba(34,201,122,0.12);color:var(--green);}
+  .s3xx{background:rgba(56,189,248,0.12);color:var(--sky);}
+  .s4xx{background:rgba(240,160,48,0.12);color:var(--amber);}
+  .s5xx{background:rgba(240,90,90,0.12);color:var(--red);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;text-align:center;flex-shrink:0;min-width:100px;}
+  .fn .fi{font-size:18px;margin-bottom:4px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:2px;}
+  .fn .fn2{font-size:11px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);}.fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);}.fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}.fn.act .ft{color:var(--green);}
+  .fn.http{border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}.fn.http .ft{color:var(--teal);}
+  .fn.out {border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.05);}.fn.out .ft{color:var(--pink);}
+  .fn.err {border-color:rgba(240,90,90,0.4);background:rgba(240,90,90,0.05);}.fn.err .ft{color:var(--red);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* IO */
+  .io-row{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;align-items:start;margin-top:14px;}
+  .io-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8;}
+  .io-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+  .io-arr{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);padding-top:28px;}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* STEP LIST */
+  .step-list{list-style:none;}
+  .step-item{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .step-item:last-child{border-bottom:none;}
+  .step-num{width:32px;height:32px;border-radius:9px;background:var(--accent-glow);border:1px solid rgba(124,110,245,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--accent2);flex-shrink:0;margin-top:1px;}
+  .step-content h4{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px;}
+  .step-content p{font-size:13px;color:var(--text2);line-height:1.6;}
+  .step-tag{display:inline-block;margin-top:6px;padding:2px 9px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--bg4);color:var(--text3);border:1px solid var(--border);}
+
+  /* API URL BAR */
+  .url-bar{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .url-method{flex-shrink:0;}
+  .url-text{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .url-text span{color:var(--teal);}
+  .url-text em{color:var(--amber);font-style:normal;}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;}.btn-p:hover{background:var(--accent2);}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);}.btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Clase 7</div>
+      <h2>APIs e Integraciones Externas</h2>
+      <p>n8n · HTTP · REST · JSON</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> Introducción</a>
+    <a class="nav-item" onclick="go('conceptos',this)"><span class="ni">🧠</span> ¿Qué es una API?</a>
+    <a class="nav-item" onclick="go('metodos',this)"><span class="ni">🔀</span> Métodos HTTP</a>
+    <a class="nav-item" onclick="go('json',this)"><span class="ni">📦</span> JSON</a>
+    <a class="nav-item" onclick="go('auth',this)"><span class="ni">🔑</span> Autenticación</a>
+    <a class="nav-item" onclick="go('nodo',this)"><span class="ni">🌐</span> Nodo HTTP Request</a>
+    <a class="nav-item" onclick="go('errores-api',this)"><span class="ni">🛡️</span> Status codes y errores</a>
+    <a class="nav-item" onclick="go('ejercicio',this)"><span class="ni">🛠️</span> Ejercicio paso a paso</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable y bonus</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- 1 INTRO -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Clase 7</div>
+        <h1>APIs e <span>Integraciones Externas</span></h1>
+        <p>El salto de automatizaciones aisladas a sistemas conectados. Aprende a hablarle a cualquier servicio del mundo con HTTP.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🚨 El problema que resuelve esta clase</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">La mayoría de workflows funcionan en burbuja — esta clase los conecta con el mundo</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">Un workflow que no habla con otros sistemas tiene alcance limitado. Las APIs son el lenguaje universal que conecta n8n con <strong style="color:var(--text);">cualquier servicio existente</strong>: pagos, IA, CRMs, redes sociales, sistemas internos, datos en tiempo real. Si tiene API, puedes integrarlo.</p>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn">∞</div><div class="sl">servicios disponibles con una API REST</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">4</div><div class="sl">métodos HTTP que cubren el 99% de casos</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">JSON</div><div class="sl">formato universal de intercambio de datos</div></div>
+        <div class="stat"><div class="sn" style="color:var(--teal);">1</div><div class="sl">nodo en n8n para hablar con cualquier API</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">💡 De automatización aislada → sistema conectado</div>
+        <div class="g2" style="margin-top:12px;">
+          <div style="background:var(--bg3);border:1px solid var(--red-bg);border-radius:10px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:10px;">❌ Antes — Workflow aislado</div>
+            <ul class="cl" style="margin-top:0;">
+              <li style="padding:7px 0;font-size:13px;"><span class="cx">✗</span>Solo trabaja con sus propios datos</li>
+              <li style="padding:7px 0;font-size:13px;"><span class="cx">✗</span>No puede consultar información externa</li>
+              <li style="padding:7px 0;font-size:13px;"><span class="cx">✗</span>No actualiza sistemas de terceros</li>
+              <li style="padding:7px 0;font-size:13px;border-bottom:none;"><span class="cx">✗</span>Limitado a lo que tiene en el trigger</li>
+            </ul>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(34,201,122,0.3);border-radius:10px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px;">✅ Después — Sistema conectado con APIs</div>
+            <ul class="cl" style="margin-top:0;">
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Consulta datos en tiempo real de cualquier fuente</li>
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Actualiza CRMs, ERPs y apps externas</li>
+              <li style="padding:7px 0;font-size:13px;"><span class="ck">✓</span>Llama IAs, servicios de pago, geo-datos</li>
+              <li style="padding:7px 0;font-size:13px;border-bottom:none;"><span class="ck">✓</span>Construye pipelines de datos reales</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🗺️ Lo que cubres hoy</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;">
+          <div style="background:var(--bg3);border:1px solid rgba(124,110,245,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🌐</div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent2);">¿Qué es una API?</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">El concepto base</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(34,201,122,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔀</div>
+            <div style="font-size:12px;font-weight:700;color:var(--green);">Métodos HTTP</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">GET POST PUT DELETE</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,160,48,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🔑</div>
+            <div style="font-size:12px;font-weight:700;color:var(--amber);">Autenticación</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">API Keys y Headers</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(32,212,176,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">⚡</div>
+            <div style="font-size:12px;font-weight:700;color:var(--teal);">HTTP Request en n8n</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Configurar y usar</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📦</div>
+            <div style="font-size:12px;font-weight:700;color:var(--sky);">JSON</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Leer y construir</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,90,90,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🛡️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--red);">Status codes</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Manejo de errores</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(132,204,22,0.3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🛠️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--lime);">Ejercicio real</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">Paso a paso</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;opacity:0.5;">
+            <div style="font-size:22px;margin-bottom:6px;">🚀</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);">Bonus</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px;">OAuth2 y más</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-p" onclick="goTo('conceptos')">Siguiente: ¿Qué es una API? →</button>
+      </div>
+    </section>
+
+    <!-- 2 CONCEPTOS -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>¿Qué es <span>una API?</span></h1>
+        <p>El concepto que conecta el mundo del software. Sin APIs, cada aplicación sería una isla. Con ellas, todo puede hablar con todo.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:20px;">
+        <div class="card-label">🔸 API — Application Programming Interface</div>
+        <h3>La interfaz que permite que sistemas se comuniquen</h3>
+        <p>Una API es como un <strong style="color:var(--text);">mesero en un restaurante</strong>: tú (el cliente) haces un pedido, el mesero (la API) lo lleva a la cocina (el servidor) y te trae la respuesta. No necesitas saber cómo funciona la cocina — solo cómo hacer el pedido correctamente.</p>
+        <div class="code-block" style="margin-top:14px;">
+<span class="cm">// Analogía completa</span>
+
+Tu workflow     = el cliente que hace el pedido
+API             = el mesero — traduce y entrega
+Servidor remoto = la cocina — procesa y responde
+
+<span class="cm">// El "pedido" en términos técnicos:</span>
+Tu workflow envía:  GET https://api.clima.com/bogota
+Servidor responde:  { "temp": 18, "estado": "nublado" }
+        </div>
+      </div>
+
+      <div class="g3">
+        <div class="card tb">
+          <div class="card-label">🌐 REST API — el estándar</div>
+          <h3 style="color:var(--teal);">La más común</h3>
+          <p style="font-size:13px;">REST (Representational State Transfer) es el estilo de API más usado. Usa HTTP, URLs y JSON. Si una app tiene API pública, casi seguro es REST. Es lo que usarás en n8n el 95% del tiempo.</p>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="b bt">HTTP nativo</span><span class="b bg">JSON</span><span class="b bac">URLs claras</span>
+          </div>
+        </div>
+        <div class="card ab">
+          <div class="card-label">📡 Cómo fluye una petición</div>
+          <div class="code-block" style="font-size:12px;margin-top:8px;">
+<span class="vl">1.</span> n8n construye la petición
+   método + URL + headers + body
+
+<span class="vl">2.</span> La envía al servidor externo
+   → viaja por internet
+
+<span class="vl">3.</span> El servidor procesa
+   → autenticación, lógica, datos
+
+<span class="vl">4.</span> Responde con JSON + status code
+   200 OK + { datos }
+
+<span class="vl">5.</span> n8n recibe y usa la respuesta
+          </div>
+        </div>
+        <div class="card gb">
+          <div class="card-label">🏢 APIs que ya conoces</div>
+          <div style="margin-top:8px;">
+            <div class="wtu" style="padding:8px 0;"><span class="we">🤖</span><div class="wt"><strong>OpenAI / Claude</strong> — generar texto, analizar</div></div>
+            <div class="wtu" style="padding:8px 0;"><span class="we">🗺️</span><div class="wt"><strong>Google Maps</strong> — geocodificar, rutas</div></div>
+            <div class="wtu" style="padding:8px 0;"><span class="we">💳</span><div class="wt"><strong>Stripe / Wompi</strong> — pagos, cobros</div></div>
+            <div class="wtu" style="padding:8px 0;"><span class="we">📧</span><div class="wt"><strong>SendGrid</strong> — envío masivo de emails</div></div>
+            <div class="wtu" style="padding:8px 0;border-bottom:none;"><span class="we">☁️</span><div class="wt"><strong>Cualquier SaaS</strong> — si tiene API pública</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('metodos')">Siguiente: Métodos HTTP →</button>
+      </div>
+    </section>
+
+    <!-- 3 MÉTODOS HTTP -->
+    <section id="metodos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Métodos <span>HTTP</span></h1>
+        <p>Los cuatro verbos que gobiernan toda comunicación con APIs REST. Cada uno tiene un propósito claro y no son intercambiables.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label"><span class="method m-get">GET</span> — Obtener datos</div>
+          <p style="font-size:13px;margin-top:10px;">Pide datos al servidor sin enviar nada ni modificar nada. Solo lectura. El más simple y más usado.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Obtener usuario por ID</span>
+<span class="kw">GET</span> https://api.ejemplo.com/usuarios/123
+
+<span class="cm">// Obtener lista de productos</span>
+<span class="kw">GET</span> https://api.tienda.com/productos?categoria=ropa
+
+<span class="cm">// Obtener datos de clima</span>
+<span class="kw">GET</span> https://api.clima.com/ciudad?q=bogota
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--text3);">✅ No envía body · ✅ Params en la URL · ✅ Seguro e idempotente</div>
+        </div>
+
+        <div class="card ab">
+          <div class="card-label"><span class="method m-post">POST</span> — Enviar datos / Crear</div>
+          <p style="font-size:13px;margin-top:10px;">Envía datos al servidor para crear un nuevo recurso o disparar una acción. Es el método de webhooks y formularios.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Crear un nuevo usuario</span>
+<span class="kw">POST</span> https://api.ejemplo.com/usuarios
+<span class="ky">Body:</span>
+{
+  <span class="ky">"nombre"</span>: <span class="str">"Ana García"</span>,
+  <span class="ky">"email"</span>:  <span class="str">"ana@email.com"</span>
+}
+
+<span class="cm">// Enviar mensaje de Slack</span>
+<span class="kw">POST</span> https://hooks.slack.com/services/xxx
+<span class="ky">Body:</span> { <span class="ky">"text"</span>: <span class="str">"Hola equipo"</span> }
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--text3);">✅ Body en JSON · ✅ Crea recursos · ⚠️ No idempotente</div>
+        </div>
+
+        <div class="card amb">
+          <div class="card-label"><span class="method m-put">PUT</span> — Actualizar (reemplazar)</div>
+          <p style="font-size:13px;margin-top:10px;">Reemplaza un recurso completo. Envías todos los campos, no solo los que cambian. Si omites un campo, se borra.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Actualizar usuario completo</span>
+<span class="kw">PUT</span> https://api.ejemplo.com/usuarios/123
+<span class="ky">Body:</span>
+{
+  <span class="ky">"nombre"</span>: <span class="str">"Ana García López"</span>,
+  <span class="ky">"email"</span>:  <span class="str">"ana@email.com"</span>,
+  <span class="ky">"estado"</span>: <span class="str">"activo"</span>
+}
+<span class="cm">// Debes enviar TODOS los campos</span>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--text3);">⚠️ Reemplaza todo · ✅ Idempotente · ✅ Incluye ID en URL</div>
+        </div>
+
+        <div class="card rb">
+          <div class="card-label"><span class="method m-del">DELETE</span> + <span class="method m-patch">PATCH</span></div>
+          <p style="font-size:13px;margin-top:10px;margin-bottom:10px;"><strong style="color:var(--text);">DELETE</strong> elimina el recurso. <strong style="color:var(--text);">PATCH</strong> actualiza solo los campos que envías, sin tocar el resto.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Eliminar usuario</span>
+<span class="kw">DELETE</span> https://api.ejemplo.com/usuarios/123
+
+<span class="cm">// Actualizar solo el email (PATCH)</span>
+<span class="kw">PATCH</span> https://api.ejemplo.com/usuarios/123
+<span class="ky">Body:</span> { <span class="ky">"email"</span>: <span class="str">"nuevo@email.com"</span> }
+<span class="cm">// Solo cambia email, el resto queda igual</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📋 Cuándo usar cada método — regla de oro</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Quiero...</th><th>Método</th><th>Body</th><th>Ejemplo</th></tr></thead>
+          <tbody>
+            <tr><td>Leer / consultar datos</td><td><span class="method m-get">GET</span></td><td>❌ No</td><td>Obtener usuario, listar productos</td></tr>
+            <tr><td>Crear algo nuevo</td><td><span class="method m-post">POST</span></td><td>✅ Sí</td><td>Crear lead en CRM, enviar mensaje</td></tr>
+            <tr><td>Actualizar todo el objeto</td><td><span class="method m-put">PUT</span></td><td>✅ Sí</td><td>Reemplazar configuración completa</td></tr>
+            <tr><td>Actualizar solo un campo</td><td><span class="method m-patch">PATCH</span></td><td>✅ Sí</td><td>Cambiar estado de un pedido</td></tr>
+            <tr><td>Eliminar un recurso</td><td><span class="method m-del">DELETE</span></td><td>❌ No</td><td>Borrar contacto, cancelar suscripción</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('json')">Siguiente: JSON →</button>
+      </div>
+    </section>
+
+    <!-- 4 JSON -->
+    <section id="json" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 4</div>
+        <h1>JSON — el <span>lenguaje de las APIs</span></h1>
+        <p>Todo lo que viaja entre sistemas viaja en JSON. Aprende a leerlo, construirlo y acceder a sus datos en n8n con expresiones.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">📦 Anatomía del JSON</div>
+        <div class="code-block">
+<span class="cm">// JSON = JavaScript Object Notation
+// Siempre son pares clave: valor</span>
+
+{
+  <span class="ky">"nombre"</span>:   <span class="str">"Ana García"</span>,         <span class="cm">← string (texto)</span>
+  <span class="ky">"edad"</span>:     <span class="vl">28</span>,                  <span class="cm">← number</span>
+  <span class="ky">"activo"</span>:   <span class="kw">true</span>,                <span class="cm">← boolean</span>
+  <span class="ky">"notas"</span>:    <span class="kw">null</span>,                <span class="cm">← null (vacío)</span>
+  <span class="ky">"tags"</span>:     [<span class="str">"vip"</span>, <span class="str">"colombia"</span>], <span class="cm">← array</span>
+  <span class="ky">"direccion"</span>: {                   <span class="cm">← objeto anidado</span>
+    <span class="ky">"ciudad"</span>: <span class="str">"Bogotá"</span>,
+    <span class="ky">"pais"</span>:   <span class="str">"CO"</span>
+  }
+}
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card tb">
+          <div class="card-label">🔍 Acceder a datos JSON en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Usando expresiones en cualquier campo</span>
+
+<span class="cm">// Campo simple</span>
+<span class="kw">{{$json.nombre}}</span>        → <span class="str">"Ana García"</span>
+<span class="kw">{{$json.edad}}</span>          → <span class="vl">28</span>
+
+<span class="cm">// Objeto anidado</span>
+<span class="kw">{{$json.direccion.ciudad}}</span>  → <span class="str">"Bogotá"</span>
+<span class="kw">{{$json.direccion.pais}}</span>    → <span class="str">"CO"</span>
+
+<span class="cm">// Array — primer elemento</span>
+<span class="kw">{{$json.tags[0]}}</span>       → <span class="str">"vip"</span>
+<span class="kw">{{$json.tags[1]}}</span>       → <span class="str">"colombia"</span>
+
+<span class="cm">// Campo que puede no existir</span>
+<span class="kw">{{$json.telefono ?? 'N/A'}}</span>  → <span class="str">"N/A"</span> si no existe
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏗️ Construir JSON para enviar a la API</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// En el body del HTTP Request
+// combinas datos del workflow con valores fijos</span>
+
+{
+  <span class="ky">"nombre"</span>:    <span class="str">"{{$json.nombre}}"</span>,
+  <span class="ky">"email"</span>:     <span class="str">"{{$json.email}}"</span>,
+  <span class="ky">"plan"</span>:      <span class="str">"{{$json.plan ?? 'free'}}"</span>,
+  <span class="ky">"origen"</span>:    <span class="str">"n8n-workflow"</span>,
+  <span class="ky">"timestamp"</span>: <span class="str">"{{$now.toISO()}}"</span>,
+  <span class="ky">"score"</span>:     <span class="kw">{{$json.score}}</span>
+}
+<span class="cm">// Nota: strings van entre comillas en la expresión
+// números y booleanos no llevan comillas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📊 JSON de respuesta real — API de pagos</div>
+        <div class="io-row">
+          <div>
+            <div class="io-lbl" style="color:var(--accent2);">📤 Lo que enviamos (body POST)</div>
+            <div class="io-box" style="font-size:12px;">
+{
+  <span class="ky">"nombre"</span>: <span class="str">"Ana"</span>,
+  <span class="ky">"email"</span>:  <span class="str">"ana@email.com"</span>
+}
+            </div>
+          </div>
+          <div class="io-arr">→</div>
+          <div>
+            <div class="io-lbl" style="color:var(--green);">📥 Lo que recibimos (respuesta)</div>
+            <div class="io-box" style="font-size:12px;">
+{
+  <span class="ky">"status"</span>:  <span class="str">"ok"</span>,
+  <span class="ky">"id"</span>:      <span class="str">"usr_12345"</span>,
+  <span class="ky">"mensaje"</span>: <span class="str">"Usuario creado"</span>,
+  <span class="ky">"token"</span>:   <span class="str">"eyJhb..."</span>
+}
+<span class="cm">// Acceder en nodo siguiente:</span>
+<span class="kw">{{$json.id}}</span> → <span class="str">"usr_12345"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Valida tu JSON antes de enviarlo.</strong> Un JSON mal formado (coma extra, comilla faltante) hace fallar el request con un error críptico. Usa <a href="https://jsonlint.com" style="color:var(--accent2);">jsonlint.com</a> para verificar antes de ejecutar.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('metodos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('auth')">Siguiente: Autenticación →</button>
+      </div>
+    </section>
+
+    <!-- 5 AUTH -->
+    <section id="auth" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 5</div>
+        <h1><span>Autenticación</span> de APIs</h1>
+        <p>La mayoría de APIs requieren identificarte antes de responder. Aprende los tres métodos más comunes y cómo configurarlos de forma segura en n8n.</p>
+      </div>
+
+      <div class="g3">
+        <!-- API KEY -->
+        <div class="card amb">
+          <div class="card-label">🔑 API Key — el más común</div>
+          <p style="font-size:13px;">Una cadena secreta que la API te da cuando te registras. La incluyes en cada petición para identificarte.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// En el Header (más seguro)</span>
+<span class="ky">Authorization</span>: <span class="str">Bearer sk-abc123xyz</span>
+<span class="ky">X-API-Key</span>:     <span class="str">sk-abc123xyz</span>
+
+<span class="cm">// En la URL (menos seguro, evitar)</span>
+GET /endpoint?<span class="ky">api_key</span>=<span class="str">sk-abc123xyz</span>
+
+<span class="cm">// En n8n: Authentication → Header Auth
+// Name: Authorization
+// Value: Bearer sk-abc123xyz</span>
+          </div>
+        </div>
+        <!-- BEARER TOKEN -->
+        <div class="card ab">
+          <div class="card-label">🎫 Bearer Token — OAuth y JWT</div>
+          <p style="font-size:13px;">Token temporal obtenido después de autenticarse. Expira y debe renovarse. Lo usan Google, GitHub, Salesforce.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Header estándar</span>
+<span class="ky">Authorization</span>: <span class="str">Bearer eyJhbGci...</span>
+
+<span class="cm">// En n8n: usar "Predefined Credential Type"
+// para servicios populares (Google, GitHub, etc.)
+// n8n maneja el refresh del token automáticamente</span>
+
+<span class="cm">// Para OAuth2 manual:</span>
+<span class="cm">// 1. Obtener token con POST /oauth/token</span>
+<span class="cm">// 2. Guardar en variable</span>
+<span class="cm">// 3. Usar en headers de los siguientes requests</span>
+          </div>
+        </div>
+        <!-- BASIC AUTH -->
+        <div class="card gb">
+          <div class="card-label">🔐 Basic Auth — usuario y contraseña</div>
+          <p style="font-size:13px;">Combinas usuario:contraseña en Base64 y lo envías en el header. Común en APIs legacy y sistemas internos.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Header</span>
+<span class="ky">Authorization</span>: <span class="str">Basic dXN1YXJpbzpjb250cmFzZW5h</span>
+<span class="cm">// (Base64 de "usuario:contraseña")</span>
+
+<span class="cm">// En n8n: Authentication → Basic Auth
+// Username: tu_usuario
+// Password: tu_contraseña
+// n8n hace el encode automáticamente</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rb" style="margin-bottom:16px;">
+        <div class="card-label">🛡️ Seguridad — cómo proteger tus API Keys en n8n</div>
+        <div class="code-block">
+<span class="cm">// ❌ MAL — API Key hardcodeada en el nodo</span>
+<span class="ky">Authorization</span>: <span class="str">"Bearer sk-abc123xyz789"</span>
+<span class="cm">// Cualquiera que vea el workflow ve la key</span>
+
+<span class="cm">// ✅ BIEN — Usar Credentials de n8n</span>
+Credentials → New → HTTP Header Auth
+  Name: Authorization
+  Value: Bearer sk-abc123xyz789
+→ Guardar como "Mi API Key"
+
+<span class="cm">// En el nodo HTTP Request:
+// Authentication → Predefined Credential
+// Credential: "Mi API Key"
+// La key queda cifrada, no visible en el workflow</span>
+
+<span class="cm">// ✅ MUY BIEN — Variables de entorno</span>
+<span class="ky">Authorization</span>: <span class="str">"Bearer {{$env.MI_API_KEY}}"</span>
+<span class="cm">// La key vive fuera del workflow</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('json')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('nodo')">Siguiente: Nodo HTTP Request →</button>
+      </div>
+    </section>
+
+    <!-- 6 NODO HTTP REQUEST -->
+    <section id="nodo" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6</div>
+        <h1>Nodo <span>HTTP Request</span></h1>
+        <p>El nodo más versátil de n8n. Un solo nodo para hablar con cualquier API del mundo. Aquí está todo lo que necesitas saber para configurarlo correctamente.</p>
+      </div>
+
+      <div class="card tb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Anatomía del nodo HTTP Request en n8n</div>
+        <div class="code-block">
+<span class="cm">// Campos del nodo — de arriba a abajo</span>
+
+<span class="ky">Method:</span>         GET | POST | PUT | PATCH | DELETE
+<span class="ky">URL:</span>            https://api.ejemplo.com/endpoint
+<span class="ky">Authentication:</span> None | Basic | Header | OAuth2
+<span class="ky">Headers:</span>        Content-Type: application/json
+                Authorization: Bearer {{token}}
+<span class="ky">Query Params:</span>   ?page=1&limit=10
+<span class="ky">Body:</span>           { "campo": "{{$json.valor}}" }
+<span class="ky">Options:</span>
+  Timeout:      <span class="vl">30000</span> ms
+  Retry on Fail: <span class="vl">3</span> intentos
+  Response Format: JSON | Text | Binary
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">🏗️ Ejemplo real — llamar a la API de OpenAI</div>
+          <div class="url-bar">
+            <span class="url-method"><span class="method m-post">POST</span></span>
+            <span class="url-text"><span>https://api.openai.com/</span><em>v1/chat/completions</em></span>
+          </div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Headers</span>
+<span class="ky">Authorization</span>: <span class="str">Bearer {{$env.OPENAI_KEY}}</span>
+<span class="ky">Content-Type</span>:  <span class="str">application/json</span>
+
+<span class="cm">// Body</span>
+{
+  <span class="ky">"model"</span>:    <span class="str">"gpt-4o-mini"</span>,
+  <span class="ky">"messages"</span>: [{
+    <span class="ky">"role"</span>:    <span class="str">"user"</span>,
+    <span class="ky">"content"</span>: <span class="str">"Clasifica este lead: {{$json.interes}}"</span>
+  }],
+  <span class="ky">"max_tokens"</span>: <span class="vl">100</span>
+}
+
+<span class="cm">// Respuesta → acceder con:</span>
+<span class="kw">{{$json.choices[0].message.content}}</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏗️ Ejemplo real — llamar a la API de WhatsApp</div>
+          <div class="url-bar">
+            <span class="url-method"><span class="method m-post">POST</span></span>
+            <span class="url-text"><span>https://graph.facebook.com/</span><em>v18.0/{{phone_id}}/messages</em></span>
+          </div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Headers</span>
+<span class="ky">Authorization</span>: <span class="str">Bearer {{$env.WA_TOKEN}}</span>
+<span class="ky">Content-Type</span>:  <span class="str">application/json</span>
+
+<span class="cm">// Body</span>
+{
+  <span class="ky">"messaging_product"</span>: <span class="str">"whatsapp"</span>,
+  <span class="ky">"to"</span>:      <span class="str">"{{$json.telefono}}"</span>,
+  <span class="ky">"type"</span>:    <span class="str">"text"</span>,
+  <span class="ky">"text"</span>:    { <span class="ky">"body"</span>: <span class="str">"Hola {{$json.nombre}}"</span> }
+}
+
+<span class="cm">// Respuesta exitosa:</span>
+{ <span class="ky">"messages"</span>: [{ <span class="ky">"id"</span>: <span class="str">"wamid.xxx"</span> }] }
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🧪 APIs públicas para practicar — sin API Key</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>API</th><th>URL base</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td>JSONPlaceholder</td><td><code style="color:var(--teal);">jsonplaceholder.typicode.com</code></td><td>Usuarios, posts, todos — perfecta para practicar</td></tr>
+            <tr><td>Open Meteo</td><td><code style="color:var(--teal);">api.open-meteo.com</code></td><td>Clima actual y pronóstico por coordenadas</td></tr>
+            <tr><td>REST Countries</td><td><code style="color:var(--teal);">restcountries.com/v3.1</code></td><td>Datos de países: capital, moneda, idioma</td></tr>
+            <tr><td>ExchangeRate API</td><td><code style="color:var(--teal);">open.er-api.com/v6</code></td><td>Tipos de cambio de divisas en tiempo real</td></tr>
+            <tr><td>Dog CEO</td><td><code style="color:var(--teal);">dog.ceo/api</code></td><td>Imágenes de perros — para flujos de prueba</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('auth')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('errores-api')">Siguiente: Status codes →</button>
+      </div>
+    </section>
+
+    <!-- 7 STATUS CODES Y ERRORES -->
+    <section id="errores-api" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 7</div>
+        <h1>Status Codes <span>y Errores</span></h1>
+        <p>La API siempre responde con un código. Ese código te dice si todo fue bien, si cometiste un error o si el servidor falló. Ignorarlos es construir castillos en el aire.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-label">📋 Los códigos más importantes</div>
+          <div style="margin-top:12px;">
+            <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span class="status s2xx">200 OK</span>
+                <span class="status s2xx">201 Created</span>
+                <span class="status s2xx">204 No Content</span>
+              </div>
+              <p style="font-size:13px;color:var(--text2);">✅ Todo salió bien. 200 = éxito con datos. 201 = recurso creado. 204 = éxito sin datos que devolver.</p>
+            </div>
+            <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span class="status s4xx">400 Bad Request</span>
+                <span class="status s4xx">401 Unauthorized</span>
+              </div>
+              <p style="font-size:13px;color:var(--text2);">⚠️ Error tuyo. 400 = datos mal formados o faltantes. 401 = no estás autenticado o tu API Key es incorrecta.</p>
+            </div>
+            <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span class="status s4xx">403 Forbidden</span>
+                <span class="status s4xx">404 Not Found</span>
+                <span class="status s4xx">429 Too Many</span>
+              </div>
+              <p style="font-size:13px;color:var(--text2);">⚠️ Error tuyo. 403 = autenticado pero sin permiso. 404 = el recurso no existe. 429 = demasiadas peticiones (rate limit).</p>
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span class="status s5xx">500 Server Error</span>
+                <span class="status s5xx">502 Bad Gateway</span>
+                <span class="status s5xx">503 Unavailable</span>
+              </div>
+              <p style="font-size:13px;color:var(--text2);">🔴 Error del servidor. No es tuyo. Usar retry automático — generalmente es temporal.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🛡️ Manejo de errores en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Opción 1: Continue on Error
+// El workflow no se detiene si la API falla</span>
+HTTP Request (Continue on Error: ON)
+  ↓ éxito: datos normales
+  ↓ error: { error: "...", statusCode: 404 }
+    ↓
+    IF $json.error no vacío:
+      → notificar fallo + log
+
+<span class="cm">// Opción 2: Retry on Fail
+// n8n reintenta automáticamente</span>
+<span class="ky">Options → Retry on Fail: ON</span>
+<span class="ky">Max tries:</span>      <span class="vl">3</span>
+<span class="ky">Wait Between:</span>   <span class="vl">5000</span> ms
+
+<span class="cm">// Opción 3: verificar status code</span>
+IF $response.statusCode >= <span class="vl">400</span>:
+  → manejar el error específico
+  → 401: renovar token y reintentar
+  → 429: esperar y reintentar
+  → 500: usar ruta alternativa
+          </div>
+        </div>
+      </div>
+
+      <div class="card rb" style="margin-bottom:16px;">
+        <div class="card-label">⚠️ Los 5 errores más comunes al usar APIs</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">URL incorrecta</strong> — un typo, una barra extra o un dominio mal escrito → 404. Siempre copia la URL de la documentación oficial, nunca la escribas a mano.</div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">Método HTTP equivocado</strong> — usar GET cuando la API espera POST → 405 Method Not Allowed. Lee la documentación para saber qué método acepta cada endpoint.</div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">Headers mal configurados</strong> — olvidar <code>Content-Type: application/json</code> cuando envías un body → 400. Casi toda API REST lo necesita en POST/PUT/PATCH.</div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">No entender la estructura del JSON</strong> — intentar acceder a <code>$json.nombre</code> cuando la respuesta tiene <code>$json.data.user.name</code>. Inspecciona siempre la respuesta real antes de mapear.</div></li>
+          <li><span class="cx">✗</span><div><strong style="color:var(--text);">Ignorar errores de respuesta</strong> — asumir que 200 siempre llega y no manejar el 400 o 500. Un workflow robusto siempre verifica el status code.</div></li>
+        </ul>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('nodo')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('ejercicio')">Siguiente: Ejercicio paso a paso →</button>
+      </div>
+    </section>
+
+    <!-- 8 EJERCICIO -->
+    <section id="ejercicio" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Ejercicio <span>Paso a Paso</span></h1>
+        <p>Construir un flujo completo: recibir datos, enviarlos a una API, procesar la respuesta y actuar según el resultado.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🚀 Caso práctico — Integración con API externa</div>
+        <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:10px 0 8px;">Recibir un usuario → enviarlo a una API → procesar la respuesta → notificar resultado</h3>
+        <p style="font-size:14px;color:var(--text2);">Usaremos JSONPlaceholder (sin API Key) como API de práctica. Luego el mismo patrón aplica a cualquier API real.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <span class="b bac">🌐 JSONPlaceholder</span>
+          <span class="b bg">Sin API Key</span>
+          <span class="b bt">Mismo patrón para APIs reales</span>
+        </div>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">📌 Los 9 pasos para construir el flujo</div>
+        <ul class="step-list" style="margin-top:12px;">
+          <li class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Crear el workflow en n8n</h4>
+              <p>Nuevo workflow → nombrar "Clase 7 — APIs". Activa "Save on Execute" para no perder el progreso entre pruebas.</p>
+              <span class="step-tag">New Workflow → nombrar</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Agregar trigger — Manual o Webhook</h4>
+              <p>Para practicar: <strong style="color:var(--text);">Manual Trigger</strong>. Para producción: Webhook POST. El Manual Trigger te permite ejecutar con un clic sin necesidad de enviar datos desde fuera.</p>
+              <span class="step-tag">+ → Manual Trigger</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Preparar datos con nodo Set</h4>
+              <p>Agrega los datos que vas a enviar a la API. En el Set define: nombre, email y cualquier dato necesario para el body del request.</p>
+              <div class="code-block" style="font-size:11px;margin-top:8px;margin-bottom:0;">
+nombre → <span class="str">"Ana García"</span>
+email  → <span class="str">"ana@email.com"</span>
+titulo → <span class="str">"Prueba de API"</span>
+cuerpo → <span class="str">"Datos enviados desde n8n"</span>
+              </div>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>Añadir nodo HTTP Request</h4>
+              <p>Agrega el nodo <strong style="color:var(--text);">HTTP Request</strong> después del Set. Este nodo es el que habla con la API.</p>
+              <span class="step-tag">+ → HTTP Request</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <h4>Configurar el método HTTP</h4>
+              <p>Para crear un recurso usamos <strong style="color:var(--text);">POST</strong>. Si fuera consultar datos sería GET. Selecciona el método correcto en el dropdown del nodo.</p>
+              <span class="step-tag">Method: POST</span>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <h4>Definir la URL del endpoint</h4>
+              <p>La URL de la API a la que te conectas. Para la práctica usamos JSONPlaceholder.</p>
+              <div class="code-block" style="font-size:11px;margin-top:8px;margin-bottom:0;">
+URL: <span class="vl">https://jsonplaceholder.typicode.com/posts</span>
+<span class="cm">// Para una API real, copiar de su documentación</span>
+              </div>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">7</div>
+            <div class="step-content">
+              <h4>Agregar headers y body</h4>
+              <p>Configura el Content-Type y construye el body con los datos del Set usando expresiones <code>{{$json.campo}}</code>.</p>
+              <div class="code-block" style="font-size:11px;margin-top:8px;margin-bottom:0;">
+<span class="cm">Header:</span>  Content-Type: application/json
+<span class="cm">Body:</span>
+{
+  <span class="ky">"title"</span>:  <span class="str">"{{$json.titulo}}"</span>,
+  <span class="ky">"body"</span>:   <span class="str">"{{$json.cuerpo}}"</span>,
+  <span class="ky">"userId"</span>: <span class="vl">1</span>
+}
+              </div>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">8</div>
+            <div class="step-content">
+              <h4>Ejecutar el flujo y revisar la respuesta</h4>
+              <p>Clic en "Execute Workflow". Abre el nodo HTTP Request y revisa la pestaña "Output". Deberías ver el JSON de respuesta con el recurso creado.</p>
+              <div class="code-block" style="font-size:11px;margin-top:8px;margin-bottom:0;">
+<span class="cm">// Respuesta esperada de JSONPlaceholder:</span>
+{
+  <span class="ky">"id"</span>:     <span class="vl">101</span>,
+  <span class="ky">"title"</span>: <span class="str">"Prueba de API"</span>,
+  <span class="ky">"userId"</span>:<span class="vl">1</span>
+}
+              </div>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">9</div>
+            <div class="step-content">
+              <h4>Usar la respuesta — Set + Notificación</h4>
+              <p>Después del HTTP Request, agrega un Set para extraer el ID recibido, y luego un nodo de notificación que use esos datos.</p>
+              <div class="code-block" style="font-size:11px;margin-top:8px;margin-bottom:0;">
+<span class="cm">// Set después del HTTP Request</span>
+id_creado → <span class="kw">{{$json.id}}</span>
+mensaje   → <span class="str">"Recurso #{{$json.id}} creado en la API"</span>
+estado    → <span class="str">"{{$json.id ? 'exitoso' : 'error'}}"</span>
+              </div>
+              <span class="step-tag">Set → Gmail / Slack / log</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏗️ Flujo completo del ejercicio</div>
+        <div class="flow-row" style="margin-top:12px;">
+          <div class="fn trig"><div class="fi">▶️</div><div class="ft">Trigger</div><div class="fn2">Manual</div></div>
+          <div class="fa">→</div>
+          <div class="fn proc"><div class="fi">🔧</div><div class="ft">Set</div><div class="fn2">Preparar datos</div></div>
+          <div class="fa">→</div>
+          <div class="fn http"><div class="fi">🌐</div><div class="ft">HTTP Request</div><div class="fn2">POST /posts</div><div class="fn3">JSONPlaceholder</div></div>
+          <div class="fa">→</div>
+          <div class="fn proc"><div class="fi">🔧</div><div class="ft">Set</div><div class="fn2">Extraer ID</div></div>
+          <div class="fa">→</div>
+          <div class="fn act"><div class="fi">🔔</div><div class="ft">Acción</div><div class="fn2">Notificar</div><div class="fn3">Email / Slack</div></div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">El ID que devuelve la API fluye hasta la notificación final →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('errores-api')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- 9 ENTREGABLE -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable, Buenas Prácticas <span>y Bonus</span></h1>
+        <p>Lo que debes entregar, los errores que debes evitar y los próximos pasos para ir más allá de las APIs básicas.</p>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Entregable — flujo que consume una API</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Consume una API externa con HTTP Request</strong><br><span style="font-size:13px;">El nodo HTTP Request hace una petición real a una URL externa y recibe respuesta.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Envía y/o recibe datos en JSON</strong><br><span style="font-size:13px;">El body del request usa datos dinámicos del workflow con expresiones. La respuesta se parsea correctamente.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Procesa la respuesta de la API</strong><br><span style="font-size:13px;">Los datos de la respuesta (ID, status, mensaje) se extraen y usan en los nodos siguientes.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Manejo básico de errores</strong><br><span style="font-size:13px;">El flujo usa Continue on Error o Retry, y hay una rama que maneja el caso de fallo.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">API Key / auth protegida</strong><br><span style="font-size:13px;">Si la API requiere autenticación, la credencial está en Credentials de n8n, no hardcodeada.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con datos reales</strong><br><span style="font-size:13px;">Al menos 2 ejecuciones exitosas verificadas: una con datos válidos y una para ver qué pasa con error 4xx.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">🧪 Buenas prácticas al trabajar con APIs</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Leer la documentación antes de construir</strong><br><span style="font-size:13px;">Cada API es distinta. La documentación te dice exactamente qué método, qué URL, qué headers y qué body necesitas. 5 minutos leyendo docs ahorran horas de depuración.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probar en Postman o Insomnia primero</strong><br><span style="font-size:13px;">Antes de construir el nodo en n8n, prueba el request manualmente en Postman. Si funciona ahí, es más fácil replicarlo en n8n.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Inspeccionar la respuesta real antes de mapear</strong><br><span style="font-size:13px;">Ejecuta el flujo una vez y abre el output del HTTP Request. Mira exactamente cómo viene estructurado el JSON para saber cómo acceder a cada campo.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Validar el status code siempre</strong><br><span style="font-size:13px;">Un status 200 significa éxito. Un 201 significa creado. Un 400+ significa error. Actúa diferente según el código, no asumas que siempre llegará 200.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🚀 Bonus nivel pro</div>
+        <div class="g2" style="margin-top:12px;">
+          <div>
+            <div class="wtu"><span class="we">🔐</span><div class="wt"><strong>OAuth2 completo:</strong> flujo de autenticación de dos pasos: obtener token con POST + usarlo en requests posteriores. Necesario para Google, Salesforce, HubSpot.</div></div>
+            <div class="wtu"><span class="we">🔗</span><div class="wt"><strong>Encadenar múltiples APIs:</strong> resultado de API 1 → input de API 2. Ejemplo: geocodificar con Google Maps → calcular ruta con HERE Maps.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">🔄</span><div class="wt"><strong>Transformación avanzada de datos:</strong> usar Function para reestructurar la respuesta compleja de una API antes de usarla en el siguiente paso.</div></div>
+            <div class="wtu"><span class="we">🌐</span><div class="wt"><strong>Crear tu propia API con webhooks:</strong> usar n8n como backend: el webhook de n8n actúa como endpoint de tu API, procesa y responde con Respond to Webhook.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRÓXIMO PASO -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">🤖</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Clase 8 — Inteligencia Artificial en tus flujos</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:520px;margin:0 auto 20px;">Con las APIs dominadas, el siguiente paso es el más poderoso: integrar IA directamente en los workflows. Clasificar datos, generar texto, analizar imágenes, tomar decisiones automáticas. De integración → a inteligencia.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">🤖 OpenAI / Claude API</span>
+            <span class="b bg">🧠 Clasificación automática</span>
+            <span class="b bt">✍️ Generación de texto</span>
+            <span class="b ba">🎯 Decisiones inteligentes</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('ejercicio')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','conceptos','metodos','json','auth','nodo','errores-api','ejercicio','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(".nav-item[onclick*=\"'"+id+"'\"]");go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent='Sección '+(idx+1)+' de '+sections.length;
+  }
+</script>
+</body>
+</html>

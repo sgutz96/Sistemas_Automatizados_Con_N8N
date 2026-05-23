@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 10 — Proyecto Final</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+    --gold:#f5c518;  --gold-bg:rgba(245,197,24,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:rgba(245,197,24,0.1);border-color:rgba(245,197,24,0.3);color:var(--gold);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(245,197,24,0.2);color:var(--gold);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--gold);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .goldb{border-color:rgba(245,197,24,0.35)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);}
+  .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);}
+  .gd{color:var(--gold);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;text-align:center;flex-shrink:0;min-width:108px;}
+  .fn .fi{font-size:20px;margin-bottom:5px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:3px;}
+  .fn .fn2{font-size:12px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.val {border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.05);}  .fn.val .ft{color:var(--sky);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fn.ai  {border-color:rgba(168,85,247,0.5);background:rgba(168,85,247,0.08);}  .fn.ai  .ft{color:#c084fc;}
+  .fn.cond{border-color:rgba(132,204,22,0.4);background:rgba(132,204,22,0.05);}  .fn.cond .ft{color:var(--lime);}
+  .fn.gold{border-color:rgba(245,197,24,0.5);background:rgba(245,197,24,0.07);}  .fn.gold .ft{color:var(--gold);}
+  .fa{display:flex;align-items:center;padding:0 5px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .bgold{background:var(--gold-bg);color:var(--gold);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* MÓDULO CARD */
+  .modulo{border-radius:12px;padding:20px;border:1px solid var(--border);background:var(--bg3);margin-bottom:0;}
+  .modulo-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .modulo-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .modulo-meta{flex:1;}
+  .modulo-tag{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;}
+  .modulo-name{font-size:14px;font-weight:700;color:var(--text);}
+  .modulo-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px;}
+  .modulo-nodos{display:flex;flex-wrap:wrap;gap:5px;}
+  .mn{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--text3);}
+
+  /* ROADMAP */
+  .roadmap{position:relative;padding-left:32px;}
+  .roadmap::before{content:'';position:absolute;left:13px;top:10px;bottom:10px;width:2px;background:linear-gradient(to bottom,var(--gold),var(--accent),var(--teal));opacity:0.3;}
+  .rm-item{position:relative;padding:0 0 28px 20px;}
+  .rm-item:last-child{padding-bottom:0;}
+  .rm-dot{position:absolute;left:-32px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid;background:var(--bg);}
+  .rm-phase{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px;}
+  .rm-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .rm-body{font-size:13px;color:var(--text2);line-height:1.6;}
+  .rm-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+
+  /* STEP NUMBERED */
+  .step-list{list-style:none;}
+  .step-item{display:flex;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .step-item:last-child{border-bottom:none;}
+  .step-num{width:30px;height:30px;border-radius:8px;background:var(--accent-glow);border:1px solid rgba(124,110,245,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--accent2);flex-shrink:0;margin-top:2px;}
+  .step-body h4{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .step-body p{font-size:13px;color:var(--text2);line-height:1.6;}
+
+  /* TROPHY */
+  .trophy-row{display:flex;gap:12px;align-items:center;padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);margin-bottom:8px;}
+  .trophy-icon{font-size:22px;flex-shrink:0;}
+  .trophy-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;}
+  .trophy-desc{font-size:12px;color:var(--text2);line-height:1.5;}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--gold);color:#0a0a0f;} .btn-p:hover{opacity:0.85;}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">🏆 Clase 10 — Final</div>
+      <h2>Proyecto Final Completo</h2>
+      <p>n8n · sistema end-to-end</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> Introducción</a>
+    <a class="nav-item" onclick="go('vision',this)"><span class="ni">🗺️</span> Visión del sistema</a>
+    <a class="nav-item" onclick="go('modulos',this)"><span class="ni">🧩</span> Módulos del proyecto</a>
+    <a class="nav-item" onclick="go('arquitectura',this)"><span class="ni">🏗️</span> Arquitectura completa</a>
+    <a class="nav-item" onclick="go('construccion',this)"><span class="ni">🔨</span> Construcción paso a paso</a>
+    <a class="nav-item" onclick="go('integraciones',this)"><span class="ni">🔌</span> Integraciones y IA</a>
+    <a class="nav-item" onclick="go('logging',this)"><span class="ni">📊</span> Logging y errores</a>
+    <a class="nav-item" onclick="go('portafolio',this)"><span class="ni">🚀</span> Portafolio y negocio</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable final</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Clase 10 · Proyecto Final</div>
+        <h1>Todo junto en un <span>Sistema Real</span></h1>
+        <p>Diez clases. Diez bloques de conocimiento. Esta clase los conecta todos en un sistema end-to-end que resuelve un problema de negocio real y está listo para mostrarse, usarse o venderse.</p>
+      </div>
+
+      <!-- LO QUE SE CONSTRUYE -->
+      <div class="card goldb" style="background:linear-gradient(135deg,rgba(245,197,24,0.06),rgba(124,110,245,0.06));margin-bottom:16px;">
+        <div class="card-label" style="color:var(--gold);">🏆 El sistema que construyes en esta clase</div>
+        <h3 style="font-size:22px;font-weight:800;margin:10px 0 12px;color:var(--text);">Sistema Automatizado de Gestión de Clientes</h3>
+        <p style="margin-bottom:18px;">Un sistema completo que captura leads desde cualquier canal, los clasifica con IA, los gestiona en un CRM, hace seguimiento automático, toma decisiones según su perfil y registra todo con logging completo. Cero intervención humana en el 85% del proceso.</p>
+        <div class="g4" style="margin-bottom:0;">
+          <div class="stat"><div class="sn" style="color:var(--gold);">8</div><div class="sl">módulos conectados entre sí</div></div>
+          <div class="stat"><div class="sn" style="color:var(--green);">10</div><div class="sl">clases integradas en un solo proyecto</div></div>
+          <div class="stat"><div class="sn" style="color:var(--teal);">E2E</div><div class="sl">flujo completo sin intervención humana</div></div>
+          <div class="stat"><div class="sn" style="color:var(--accent2);">∞</div><div class="sl">base para producto, servicio o SaaS</div></div>
+        </div>
+      </div>
+
+      <!-- EVOLUCIÓN DEL CURSO -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">📈 Todo lo que aprendiste, ahora conectado</div>
+        <div style="padding:8px 0;">
+          <div style="display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--sky);width:72px;flex-shrink:0;">Clase 1–2</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+              <span class="b bs">Captura</span><span class="b bs">Validación</span><span class="b bs">Limpieza</span><span class="b bs">Sheets</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent2);width:72px;flex-shrink:0;">Clase 3–4</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+              <span class="b bac">Pipeline</span><span class="b bac">Scoring</span><span class="b bac">Asignación</span><span class="b bac">Notificaciones</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--pink);width:72px;flex-shrink:0;">Clase 5</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+              <span class="b bp">CRM</span><span class="b bp">Estados</span><span class="b bp">Emails automáticos</span><span class="b bp">Wait / Delays</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--lime);width:72px;flex-shrink:0;">Clase 6</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+              <span class="b bl">IF / Switch</span><span class="b bl">Lógica condicional</span><span class="b bl">Prioridades</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--teal);width:72px;flex-shrink:0;">Clase 7</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+              <span class="b bt">APIs externas</span><span class="b bt">HTTP Request</span><span class="b bt">Auth / Headers</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#c084fc;width:72px;flex-shrink:0;">Clase 8</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+              <span class="b" style="background:rgba(168,85,247,0.1);color:#c084fc;">IA / LLM</span>
+              <span class="b" style="background:rgba(168,85,247,0.1);color:#c084fc;">Prompts</span>
+              <span class="b" style="background:rgba(168,85,247,0.1);color:#c084fc;">Clasificación</span>
+              <span class="b" style="background:rgba(168,85,247,0.1);color:#c084fc;">Respuestas</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;padding:10px 0;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);width:72px;flex-shrink:0;">Clase 9–10</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+              <span class="b bgold">Logging</span><span class="b bgold">Errores</span><span class="b bgold">Modularidad</span><span class="b bgold">Proyecto Final</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip" style="border-color:rgba(245,197,24,0.3);">
+        <span class="ti">🏆</span>
+        <div class="tt"><strong>El proyecto final no es un ejercicio nuevo.</strong> Es ensamblar lo que ya construiste. Cada módulo del sistema existe en alguna clase anterior. Aquí los conectas, los ajustas para que hablen entre sí y los documentas para presentarlos como un producto completo.</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" disabled style="opacity:0.3;cursor:default;">← Clase 9</button>
+        <button class="btn btn-p" onclick="goTo('vision')">Siguiente: Visión del sistema →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · VISIÓN ══ -->
+    <section id="vision" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Visión del <span>Sistema Completo</span></h1>
+        <p>Antes de construir nada, el sistema debe estar claro en papel. Esta sección define el problema, el usuario, las entradas, las salidas y los límites del proyecto.</p>
+      </div>
+
+      <!-- PROBLEMA → SOLUCIÓN -->
+      <div class="card goldb" style="margin-bottom:16px;">
+        <div class="card-label">🎯 El problema que resuelve el sistema</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div style="background:var(--bg4);border-radius:10px;padding:18px;border:1px solid var(--border);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Sin el sistema</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text2);margin-bottom:10px;">Gestión manual y fragmentada</div>
+            <div class="wtu" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span class="we">❌</span><div class="wt" style="font-size:12px;">Leads en emails sin procesar</div></div>
+            <div class="wtu" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span class="we">❌</span><div class="wt" style="font-size:12px;">Sin seguimiento → ventas perdidas</div></div>
+            <div class="wtu" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span class="we">❌</span><div class="wt" style="font-size:12px;">Respuestas tardías o genéricas</div></div>
+            <div class="wtu" style="padding:6px 0;"><span class="we">❌</span><div class="wt" style="font-size:12px;">Sin datos = sin mejora posible</div></div>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(245,197,24,0.06),rgba(34,201,122,0.06));border-radius:10px;padding:18px;border:1px solid rgba(245,197,24,0.3);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Con el sistema</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:10px;">Gestión automatizada end-to-end</div>
+            <div class="wtu" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span class="we">✅</span><div class="wt" style="font-size:12px;">Lead llega → procesado en segundos</div></div>
+            <div class="wtu" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span class="we">✅</span><div class="wt" style="font-size:12px;">Seguimiento automático 3 días</div></div>
+            <div class="wtu" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span class="we">✅</span><div class="wt" style="font-size:12px;">Respuestas personalizadas por IA</div></div>
+            <div class="wtu" style="padding:6px 0;"><span class="we">✅</span><div class="wt" style="font-size:12px;">Dashboard con todos los datos</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USUARIOS Y ALCANCE -->
+      <div class="g2">
+        <div class="card ab">
+          <div class="card-label">👥 Quién usa el sistema</div>
+          <table class="ct" style="margin-top:0;">
+            <thead><tr><th>Actor</th><th>Qué hace</th><th>Qué recibe</th></tr></thead>
+            <tbody>
+              <tr><td>Lead / Cliente</td><td>Llena formulario o envía mensaje</td><td>Email personalizado en segundos</td></tr>
+              <tr><td>Equipo comercial</td><td>Recibe leads asignados</td><td>Notificación Slack + tarea Calendar</td></tr>
+              <tr><td>Equipo soporte</td><td>Atiende tickets</td><td>Ticket creado y clasificado por IA</td></tr>
+              <tr><td>Gerencia</td><td>Revisa métricas</td><td>Dashboard Sheets en tiempo real</td></tr>
+              <tr><td>Sistema (n8n)</td><td>Orquesta todo</td><td>Registra cada acción en log</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card gb">
+          <div class="card-label">📐 Alcance del proyecto final</div>
+          <ul class="cl" style="margin-top:0;">
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Dentro del alcance</strong><br><span style="font-size:12px;">Captura multi-canal, validación, CRM con estados, emails automáticos, clasificación IA, asignación automática, seguimiento temporal, logging completo.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Entregables documentados</strong><br><span style="font-size:12px;">Diagrama del sistema, workflows exportados de n8n, hoja de Google Sheets configurada, README con instrucciones de instalación.</span></div></li>
+            <li><span class="cx">–</span><div><strong style="color:var(--text2);">Fuera del alcance (para siguiente etapa)</strong><br><span style="font-size:12px;">Frontend personalizado, base de datos SQL, multi-tenant, panel de administración con autenticación.</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('modulos')">Siguiente: Módulos →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · MÓDULOS ══ -->
+    <section id="modulos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3</div>
+        <h1>Los 8 <span>Módulos del Sistema</span></h1>
+        <p>El sistema no es un solo workflow gigante. Es 8 módulos independientes que se comunican entre sí. Cada módulo tiene responsabilidad única, puede probarse por separado y puede reemplazarse sin romper el resto.</p>
+      </div>
+
+      <div class="g2">
+        <div class="modulo" style="border-color:rgba(56,189,248,0.3);background:rgba(56,189,248,0.03);">
+          <div class="modulo-header">
+            <div class="modulo-icon" style="background:rgba(56,189,248,0.12);">📥</div>
+            <div class="modulo-meta">
+              <div class="modulo-tag" style="color:var(--sky);">Módulo 1</div>
+              <div class="modulo-name">Captura y Validación</div>
+            </div>
+          </div>
+          <div class="modulo-desc">Recibe leads desde múltiples canales: formulario web, webhook, email, WhatsApp. Normaliza y valida los datos. Los inválidos van a una hoja de errores.</div>
+          <div class="modulo-nodos"><span class="mn">Webhook</span><span class="mn">Code</span><span class="mn">IF guardián</span><span class="mn">Sheets errores</span></div>
+        </div>
+
+        <div class="modulo" style="border-color:rgba(124,110,245,0.3);background:rgba(124,110,245,0.03);">
+          <div class="modulo-header">
+            <div class="modulo-icon" style="background:rgba(124,110,245,0.12);">🎯</div>
+            <div class="modulo-meta">
+              <div class="modulo-tag" style="color:var(--accent2);">Módulo 2</div>
+              <div class="modulo-name">Scoring y Clasificación</div>
+            </div>
+          </div>
+          <div class="modulo-desc">Calcula el score del lead (0–100) según datos disponibles, fuente y palabras clave. Clasifica en VIP, caliente, medio o frío. La IA refina la clasificación en casos ambiguos.</div>
+          <div class="modulo-nodos"><span class="mn">Code scoring</span><span class="mn">OpenAI</span><span class="mn">Switch 4 rutas</span></div>
+        </div>
+
+        <div class="modulo" style="border-color:rgba(240,160,48,0.3);background:rgba(240,160,48,0.03);">
+          <div class="modulo-header">
+            <div class="modulo-icon" style="background:rgba(240,160,48,0.12);">💼</div>
+            <div class="modulo-meta">
+              <div class="modulo-tag" style="color:var(--amber);">Módulo 3</div>
+              <div class="modulo-name">CRM y Pipeline</div>
+            </div>
+          </div>
+          <div class="modulo-desc">Registra el lead en Google Sheets con todos sus datos y estado inicial. Gestiona las transiciones de estado: Nuevo → Contactado → Interesado → Cliente. Un registro por evento.</div>
+          <div class="modulo-nodos"><span class="mn">Sheets Append</span><span class="mn">Sheets Update</span><span class="mn">Merge</span></div>
+        </div>
+
+        <div class="modulo" style="border-color:rgba(34,201,122,0.3);background:rgba(34,201,122,0.03);">
+          <div class="modulo-header">
+            <div class="modulo-icon" style="background:rgba(34,201,122,0.12);">👤</div>
+            <div class="modulo-meta">
+              <div class="modulo-tag" style="color:var(--green);">Módulo 4</div>
+              <div class="modulo-name">Asignación Automática</div>
+            </div>
+          </div>
+          <div class="modulo-desc">Asigna el lead al vendedor correcto según prioridad. VIP → director. Caliente → senior. Medio → equipo general. Frío → nurture automático. Notificación inmediata al asignado.</div>
+          <div class="modulo-nodos"><span class="mn">Code asignación</span><span class="mn">Slack</span><span class="mn">Calendar</span><span class="mn">Sheets Update</span></div>
+        </div>
+
+        <div class="modulo" style="border-color:rgba(232,121,160,0.3);background:rgba(232,121,160,0.03);">
+          <div class="modulo-header">
+            <div class="modulo-icon" style="background:rgba(232,121,160,0.12);">📧</div>
+            <div class="modulo-meta">
+              <div class="modulo-tag" style="color:var(--pink);">Módulo 5</div>
+              <div class="modulo-name">Secuencia de Emails + IA</div>
+            </div>
+          </div>
+          <div class="modulo-desc">Email de bienvenida inmediato generado por IA con el nombre e interés del lead. Follow-up a las 24h. Recordatorio a los 3 días si no responde. Wait entre cada email.</div>
+          <div class="modulo-nodos"><span class="mn">OpenAI</span><span class="mn">Gmail</span><span class="mn">Wait x2</span><span class="mn">IF sin respuesta</span></div>
+        </div>
+
+        <div class="modulo" style="border-color:rgba(132,204,22,0.3);background:rgba(132,204,22,0.03);">
+          <div class="modulo-header">
+            <div class="modulo-icon" style="background:rgba(132,204,22,0.12);">🔀</div>
+            <div class="modulo-meta">
+              <div class="modulo-tag" style="color:var(--lime);">Módulo 6</div>
+              <div class="modulo-name">Lógica Operacional</div>
+            </div>
+          </div>
+          <div class="modulo-desc">Router inteligente que toma decisiones según tipo de solicitud (soporte, ventas, facturación). Detecta urgencia por palabras clave. Activa SLA enforcement automático.</div>
+          <div class="modulo-nodos"><span class="mn">IF x3</span><span class="mn">Switch tipo</span><span class="mn">Code prioridad</span><span class="mn">Wait SLA</span></div>
+        </div>
+
+        <div class="modulo" style="border-color:rgba(32,212,176,0.3);background:rgba(32,212,176,0.03);">
+          <div class="modulo-header">
+            <div class="modulo-icon" style="background:rgba(32,212,176,0.12);">🔌</div>
+            <div class="modulo-meta">
+              <div class="modulo-tag" style="color:var(--teal);">Módulo 7</div>
+              <div class="modulo-name">Integraciones Externas</div>
+            </div>
+          </div>
+          <div class="modulo-desc">Conexión con servicios externos: Slack para notificaciones, Google Calendar para tareas, API de enriquecimiento de datos (Clearbit / Apollo) para obtener más info del lead automáticamente.</div>
+          <div class="modulo-nodos"><span class="mn">HTTP Request</span><span class="mn">Slack</span><span class="mn">Google Calendar</span><span class="mn">Clearbit API</span></div>
+        </div>
+
+        <div class="modulo goldb" style="background:rgba(245,197,24,0.04);">
+          <div class="modulo-header">
+            <div class="modulo-icon" style="background:rgba(245,197,24,0.15);">📊</div>
+            <div class="modulo-meta">
+              <div class="modulo-tag" style="color:var(--gold);">Módulo 8</div>
+              <div class="modulo-name">Logging y Dashboard</div>
+            </div>
+          </div>
+          <div class="modulo-desc">Registra cada evento del sistema en una hoja de log. Dashboard automático en Sheets con métricas: leads por estado, tasa de conversión, tiempo de respuesta. Error Trigger para fallos.</div>
+          <div class="modulo-nodos"><span class="mn">Sheets log</span><span class="mn">Error Trigger</span><span class="mn">Cron diario</span><span class="mn">Resumen Slack</span></div>
+        </div>
+      </div>
+
+      <div class="tip" style="border-color:rgba(245,197,24,0.3);">
+        <span class="ti">💡</span>
+        <div class="tt"><strong>Un workflow por módulo, no un megaworkflow.</strong> n8n permite llamar a un workflow desde otro (nodo Execute Workflow). Si un módulo falla, los demás siguen funcionando. Si necesitas cambiar la lógica de scoring, solo tocas el Módulo 2 sin tocar nada más.</div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('vision')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('arquitectura')">Siguiente: Arquitectura →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · ARQUITECTURA ══ -->
+    <section id="arquitectura" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 4</div>
+        <h1>Arquitectura <span>Completa</span></h1>
+        <p>El diagrama que muestra cómo los 8 módulos se conectan en tiempo real. Cada nodo, cada flecha y cada decisión del sistema en un solo vistazo.</p>
+      </div>
+
+      <!-- FLUJO MAESTRO -->
+      <div class="card goldb" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Flujo maestro — todos los módulos conectados</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="fn trig">
+            <div class="fi">📥</div>
+            <div class="ft">M1 Captura</div>
+            <div class="fn2">Webhook</div>
+            <div class="fn3">+ validar</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn ai">
+            <div class="fi">🎯</div>
+            <div class="ft">M2 Score</div>
+            <div class="fn2">IA + Code</div>
+            <div class="fn3">VIP/cal/med/frío</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn proc">
+            <div class="fi">💼</div>
+            <div class="ft">M3 CRM</div>
+            <div class="fn2">Sheets</div>
+            <div class="fn3">estado: Nuevo</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn act">
+            <div class="fi">👤</div>
+            <div class="ft">M4 Asignar</div>
+            <div class="fn2">Vendedor</div>
+            <div class="fn3">+ Slack</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn val">
+            <div class="fi">📧</div>
+            <div class="ft">M5 Emails</div>
+            <div class="fn2">IA + Wait</div>
+            <div class="fn3">3 mensajes</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn cond">
+            <div class="fi">🔀</div>
+            <div class="ft">M6 Ops</div>
+            <div class="fn2">IF / Switch</div>
+            <div class="fn3">decisiones</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn out">
+            <div class="fi">🔌</div>
+            <div class="ft">M7 APIs</div>
+            <div class="fn2">Calendar</div>
+            <div class="fn3">Clearbit</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn gold">
+            <div class="fi">📊</div>
+            <div class="ft">M8 Log</div>
+            <div class="fn2">Registro</div>
+            <div class="fn3">+ dashboard</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAPAS DEL SISTEMA -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">🔷 Las 4 capas del sistema</div>
+        <div class="g4" style="margin-bottom:0;">
+          <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.25);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:8px;">🔵</div>
+            <div style="font-size:13px;font-weight:700;color:var(--sky);margin-bottom:6px;">Entrada</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.5;">Webhooks<br>Formularios<br>Emails<br>WhatsApp</div>
+          </div>
+          <div style="background:rgba(124,110,245,0.05);border:1px solid rgba(124,110,245,0.25);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:8px;">🟣</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:6px;">Procesamiento</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.5;">Scoring IA<br>Clasificación<br>Decisiones<br>Asignación</div>
+          </div>
+          <div style="background:rgba(34,201,122,0.05);border:1px solid rgba(34,201,122,0.25);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:8px;">🟢</div>
+            <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px;">Acción</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.5;">Emails<br>Slack<br>Tareas<br>APIs externas</div>
+          </div>
+          <div style="background:rgba(245,197,24,0.05);border:1px solid rgba(245,197,24,0.25);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:8px;">🟡</div>
+            <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:6px;">Observabilidad</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.5;">Logging<br>Errores<br>Dashboard<br>Alertas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOJAS DE SHEETS -->
+      <div class="card gb" style="margin-bottom:0;">
+        <div class="card-label">📊 Estructura de Google Sheets — base de datos del sistema</div>
+        <table class="ct" style="margin-top:0;">
+          <thead><tr><th>Hoja</th><th>Campos principales</th><th>Quién escribe</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td>📋 Leads</td><td>ID, nombre, email, tel, interés, estado, asignado, score, segmento, último contacto</td><td>M1, M3, M4, M5</td><td>CRM principal — fuente de verdad</td></tr>
+            <tr><td>📜 Log de eventos</td><td>Timestamp, lead_id, módulo, acción, resultado, duración_ms</td><td>M8 (todos los módulos)</td><td>Historial completo de cada acción</td></tr>
+            <tr><td>❌ Errores</td><td>Timestamp, tipo_error, módulo, datos, estado</td><td>Error Trigger</td><td>Debug y monitoreo de producción</td></tr>
+            <tr><td>📊 Dashboard</td><td>Fórmulas automáticas: leads por estado, por segmento, tasa conversión, tiempo respuesta promedio</td><td>Fórmulas (no workflow)</td><td>Métricas para gerencia</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('modulos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('construccion')">Siguiente: Construcción →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · CONSTRUCCIÓN ══ -->
+    <section id="construccion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 5</div>
+        <h1>Construcción <span>Paso a Paso</span></h1>
+        <p>El orden importa. Construir en la secuencia correcta significa que puedes probar cada módulo antes de conectarlo al siguiente y no llegar al final con un error imposible de diagnosticar.</p>
+      </div>
+
+      <!-- ROADMAP DE CONSTRUCCIÓN -->
+      <div class="card goldb" style="margin-bottom:16px;">
+        <div class="card-label" style="color:var(--gold);">🗺️ Roadmap de construcción — 10 pasos ordenados</div>
+        <div class="roadmap" style="margin-top:16px;">
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--sky);background:var(--sky);"></div>
+            <div class="rm-phase" style="color:var(--sky);">Paso 1 — Fundación</div>
+            <div class="rm-title">Definir y preparar Google Sheets</div>
+            <div class="rm-body">Crear las 4 hojas (Leads, Log, Errores, Dashboard) con los headers correctos. Sin esto, ningún nodo de Sheets funcionará.</div>
+            <div class="rm-tags"><span class="b bs" style="font-size:10px;">30 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Sin n8n</span></div>
+          </div>
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--sky);background:var(--sky);"></div>
+            <div class="rm-phase" style="color:var(--sky);">Paso 2 — Módulo 1</div>
+            <div class="rm-title">Webhook + validación + guardado básico</div>
+            <div class="rm-body">Crear el webhook, el nodo Code de validación y el Sheets Append. Probar con 3 leads distintos antes de avanzar.</div>
+            <div class="rm-tags"><span class="b bs" style="font-size:10px;">45 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Clase 1–2</span></div>
+          </div>
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--accent2);background:var(--accent2);"></div>
+            <div class="rm-phase" style="color:var(--accent2);">Paso 3 — Módulo 2</div>
+            <div class="rm-title">Scoring con Code + llamada inicial a IA</div>
+            <div class="rm-body">Añadir el nodo Code de scoring y el primer nodo OpenAI para clasificación. Verificar que el campo <code>segmento</code> tiene el valor correcto para cada caso.</div>
+            <div class="rm-tags"><span class="b bac" style="font-size:10px;">60 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Clase 4 + 8</span></div>
+          </div>
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--amber);background:var(--amber);"></div>
+            <div class="rm-phase" style="color:var(--amber);">Paso 4 — Módulos 3 y 4</div>
+            <div class="rm-title">CRM completo + asignación + notificaciones</div>
+            <div class="rm-body">Conectar el Sheets Update de estado, el Switch de asignación, el nodo Slack y el Google Calendar. Verificar que el vendedor recibe la notificación correcta.</div>
+            <div class="rm-tags"><span class="b ba" style="font-size:10px;">60 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Clase 4–5</span></div>
+          </div>
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--pink);background:var(--pink);"></div>
+            <div class="rm-phase" style="color:var(--pink);">Paso 5 — Módulo 5</div>
+            <div class="rm-title">Secuencia de emails con IA y Wait</div>
+            <div class="rm-body">Email de bienvenida generado por IA. Wait de 1 minuto para prueba. Verificar que llega, que menciona el nombre y el interés. Después cambiar Wait a 1 día.</div>
+            <div class="rm-tags"><span class="b bp" style="font-size:10px;">45 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Clase 5 + 8</span></div>
+          </div>
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--lime);background:var(--lime);"></div>
+            <div class="rm-phase" style="color:var(--lime);">Paso 6 — Módulo 6</div>
+            <div class="rm-title">Lógica operacional y SLA enforcement</div>
+            <div class="rm-body">Añadir el router de tipo de solicitud (soporte/ventas/facturación) y el detector de prioridad. El Wait de SLA se prueba con 1 minuto. Verificar que el escalado funciona.</div>
+            <div class="rm-tags"><span class="b bl" style="font-size:10px;">60 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Clase 6 · Parte 2</span></div>
+          </div>
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--teal);background:var(--teal);"></div>
+            <div class="rm-phase" style="color:var(--teal);">Paso 7 — Módulo 7</div>
+            <div class="rm-title">Integraciones externas (APIs)</div>
+            <div class="rm-body">Añadir la llamada a la API de enriquecimiento (Clearbit o Apollo). Verificar que los datos del lead se enriquecen correctamente y se guardan en Sheets.</div>
+            <div class="rm-tags"><span class="b bt" style="font-size:10px;">45 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Clase 7</span></div>
+          </div>
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--gold);background:var(--gold);"></div>
+            <div class="rm-phase" style="color:var(--gold);">Paso 8 — Módulo 8</div>
+            <div class="rm-title">Logging completo y Error Trigger</div>
+            <div class="rm-body">Añadir el nodo de log al final de cada rama. Configurar el workflow de Error Trigger. Probar que un error forzado llega al canal #errores de Slack.</div>
+            <div class="rm-tags"><span class="b bgold" style="font-size:10px;">45 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Clase 9</span></div>
+          </div>
+
+          <div class="rm-item">
+            <div class="rm-dot" style="border-color:var(--green);background:var(--green);"></div>
+            <div class="rm-phase" style="color:var(--green);">Paso 9 — Pruebas end-to-end</div>
+            <div class="rm-title">Probar el sistema completo con 10 casos reales</div>
+            <div class="rm-body">Ejecutar el flujo completo con leads de diferentes segmentos, tipos de solicitud y niveles de prioridad. Verificar que cada uno termina en el estado correcto en Sheets.</div>
+            <div class="rm-tags"><span class="b bg" style="font-size:10px;">60 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Testing</span></div>
+          </div>
+
+          <div class="rm-item" style="padding-bottom:0;">
+            <div class="rm-dot" style="border-color:var(--gold);background:var(--gold);"></div>
+            <div class="rm-phase" style="color:var(--gold);">Paso 10 — Documentar y presentar</div>
+            <div class="rm-title">README + diagrama + video demo</div>
+            <div class="rm-body">Escribir el README con instrucciones de instalación. Exportar los workflows en JSON. Grabar una demo de 3 minutos mostrando el flujo completo. Publicar en GitHub.</div>
+            <div class="rm-tags"><span class="b bgold" style="font-size:10px;">45 min</span><span class="b" style="background:var(--bg4);color:var(--text3);font-size:10px;">Portafolio</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('arquitectura')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('integraciones')">Siguiente: Integraciones y IA →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · INTEGRACIONES ══ -->
+    <section id="integraciones" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 6</div>
+        <h1>Integraciones y <span>IA en el Proyecto</span></h1>
+        <p>El sistema usa IA en dos puntos clave y se conecta a cuatro servicios externos. Esta sección muestra exactamente cómo están configurados para el proyecto final.</p>
+      </div>
+
+      <!-- IA EN EL SISTEMA -->
+      <div class="card" style="border-color:rgba(168,85,247,0.35);margin-bottom:16px;">
+        <div class="card-label" style="color:#c084fc;">🤖 Los dos puntos de IA en el proyecto final</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#c084fc;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">IA Punto 1 — Módulo 2: Scoring refinado</div>
+            <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="cm">// Cuando las reglas de scoring dan resultado ambiguo
+// (score 45–55, zona gris entre medio y frío)</span>
+
+<span class="ky">System:</span> <span class="str">"Eres un experto en ventas B2B.
+Analiza este lead y decide si es
+medio o frío según su potencial.
+Responde SOLO con: medio | frío"</span>
+
+<span class="ky">User:</span> <span class="str">"Nombre: {{nombre}}
+Mensaje: {{mensaje}}
+Empresa: {{empresa}}
+Score automático: {{score}}"</span>
+
+<span class="cm">// Temperature: 0 — resultado determinista
+// Modelo: GPT-4o mini — bajo costo</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#c084fc;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">IA Punto 2 — Módulo 5: Redactar emails</div>
+            <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="cm">// Genera el email de bienvenida personalizado</span>
+
+<span class="ky">System:</span> <span class="str">"Eres el equipo comercial de [Empresa].
+Escribe un email breve (100 palabras max)
+de bienvenida para el lead.
+Tono: profesional y cercano.
+Menciona su nombre e interés específico.
+No uses markdown."</span>
+
+<span class="ky">User:</span> <span class="str">"Nombre: {{nombre}}
+Interés: {{interes}}
+Empresa: {{empresa}}
+Segmento: {{segmento}}"</span>
+
+<span class="cm">// Temperature: 0.6 — algo de variedad
+// Modelo: Claude Haiku — mejor redacción</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTEGRACIONES EXTERNAS -->
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">🔌 Las 4 integraciones externas del proyecto</div>
+        <table class="ct" style="margin-top:0;">
+          <thead><tr><th>Servicio</th><th>Módulo</th><th>Para qué</th><th>Nodo en n8n</th><th>Configuración clave</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>🔔 Slack</td>
+              <td>M4, M6, M8</td>
+              <td>Notificaciones al equipo: asignaciones, urgencias, errores, resumen diario</td>
+              <td>Nodo Slack</td>
+              <td>Bot Token + canales: #ventas, #soporte, #errores-auto</td>
+            </tr>
+            <tr>
+              <td>📅 Google Calendar</td>
+              <td>M4</td>
+              <td>Crear tarea de seguimiento en el calendario del vendedor asignado automáticamente</td>
+              <td>Nodo Google Calendar</td>
+              <td>OAuth2 + calendario del equipo + duración 30min</td>
+            </tr>
+            <tr>
+              <td>📧 Gmail / SMTP</td>
+              <td>M5</td>
+              <td>Enviar los 3 emails de la secuencia (bienvenida, follow-up, último intento)</td>
+              <td>Nodo Gmail</td>
+              <td>OAuth2 + Reply-To ventas + From Name "Equipo Comercial"</td>
+            </tr>
+            <tr>
+              <td>🔍 Clearbit API</td>
+              <td>M7</td>
+              <td>Enriquecer el lead con datos de empresa: tamaño, industria, tecnología usada</td>
+              <td>HTTP Request</td>
+              <td>GET /v2/combined/find?email= + API Key header</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="g2">
+        <div class="card amb">
+          <div class="card-label">🔍 Enriquecimiento con Clearbit — código completo</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: HTTP Request — Clearbit Enrichment</span>
+<span class="ky">Method:</span>  GET
+<span class="ky">URL:</span>
+<span class="str">https://person-stream.clearbit.com/v2/combined/find
+  ?email={{$json.email}}</span>
+
+<span class="ky">Headers:</span>
+  Authorization: <span class="str">"Bearer {{$credentials.clearbit}}"</span>
+
+<span class="cm">// Respuesta → nodo Code para extraer</span>
+<span class="kw">const</span> d = $input.first().json;
+<span class="kw">return</span> [{ json: {
+  ...$('Módulo 1').first().json,
+  <span class="ky">empresa_nombre</span>:    d.company?.name,
+  <span class="ky">empresa_empleados</span>: d.company?.metrics?.employees,
+  <span class="ky">empresa_industria</span>: d.company?.category?.industry,
+  <span class="ky">linkedin</span>:          d.person?.linkedin?.handle
+}}];
+          </div>
+        </div>
+
+        <div class="card sb">
+          <div class="card-label">📊 Resumen diario automático — Cron a las 9am</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Workflow separado — Cron trigger 9am</span>
+<span class="cm">// Lee Sheets y envía resumen a Slack</span>
+
+<span class="ky">Trigger:</span> Cron <span class="str">"0 9 * * 1-5"</span>
+<span class="cm">// Lunes a viernes a las 9am</span>
+
+<span class="cm">// Leer hoja Leads → contar por estado</span>
+<span class="cm">// Calcular leads nuevos últimas 24h</span>
+<span class="cm">// Calcular tasa de conversión semana</span>
+
+<span class="ky">Slack mensaje:</span>
+<span class="str">"📊 *Resumen diario {{fecha}}*
+
+Nuevos ayer: {{nuevos}}
+En seguimiento: {{seguimiento}}
+Cerrados semana: {{cerrados}}
+Tasa conversión: {{tasa}}%
+
+Ver dashboard → [link sheets]"</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('construccion')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('logging')">Siguiente: Logging y errores →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · LOGGING ══ -->
+    <section id="logging" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 7</div>
+        <h1>Logging, Errores y <span>Observabilidad</span></h1>
+        <p>Un sistema en producción sin logging es una caja negra. No sabes qué procesa, cuándo falla ni qué leads se perdieron. Esta sección convierte el sistema en observable y auto-reportante.</p>
+      </div>
+
+      <div class="card out tb" style="margin-bottom:16px;">
+        <div class="card-label">📝 Patrón de logging — nodo al final de cada rama</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Code — preparar entrada de log
+// Se añade AL FINAL de cada rama del sistema</span>
+<span class="kw">const</span> d = $input.first().json;
+<span class="kw">const</span> inicio = d._ts_inicio || Date.now();
+
+<span class="kw">return</span> [{ json: {
+  <span class="cm">// ── IDENTIFICACIÓN ────────────────────────────</span>
+  <span class="ky">ts</span>:          <span class="kw">new</span> Date().toISOString(),
+  <span class="ky">lead_id</span>:     d.solicitud_id,
+  <span class="ky">nombre</span>:      d.nombre,
+  <span class="ky">email</span>:       d.email,
+
+  <span class="cm">// ── QUÉ PASÓ ──────────────────────────────────</span>
+  <span class="ky">modulo</span>:      d._modulo_actual,   <span class="cm">← "M4-asignacion"</span>
+  <span class="ky">accion</span>:      d._accion,          <span class="cm">← "email_enviado"</span>
+  <span class="ky">resultado</span>:   d._resultado,       <span class="cm">← "ok" | "error"</span>
+
+  <span class="cm">// ── CONTEXTO ──────────────────────────────────</span>
+  <span class="ky">segmento</span>:    d.segmento,
+  <span class="ky">prioridad</span>:   d.prioridad,
+  <span class="ky">vendedor</span>:    d.vendedor?.nombre,
+
+  <span class="cm">// ── PERFORMANCE ───────────────────────────────</span>
+  <span class="ky">duracion_ms</span>: Date.now() - inicio
+}}];
+<span class="cm">// Siguiente nodo: Sheets Append → hoja "Log"</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card rb">
+          <div class="card-label">⚠️ Error Trigger — workflow separado de manejo global</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Workflow: "Manejador Global de Errores"</span>
+<span class="cm">// Trigger: Error Trigger (se activa automáticamente
+// cuando cualquier workflow activo falla)</span>
+
+<span class="ky">Nodo 1:</span> Error Trigger
+<span class="ky">Nodo 2:</span> Code — extraer contexto del error
+<span class="kw">const</span> err = $input.first().json;
+<span class="kw">return</span> [{ json: {
+  <span class="ky">ts</span>:       <span class="kw">new</span> Date().toISOString(),
+  <span class="ky">workflow</span>: err.workflow.name,
+  <span class="ky">nodo</span>:     err.execution.lastNodeExecuted,
+  <span class="ky">error</span>:    err.execution.error.message,
+  <span class="ky">datos</span>:    JSON.stringify(
+              err.execution.data
+            ).slice(<span class="vl">0</span>,<span class="vl">400</span>)
+}}]
+
+<span class="ky">Nodo 3:</span> Slack → canal #errores-automatizacion
+<span class="ky">Nodo 4:</span> Sheets → hoja "Errores" → registrar
+<span class="ky">Nodo 5:</span> IF → si es tercer error del mismo tipo
+            → email urgente a dev
+          </div>
+        </div>
+
+        <div class="card goldb">
+          <div class="card-label" style="color:var(--gold);">📊 Dashboard en Sheets — fórmulas clave</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Hoja "Dashboard" — columna B (valores)</span>
+
+<span class="cm">// B2 — Total leads esta semana</span>
+<span class="kw">=COUNTIFS(Leads!A:A,">="&HOY()-7)</span>
+
+<span class="cm">// B3 — Leads por estado</span>
+<span class="kw">=COUNTIF(Leads!F:F,"Nuevo")</span>
+<span class="kw">=COUNTIF(Leads!F:F,"Contactado")</span>
+<span class="kw">=COUNTIF(Leads!F:F,"Cliente")</span>
+
+<span class="cm">// B6 — Tasa de conversión</span>
+<span class="kw">=IFERROR(B5/B2*100,0)&"%"</span>
+
+<span class="cm">// B7 — Tiempo promedio de respuesta (horas)</span>
+<span class="kw">=AVERAGEIF(Log!D:D,"email_enviado",Log!H:H)
+  /3600000</span>
+
+<span class="cm">// B8 — Leads sin atender > 3 días</span>
+<span class="kw">=COUNTIFS(Leads!F:F,"Nuevo",
+           Leads!A:A,"<"&HOY()-3)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('integraciones')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('portafolio')">Siguiente: Portafolio y negocio →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · PORTAFOLIO ══ -->
+    <section id="portafolio" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Portafolio, Servicio <span>y Negocio</span></h1>
+        <p>Este proyecto no es solo un ejercicio académico. Es un activo: puedes publicarlo como portafolio, ofrecerlo como servicio freelance o convertirlo en un producto vendible. Esta sección muestra cómo.</p>
+      </div>
+
+      <!-- TRES CAMINOS -->
+      <div class="g3">
+        <div style="background:linear-gradient(135deg,rgba(56,189,248,0.07),rgba(124,110,245,0.07));border:1px solid rgba(56,189,248,0.3);border-radius:12px;padding:20px;">
+          <div style="font-size:28px;margin-bottom:12px;text-align:center;">📁</div>
+          <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:8px;text-align:center;">Portafolio</div>
+          <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px;">Publicar en GitHub con README profesional y demo en video. Mostrarlo en LinkedIn y en entrevistas de trabajo como evidencia de habilidades técnicas reales.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            <span class="b bs" style="font-size:10px;">GitHub repo</span>
+            <span class="b bs" style="font-size:10px;">README</span>
+            <span class="b bs" style="font-size:10px;">Video demo</span>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg,rgba(34,201,122,0.07),rgba(32,212,176,0.07));border:1px solid rgba(34,201,122,0.3);border-radius:12px;padding:20px;">
+          <div style="font-size:28px;margin-bottom:12px;text-align:center;">💼</div>
+          <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:8px;text-align:center;">Servicio freelance</div>
+          <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px;">Ofrecer el sistema como instalación personalizada para empresas. Un proyecto de $500–2000 USD que puedes entregar en una semana. Precio por configuración + mantenimiento mensual.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            <span class="b bg" style="font-size:10px;">$500–2000</span>
+            <span class="b bg" style="font-size:10px;">1 semana</span>
+            <span class="b bg" style="font-size:10px;">Retainer</span>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg,rgba(245,197,24,0.07),rgba(240,160,48,0.07));border:1px solid rgba(245,197,24,0.35);border-radius:12px;padding:20px;">
+          <div style="font-size:28px;margin-bottom:12px;text-align:center;">🚀</div>
+          <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:8px;text-align:center;">Producto / SaaS</div>
+          <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px;">Convertir el sistema en una plantilla multi-cliente con panel de configuración. Vender acceso recurrente a pequeñas empresas que no saben automatizar. El sistema ya está construido.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            <span class="b bgold" style="font-size:10px;">Multi-cliente</span>
+            <span class="b bgold" style="font-size:10px;">SaaS</span>
+            <span class="b bgold" style="font-size:10px;">MRR</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- README TEMPLATE -->
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">📄 Estructura del README para GitHub</div>
+        <div class="code-block" style="font-size:12px;">
+<span class="cm"># Sistema Automatizado de Gestión de Clientes</span>
+<span class="cm">## Construido con n8n + Google Sheets + OpenAI</span>
+
+<span class="gd">## ¿Qué hace?</span>
+<span class="str">Sistema end-to-end que captura leads, los clasifica
+con IA, gestiona el CRM y hace seguimiento automático.
+Cero intervención humana en el 85% del proceso.</span>
+
+<span class="gd">## Stack técnico</span>
+<span class="str">- n8n (self-hosted o cloud)
+- Google Sheets (CRM y log)
+- OpenAI GPT-4o mini (scoring y emails)
+- Slack (notificaciones)
+- Google Calendar (tareas)
+- Clearbit API (enriquecimiento)</span>
+
+<span class="gd">## Instalación en 5 pasos</span>
+<span class="str">1. Importar los 8 workflows JSON en n8n
+2. Crear Google Sheet con la plantilla incluida
+3. Configurar credenciales (OpenAI, Slack, Gmail)
+4. Activar los workflows en orden (M1 → M8)
+5. Probar con el webhook de test incluido</span>
+
+<span class="gd">## Demo</span>
+<span class="str">[Video de 3 minutos mostrando el flujo completo]
+[Screenshots del dashboard en tiempo real]</span>
+        </div>
+      </div>
+
+      <!-- PRÓXIMOS PASOS -->
+      <div class="card" style="background:var(--bg3);margin-bottom:0;">
+        <div class="card-label">🚀 Próximos pasos para convertirlo en negocio</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <div class="wtu"><span class="we">1️⃣</span><div class="wt"><strong>Publicar en GitHub:</strong> repo público con README, workflows JSON exportados y screenshots del dashboard. Es tu tarjeta de presentación técnica.</div></div>
+            <div class="wtu"><span class="we">2️⃣</span><div class="wt"><strong>Crear video demo de 3 min:</strong> mostrar el flujo completo desde un lead hasta el email de bienvenida y la notificación en Slack. Publicar en LinkedIn.</div></div>
+            <div class="wtu"><span class="we">3️⃣</span><div class="wt"><strong>Primer cliente piloto gratis:</strong> ofrecer la instalación a una empresa conocida a cambio de un caso de éxito escrito. Ese caso de éxito vale más que cualquier currículum.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">4️⃣</span><div class="wt"><strong>Publicar en Gumroad o Lemon Squeezy:</strong> empaquetar los workflows + instrucciones como producto digital de $29–99 USD. Ingreso pasivo desde el primer día.</div></div>
+            <div class="wtu"><span class="we">5️⃣</span><div class="wt"><strong>Escalar con sub-workflows reutilizables:</strong> extraer los módulos genéricos (logging, validación, notificaciones) como plantillas vendibles por separado. Un catálogo de automatizaciones.</div></div>
+            <div class="wtu"><span class="we">6️⃣</span><div class="wt"><strong>Dashboard de monitoreo multi-cliente:</strong> una hoja de Sheets maestra que muestra el estado de todos los clientes con el sistema instalado. Escala sin trabajo adicional.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('logging')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable final →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · ENTREGABLE ══ -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9 · Final</div>
+        <h1>Entregable <span>Final del Curso</span></h1>
+        <p>Lo que debes tener funcionando al terminar la Clase 10. No es solo un workflow: es un sistema completo, documentado y listo para el mundo real.</p>
+      </div>
+
+      <!-- CHECKLIST FINAL -->
+      <div class="card goldb" style="background:linear-gradient(135deg,rgba(245,197,24,0.05),rgba(34,201,122,0.04));margin-bottom:16px;">
+        <div class="card-label" style="color:var(--gold);">🏆 Checklist del proyecto final</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Sistema funcionando end-to-end</strong><br><span style="font-size:13px;">Un lead enviado al webhook pasa por todos los módulos: validación → scoring → CRM → asignación → email IA → seguimiento → log. Sin intervención manual en ningún punto.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">8 módulos conectados y funcionando</strong><br><span style="font-size:13px;">Cada módulo tiene su propio workflow en n8n. El módulo M1 llama a M2, M2 llama a M3, etc. Un módulo puede fallar sin romper los demás.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">IA integrada en scoring y redacción</strong><br><span style="font-size:13px;">El Módulo 2 usa IA para refinar casos ambiguos. El Módulo 5 usa IA para redactar los emails. Las respuestas son distintas para cada lead.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Google Sheets con las 4 hojas configuradas</strong><br><span style="font-size:13px;">Hojas Leads, Log, Errores y Dashboard funcionando. El dashboard muestra métricas reales calculadas por fórmulas, no manualmente.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Error Trigger configurado y probado</strong><br><span style="font-size:13px;">Un error forzado en cualquier módulo llega al canal #errores-automatizacion de Slack y se registra en la hoja Errores. El sistema nunca falla silenciosamente.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con 10 leads de prueba distintos</strong><br><span style="font-size:13px;">Al menos 2 por segmento (VIP, caliente, medio, frío) + 2 con datos inválidos. Todos terminan en el estado correcto en Sheets.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">README escrito y workflows exportados</strong><br><span style="font-size:13px;">README con instrucciones de instalación paso a paso. Los 8 workflows exportados en JSON. Cualquier persona puede instalar el sistema desde cero siguiendo el README.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Video demo de 3 minutos grabado</strong><br><span style="font-size:13px;">Muestra el flujo completo: enviar un lead → ver el email de bienvenida → ver la notificación en Slack → ver la fila en Sheets → ver el log. Sin explicaciones largas, solo el sistema en acción.</span></div></li>
+        </ul>
+      </div>
+
+      <!-- TROFEOS DEL CURSO -->
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏆 Lo que dominas al terminar el curso</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <div class="trophy-row">
+              <span class="trophy-icon">🔵</span>
+              <div><div class="trophy-title">Arquitectura de automatizaciones</div><div class="trophy-desc">Diseñar sistemas modulares que escalan sin romper.</div></div>
+            </div>
+            <div class="trophy-row">
+              <span class="trophy-icon">🟣</span>
+              <div><div class="trophy-title">Lógica condicional avanzada</div><div class="trophy-desc">IF, Switch, AND/OR, condiciones sobre texto, números y fechas.</div></div>
+            </div>
+            <div class="trophy-row">
+              <span class="trophy-icon">🟢</span>
+              <div><div class="trophy-title">CRM automatizado desde cero</div><div class="trophy-desc">Pipeline con estados, seguimiento temporal y asignación automática.</div></div>
+            </div>
+            <div class="trophy-row">
+              <span class="trophy-icon">🔴</span>
+              <div><div class="trophy-title">Operaciones end-to-end</div><div class="trophy-desc">Flujos completos sin intervención humana con manejo de errores.</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="trophy-row">
+              <span class="trophy-icon">🟡</span>
+              <div><div class="trophy-title">Integración de IA en workflows</div><div class="trophy-desc">Prompts, parseo de output, temperatura, modelos correctos para cada tarea.</div></div>
+            </div>
+            <div class="trophy-row">
+              <span class="trophy-icon">🔶</span>
+              <div><div class="trophy-title">APIs externas e integraciones</div><div class="trophy-desc">HTTP Request, autenticación, enriquecimiento, servicios en la nube.</div></div>
+            </div>
+            <div class="trophy-row">
+              <span class="trophy-icon">⚪</span>
+              <div><div class="trophy-title">Logging y observabilidad</div><div class="trophy-desc">Sistemas que reportan su propio estado y nunca fallan silenciosamente.</div></div>
+            </div>
+            <div class="trophy-row">
+              <span class="trophy-icon">🌟</span>
+              <div><div class="trophy-title">Pensamiento de producto</div><div class="trophy-desc">Diseñar antes de construir. Modularidad. Documentación. Portafolio.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CIERRE ÉPICO -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(245,197,24,0.07),rgba(124,110,245,0.07),rgba(32,212,176,0.05));border-color:rgba(245,197,24,0.35);text-align:center;padding:40px 24px;">
+        <div style="font-size:56px;margin-bottom:16px;">🏆</div>
+        <h2 style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:12px;">Completaste el curso</h2>
+        <p style="font-size:16px;color:var(--text2);line-height:1.7;max-width:560px;margin:0 auto 24px;">Pasaste de ejecutar una tarea repetitiva a diseñar sistemas completos que trabajan solos. Eso no es solo una habilidad técnica: es una forma diferente de pensar los problemas.</p>
+        <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:24px;">
+          <span class="b bgold">🤖 Automatización</span>
+          <span class="b bac">🧠 IA integrada</span>
+          <span class="b bg">💼 CRM real</span>
+          <span class="b bt">🔌 APIs externas</span>
+          <span class="b bl">🔀 Lógica condicional</span>
+          <span class="b bp">📧 Secuencias</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text3);border-top:1px solid var(--border);padding-top:20px;margin-top:4px;">
+          Automatización → CRM → Operaciones → IA → <span style="color:var(--gold);">Sistema completo → Negocio real</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('portafolio')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Revisar desde el inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','vision','modulos','arquitectura','construccion','integraciones','logging','portafolio','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(`.nav-item[onclick*="'${id}'"]`);go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Sección ${idx+1} de ${sections.length}`;
+  }
+</script>
+</body>
+</html>

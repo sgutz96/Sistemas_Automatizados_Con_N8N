@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 8 — Automatizaciones con IA</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+    /* model colors */
+    --gpt:#10a37f; --gpt-bg:rgba(16,163,127,0.12);
+    --claude:#c17a3c; --claude-bg:rgba(193,122,60,0.12);
+    --gemini:#4285f4; --gemini-bg:rgba(66,133,244,0.12);
+    --llama:#a855f7; --llama-bg:rgba(168,85,247,0.12);
+    --mistral:#ff6b35; --mistral-bg:rgba(255,107,53,0.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);}
+  .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;text-align:center;flex-shrink:0;min-width:110px;}
+  .fn .fi{font-size:20px;margin-bottom:5px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:3px;}
+  .fn .fn2{font-size:12px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.val {border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.05);}  .fn.val .ft{color:var(--sky);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fn.ai  {border-color:rgba(168,85,247,0.5);background:rgba(168,85,247,0.08);}  .fn.ai .ft{color:#c084fc;}
+  .fn.cond{border-color:rgba(132,204,22,0.4);background:rgba(132,204,22,0.05);}  .fn.cond .ft{color:var(--lime);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* MODEL BADGE */
+  .mb{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
+  .mb-gpt    {background:var(--gpt-bg);color:var(--gpt);border:1px solid rgba(16,163,127,0.3);}
+  .mb-claude {background:var(--claude-bg);color:var(--claude);border:1px solid rgba(193,122,60,0.3);}
+  .mb-gemini {background:var(--gemini-bg);color:var(--gemini);border:1px solid rgba(66,133,244,0.3);}
+  .mb-llama  {background:var(--llama-bg);color:var(--llama);border:1px solid rgba(168,85,247,0.3);}
+  .mb-mistral{background:var(--mistral-bg);color:var(--mistral);border:1px solid rgba(255,107,53,0.3);}
+
+  /* RADAR CONTAINER */
+  .radar-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .radar-controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+  .radar-btn{padding:6px 14px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;transition:all 0.15s;background:var(--bg4);}
+  .radar-btn.active,.radar-btn:hover{opacity:1;}
+  .radar-btn[data-model="gpt"]    {border-color:var(--gpt);color:var(--gpt);}
+  .radar-btn[data-model="claude"] {border-color:var(--claude);color:var(--claude);}
+  .radar-btn[data-model="gemini"] {border-color:var(--gemini);color:var(--gemini);}
+  .radar-btn[data-model="llama"]  {border-color:var(--llama);color:var(--llama);}
+  .radar-btn[data-model="mistral"]{border-color:var(--mistral);color:var(--mistral);}
+  .radar-btn.active{opacity:1;filter:brightness(1.3);}
+  .radar-btn:not(.active){opacity:0.45;}
+  .radar-layout{display:grid;grid-template-columns:1fr 220px;gap:24px;align-items:start;}
+  .radar-legend{display:flex;flex-direction:column;gap:10px;}
+  .radar-leg-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);}
+  .radar-leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .radar-leg-name{font-weight:700;font-size:13px;}
+  .radar-leg-score{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;}
+
+  /* COSTO TABLE */
+  .cost-row{display:flex;align-items:center;gap:0;margin-bottom:8px;}
+  .cost-model{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;width:110px;flex-shrink:0;}
+  .cost-bar-wrap{flex:1;background:var(--bg4);border-radius:4px;height:22px;overflow:hidden;position:relative;}
+  .cost-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:rgba(0,0,0,0.8);transition:width 0.6s ease;}
+  .cost-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);margin-left:10px;white-space:nowrap;}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{opacity:0.85;}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Clase 8</div>
+      <h2>Automatizaciones con IA</h2>
+      <p>n8n · inteligencia artificial</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> Introducción</a>
+    <a class="nav-item" onclick="go('conceptos',this)"><span class="ni">🧠</span> Conceptos clave</a>
+    <a class="nav-item" onclick="go('modelos',this)"><span class="ni">⚖️</span> Comparativa de modelos IA</a>
+    <a class="nav-item" onclick="go('arquitectura',this)"><span class="ni">🏗️</span> Arquitectura del sistema</a>
+    <a class="nav-item" onclick="go('prompts',this)"><span class="ni">✍️</span> Paso 1 — Prompts</a>
+    <a class="nav-item" onclick="go('clasificacion',this)"><span class="ni">🔀</span> Paso 2 — Clasificación IA</a>
+    <a class="nav-item" onclick="go('respuestas',this)"><span class="ni">💬</span> Paso 3 — Respuestas inteligentes</a>
+    <a class="nav-item" onclick="go('practicas',this)"><span class="ni">✅</span> Buenas prácticas</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Clase 8</div>
+        <h1>Automatizaciones <span>con IA</span></h1>
+        <p>Los workflows basados en reglas fijas tienen un límite: no entienden contexto, no se adaptan y fallan ante lo inesperado. La IA elimina ese límite. A partir de esta clase, tus sistemas piensan.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🔥 El salto definitivo</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div style="background:var(--bg4);border-radius:10px;padding:18px;border:1px solid var(--border);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Clases 1–7 — Automatización con reglas</div>
+            <div style="font-size:17px;font-weight:800;color:var(--text2);margin-bottom:8px;">"Si tipo = soporte → hacer X"</div>
+            <p style="font-size:13px;color:var(--text3);line-height:1.6;">El sistema solo actúa si el dato coincide exactamente con una regla predefinida. Cualquier variación, lenguaje natural o ambigüedad lo rompe.</p>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(124,110,245,0.08));border-radius:10px;padding:18px;border:1px solid rgba(168,85,247,0.35);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#c084fc;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Clase 8 — Automatización con IA</div>
+            <div style="font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:8px;">"Analiza, entiende y decide"</div>
+            <p style="font-size:13px;color:var(--text2);line-height:1.6;">La IA lee el mensaje completo, entiende la intención, clasifica con contexto y genera una respuesta personalizada. Sin reglas rígidas, sin casos rotos.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn" style="color:#c084fc;">IA</div><div class="sl">entiende lenguaje natural, no solo palabras clave</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">∞</div><div class="sl">casos cubiertos sin reglas adicionales</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">5</div><div class="sl">modelos distintos disponibles para integrar</div></div>
+        <div class="stat"><div class="sn" style="color:var(--teal);">~1s</div><div class="sl">tiempo de respuesta de la IA en el workflow</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🧠 Qué vas a aprender en esta clase</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Cómo integrar modelos de IA en n8n</strong><br><span style="font-size:13px;">El nodo OpenAI, el nodo HTTP Request hacia cualquier API de IA, y cómo pasar datos del workflow al modelo y devolver la respuesta al flujo.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Comparativa real de modelos: GPT, Claude, Gemini, Llama, Mistral</strong><br><span style="font-size:13px;">No todos los modelos son iguales. Cada uno tiene fortalezas distintas, precios distintos y casos de uso distintos. Esta clase incluye una comparativa completa para elegir el correcto.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Escritura de prompts para resultados controlados</strong><br><span style="font-size:13px;">Un prompt mal escrito devuelve respuestas impredecibles que rompen el workflow. Aprenderás las técnicas para que la IA siempre devuelva exactamente el formato que necesitas.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Clasificación inteligente de texto</strong><br><span style="font-size:13px;">En vez de reglas basadas en palabras clave, la IA entiende la intención completa del mensaje y clasifica con contexto, incluso ante mensajes ambiguos o mal escritos.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Generación de respuestas personalizadas</strong><br><span style="font-size:13px;">La IA redacta emails, mensajes de soporte y respuestas comerciales usando los datos del lead y el contexto de la solicitud. Cada respuesta es única.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" disabled style="opacity:0.3;cursor:default;">← Clase 7</button>
+        <button class="btn btn-p" onclick="goTo('conceptos')">Siguiente: Conceptos →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · CONCEPTOS ══ -->
+    <section id="conceptos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Conceptos <span>Clave</span></h1>
+        <p>Cuatro conceptos que definen cómo funcionan los modelos de lenguaje dentro de un workflow de automatización.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card" style="border-color:rgba(168,85,247,0.3);">
+          <div class="card-label" style="color:#c084fc;">🔸 Modelo de lenguaje (LLM)</div>
+          <p style="margin-bottom:14px;">Un sistema de IA entrenado para entender y generar texto. Recibe un prompt (instrucción + contexto) y devuelve texto generado. En n8n, es un nodo que hace una llamada a una API.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Así lo ve n8n internamente</span>
+<span class="cm">// (simplificado)</span>
+
+POST https://api.openai.com/v1/chat/completions
+{
+  <span class="ky">"model"</span>: <span class="str">"gpt-4o-mini"</span>,
+  <span class="ky">"messages"</span>: [
+    { <span class="ky">"role"</span>: <span class="str">"system"</span>,
+      <span class="ky">"content"</span>: <span class="str">"Tu instrucción aquí"</span> },
+    { <span class="ky">"role"</span>: <span class="str">"user"</span>,
+      <span class="ky">"content"</span>: <span class="str">"{{$json.mensaje}}"</span> }
+  ]
+}
+          </div>
+        </div>
+
+        <div class="card amb">
+          <div class="card-label">🔸 Prompt — la instrucción que controla la IA</div>
+          <p style="margin-bottom:14px;">El prompt es lo más importante de toda la integración. Un prompt bueno devuelve siempre el formato correcto. Un prompt ambiguo devuelve resultados impredecibles que rompen el workflow.</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Prompt malo ← ambiguo</span>
+<span class="str">"Analiza este mensaje: {{mensaje}}"</span>
+<span class="cm">// Devuelve: párrafo de análisis, no clasificación</span>
+
+<span class="cm">// Prompt bueno ← específico y controlado</span>
+<span class="str">"Clasifica el siguiente mensaje en una
+de estas categorías exactas:
+ventas | soporte | facturacion | otro
+
+Responde SOLO con la categoría, sin
+explicación ni puntuación adicional.
+
+Mensaje: {{$json.mensaje}}"</span>
+<span class="cm">// Devuelve: "ventas" ← predecible, parseable</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">🔸 Clasificación automática — IA vs reglas</div>
+          <table class="ct" style="margin-top:0;">
+            <thead><tr><th>Aspecto</th><th>Reglas fijas</th><th>IA</th></tr></thead>
+            <tbody>
+              <tr><td>Mensaje exacto</td><td>✅ Funciona</td><td>✅ Funciona</td></tr>
+              <tr><td>Typos / errores</td><td>❌ Falla</td><td>✅ Entiende</td></tr>
+              <tr><td>Lenguaje informal</td><td>❌ Falla</td><td>✅ Entiende</td></tr>
+              <tr><td>Ambigüedad</td><td>❌ Falla</td><td>✅ Infiere</td></tr>
+              <tr><td>Idiomas múltiples</td><td>❌ Falla</td><td>✅ Maneja</td></tr>
+              <tr><td>Velocidad</td><td>⚡ Instantáneo</td><td>~500ms–2s</td></tr>
+              <tr><td>Costo</td><td>$0</td><td>~$0.001/msg</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card sb">
+          <div class="card-label">🔸 Tokens — cómo se mide y cobra la IA</div>
+          <p style="margin-bottom:14px;">Los modelos no leen palabras sino <strong style="color:var(--text);">tokens</strong>: fragmentos de texto de ~4 caracteres. El costo se calcula por tokens de entrada (prompt) y tokens de salida (respuesta).</p>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Regla práctica de tokens</span>
+<span class="vl">1</span> token ≈ <span class="vl">4</span> caracteres en inglés
+<span class="vl">1</span> token ≈ <span class="vl">3</span> caracteres en español
+<span class="vl">100</span> palabras ≈ <span class="vl">130</span> tokens
+
+<span class="cm">// Ejemplo de costo real (GPT-4o mini)</span>
+Prompt de clasificación: ~<span class="vl">80</span> tokens
+Respuesta esperada:       ~<span class="vl">5</span> tokens
+Total por solicitud:      ~<span class="vl">85</span> tokens
+
+Costo: <span class="vl">0.15</span>$ / <span class="vl">1M</span> tokens input
+     = <span class="str">$0.0000128 por solicitud</span>
+
+<span class="cm">// 1000 solicitudes/día = $0.013/día ≈ $0.39/mes</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('modelos')">Siguiente: Comparativa de modelos →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · COMPARATIVA MODELOS ══ -->
+    <section id="modelos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 3 · Exclusiva</div>
+        <h1>Comparativa de <span>Modelos de IA</span></h1>
+        <p>GPT-4o, Claude, Gemini, Llama, Mistral. No son intercambiables. Cada uno tiene fortalezas distintas, precios distintos y casos de uso donde brilla. Esta sección te ayuda a elegir el correcto para cada tarea.</p>
+      </div>
+
+      <!-- RADAR INTERACTIVO -->
+      <div class="radar-wrap">
+        <div class="card-label">📡 Mapa vectorial de capacidades — selecciona los modelos a comparar</div>
+        <div class="radar-controls" id="radarControls">
+          <button class="radar-btn active" data-model="gpt" onclick="toggleModel('gpt',this)">GPT-4o</button>
+          <button class="radar-btn active" data-model="claude" onclick="toggleModel('claude',this)">Claude 3.5</button>
+          <button class="radar-btn active" data-model="gemini" onclick="toggleModel('gemini',this)">Gemini 1.5</button>
+          <button class="radar-btn active" data-model="llama" onclick="toggleModel('llama',this)">Llama 3.1</button>
+          <button class="radar-btn active" data-model="mistral" onclick="toggleModel('mistral',this)">Mistral Large</button>
+        </div>
+        <div class="radar-layout">
+          <svg id="radarSvg" viewBox="0 0 420 420" width="100%" style="max-width:420px;"></svg>
+          <div class="radar-legend" id="radarLegend"></div>
+        </div>
+      </div>
+
+      <!-- CUADRO COMPARATIVO -->
+      <div class="card" style="margin-bottom:16px;overflow-x:auto;">
+        <div class="card-label">📊 Cuadro comparativo completo</div>
+        <table class="ct" style="margin-top:8px;min-width:700px;">
+          <thead>
+            <tr>
+              <th>Modelo</th>
+              <th>Empresa</th>
+              <th>Razonamiento</th>
+              <th>Contexto</th>
+              <th>Velocidad</th>
+              <th>Costo</th>
+              <th>Open Source</th>
+              <th>Mejor para</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="mb mb-gpt">GPT-4o</span></td>
+              <td>OpenAI</td>
+              <td><span style="color:var(--green);">★★★★★</span></td>
+              <td>128K tokens</td>
+              <td><span style="color:var(--amber);">Media</span></td>
+              <td>$$</td>
+              <td><span style="color:var(--red);">No</span></td>
+              <td>Razonamiento complejo, multimodal, integraciones estables</td>
+            </tr>
+            <tr>
+              <td><span class="mb mb-gpt">GPT-4o mini</span></td>
+              <td>OpenAI</td>
+              <td><span style="color:var(--amber);">★★★★☆</span></td>
+              <td>128K tokens</td>
+              <td><span style="color:var(--green);">Rápida</span></td>
+              <td style="color:var(--green);">$</td>
+              <td><span style="color:var(--red);">No</span></td>
+              <td>Clasificación, tareas simples, alto volumen y bajo costo</td>
+            </tr>
+            <tr>
+              <td><span class="mb mb-claude">Claude 3.5 Sonnet</span></td>
+              <td>Anthropic</td>
+              <td><span style="color:var(--green);">★★★★★</span></td>
+              <td>200K tokens</td>
+              <td><span style="color:var(--amber);">Media</span></td>
+              <td>$$</td>
+              <td><span style="color:var(--red);">No</span></td>
+              <td>Redacción, análisis largo, seguir instrucciones complejas</td>
+            </tr>
+            <tr>
+              <td><span class="mb mb-claude">Claude 3.5 Haiku</span></td>
+              <td>Anthropic</td>
+              <td><span style="color:var(--amber);">★★★★☆</span></td>
+              <td>200K tokens</td>
+              <td><span style="color:var(--green);">Muy rápida</span></td>
+              <td style="color:var(--green);">$</td>
+              <td><span style="color:var(--red);">No</span></td>
+              <td>Respuestas rápidas, chatbots, volumen alto con buena calidad</td>
+            </tr>
+            <tr>
+              <td><span class="mb mb-gemini">Gemini 1.5 Pro</span></td>
+              <td>Google</td>
+              <td><span style="color:var(--green);">★★★★★</span></td>
+              <td><span style="color:var(--green);">1M tokens</span></td>
+              <td><span style="color:var(--amber);">Media</span></td>
+              <td>$$</td>
+              <td><span style="color:var(--red);">No</span></td>
+              <td>Documentos muy largos, PDFs completos, análisis masivo</td>
+            </tr>
+            <tr>
+              <td><span class="mb mb-gemini">Gemini 1.5 Flash</span></td>
+              <td>Google</td>
+              <td><span style="color:var(--amber);">★★★☆☆</span></td>
+              <td>1M tokens</td>
+              <td><span style="color:var(--green);">Muy rápida</span></td>
+              <td style="color:var(--green);">$</td>
+              <td><span style="color:var(--red);">No</span></td>
+              <td>Procesamiento masivo de documentos a bajo costo</td>
+            </tr>
+            <tr>
+              <td><span class="mb mb-llama">Llama 3.1 70B</span></td>
+              <td>Meta</td>
+              <td><span style="color:var(--amber);">★★★★☆</span></td>
+              <td>128K tokens</td>
+              <td><span style="color:var(--amber);">Media</span></td>
+              <td style="color:var(--green);">$ (self-hosted)</td>
+              <td><span style="color:var(--green);">Sí</span></td>
+              <td>Privacidad de datos, sin dependencia de terceros, on-premise</td>
+            </tr>
+            <tr>
+              <td><span class="mb mb-mistral">Mistral Large</span></td>
+              <td>Mistral AI</td>
+              <td><span style="color:var(--amber);">★★★★☆</span></td>
+              <td>128K tokens</td>
+              <td><span style="color:var(--green);">Rápida</span></td>
+              <td>$$</td>
+              <td><span style="color:var(--green);">Parcial</span></td>
+              <td>Multilenguaje europeo, código, alternativa eficiente a GPT</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- COMPARATIVA DE COSTOS -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">💰 Comparativa de costos — precio por millón de tokens de entrada (Input)</div>
+        <div style="margin-top:16px;">
+          <div class="cost-row">
+            <div class="cost-model" style="color:var(--gpt);">GPT-4o</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar" style="width:80%;background:var(--gpt);">$5.00</div>
+            </div>
+            <div class="cost-val">$5.00 / 1M tokens</div>
+          </div>
+          <div class="cost-row">
+            <div class="cost-model" style="color:var(--gpt);">GPT-4o mini</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar" style="width:3%;background:var(--gpt);min-width:40px;">$0.15</div>
+            </div>
+            <div class="cost-val">$0.15 / 1M tokens</div>
+          </div>
+          <div class="cost-row">
+            <div class="cost-model" style="color:var(--claude);">Claude Sonnet</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar" style="width:30%;background:var(--claude);">$3.00</div>
+            </div>
+            <div class="cost-val">$3.00 / 1M tokens</div>
+          </div>
+          <div class="cost-row">
+            <div class="cost-model" style="color:var(--claude);">Claude Haiku</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar" style="width:2.5%;background:var(--claude);min-width:38px;">$0.25</div>
+            </div>
+            <div class="cost-val">$0.25 / 1M tokens</div>
+          </div>
+          <div class="cost-row">
+            <div class="cost-model" style="color:var(--gemini);">Gemini Pro</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar" style="width:35%;background:var(--gemini);">$3.50</div>
+            </div>
+            <div class="cost-val">$3.50 / 1M tokens</div>
+          </div>
+          <div class="cost-row">
+            <div class="cost-model" style="color:var(--gemini);">Gemini Flash</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar" style="width:0.75%;background:var(--gemini);min-width:36px;">$0.075</div>
+            </div>
+            <div class="cost-val">$0.075 / 1M tokens</div>
+          </div>
+          <div class="cost-row">
+            <div class="cost-model" style="color:var(--llama);">Llama 3.1 70B</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar" style="width:9%;background:var(--llama);">~$0.90</div>
+            </div>
+            <div class="cost-val">~$0.90 / 1M (hosted)</div>
+          </div>
+          <div class="cost-row">
+            <div class="cost-model" style="color:var(--mistral);">Mistral Large</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar" style="width:20%;background:var(--mistral);">$2.00</div>
+            </div>
+            <div class="cost-val">$2.00 / 1M tokens</div>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:14px;">* Precios de referencia mayo 2025 — pueden variar. Self-hosted (Llama) tiene costo de infraestructura en vez de por token.</p>
+      </div>
+
+      <!-- CASOS DE USO REAL -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">🚀 Casos de uso reales — qué modelo usar para cada tarea en n8n</div>
+        <table class="ct" style="margin-top:0;">
+          <thead>
+            <tr><th>Tarea en el workflow</th><th>Modelo recomendado</th><th>Por qué</th><th>Costo estimado / 1000 msgs</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Clasificar intención de mensaje</td>
+              <td><span class="mb mb-gpt">GPT-4o mini</span></td>
+              <td>Rápido, barato, preciso para categorías simples</td>
+              <td style="color:var(--green);">~$0.01</td>
+            </tr>
+            <tr>
+              <td>Redactar email de respuesta personalizado</td>
+              <td><span class="mb mb-claude">Claude 3.5 Haiku</span></td>
+              <td>Mejor calidad de redacción en español, rápido</td>
+              <td style="color:var(--green);">~$0.05</td>
+            </tr>
+            <tr>
+              <td>Analizar documento PDF completo</td>
+              <td><span class="mb mb-gemini">Gemini 1.5 Pro</span></td>
+              <td>Contexto de 1M tokens, procesa PDFs largos enteros</td>
+              <td style="color:var(--amber);">~$0.50–2.00</td>
+            </tr>
+            <tr>
+              <td>Scoring de leads con datos extensos</td>
+              <td><span class="mb mb-claude">Claude 3.5 Sonnet</span></td>
+              <td>Mejor razonamiento multi-criterio, sigue instrucciones complejas</td>
+              <td style="color:var(--amber);">~$0.30</td>
+            </tr>
+            <tr>
+              <td>Respuesta automática en chatbot 24/7</td>
+              <td><span class="mb mb-gemini">Gemini 1.5 Flash</span></td>
+              <td>El más barato del mercado, contexto largo, muy rápido</td>
+              <td style="color:var(--green);">~$0.008</td>
+            </tr>
+            <tr>
+              <td>Análisis de sentimiento de reseñas</td>
+              <td><span class="mb mb-gpt">GPT-4o mini</span></td>
+              <td>Excelente relación calidad/costo para clasificación</td>
+              <td style="color:var(--green);">~$0.02</td>
+            </tr>
+            <tr>
+              <td>Generación de código o SQL</td>
+              <td><span class="mb mb-gpt">GPT-4o</span></td>
+              <td>Mejor modelo para código técnico complejo</td>
+              <td style="color:var(--red);">~$1.00</td>
+            </tr>
+            <tr>
+              <td>Datos confidenciales (sin enviar a terceros)</td>
+              <td><span class="mb mb-llama">Llama 3.1 70B</span></td>
+              <td>Open source, se ejecuta en tus servidores, sin API externa</td>
+              <td style="color:var(--amber);">Costo infra propio</td>
+            </tr>
+            <tr>
+              <td>Traducciones y análisis multilenguaje EU</td>
+              <td><span class="mb mb-mistral">Mistral Large</span></td>
+              <td>Entrenado con más datos europeos (FR, DE, IT, ES)</td>
+              <td style="color:var(--amber);">~$0.40</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Regla de selección de modelo para n8n:</strong> para el 80% de las tareas de automatización (clasificación, respuestas simples, análisis de texto corto), usa <strong>GPT-4o mini</strong> o <strong>Gemini Flash</strong>. Son los más baratos y más que suficientes. Reserva los modelos premium (GPT-4o, Claude Sonnet) para tareas de razonamiento complejo que realmente lo justifiquen.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('conceptos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('arquitectura')">Siguiente: Arquitectura →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · ARQUITECTURA ══ -->
+    <section id="arquitectura" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 4</div>
+        <h1>Arquitectura del <span>Asistente Inteligente</span></h1>
+        <p>El sistema completo que construyes en esta clase: un flujo que recibe cualquier mensaje, lo analiza con IA, lo clasifica y genera una respuesta personalizada sin intervención humana.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🏗️ Flujo completo — IA integrada en cada etapa</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="fn trig">
+            <div class="fi">📥</div>
+            <div class="ft">Trigger</div>
+            <div class="fn2">Webhook</div>
+            <div class="fn3">mensaje</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn proc">
+            <div class="fi">⚙️</div>
+            <div class="ft">Code</div>
+            <div class="fn2">Preparar</div>
+            <div class="fn3">input para IA</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn ai">
+            <div class="fi">🤖</div>
+            <div class="ft">IA — paso 1</div>
+            <div class="fn2">Clasificar</div>
+            <div class="fn3">intención</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn cond">
+            <div class="fi">🔀</div>
+            <div class="ft">Switch</div>
+            <div class="fn2">Por categoría</div>
+            <div class="fn3">IA devuelta</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn ai">
+            <div class="fi">🤖</div>
+            <div class="ft">IA — paso 2</div>
+            <div class="fn2">Generar</div>
+            <div class="fn3">respuesta</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn proc">
+            <div class="fi">✅</div>
+            <div class="ft">Validar</div>
+            <div class="fn2">Output IA</div>
+            <div class="fn3">+ parsear</div>
+          </div>
+          <div class="fa">→</div>
+          <div class="fn out">
+            <div class="fi">📧</div>
+            <div class="ft">Enviar</div>
+            <div class="fn2">Respuesta</div>
+            <div class="fn3">+ Sheets</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">📋 Input del sistema</div>
+          <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="cm">// JSON que llega al webhook</span>
+{
+  <span class="ky">"mensaje"</span>:    <span class="str">"Hola, quiero información
+               sobre precios"</span>,
+  <span class="ky">"nombre"</span>:     <span class="str">"Carlos Ruiz"</span>,
+  <span class="ky">"email"</span>:      <span class="str">"carlos@empresa.com"</span>,
+  <span class="ky">"canal"</span>:      <span class="str">"web"</span>,
+  <span class="ky">"timestamp"</span>:  <span class="str">"2024-01-15T14:32:00Z"</span>
+}
+          </div>
+        </div>
+        <div class="card gb">
+          <div class="card-label">📋 Output esperado del sistema</div>
+          <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="cm">// Lo que el sistema produce al final</span>
+{
+  <span class="ky">"categoria_ia"</span>: <span class="str">"ventas"</span>,
+  <span class="ky">"confianza"</span>:    <span class="str">"alta"</span>,
+  <span class="ky">"respuesta"</span>:    <span class="str">"Hola Carlos, gracias
+    por tu interés. Nuestros planes
+    empiezan en..."</span>,
+  <span class="ky">"accion"</span>:      <span class="str">"email_enviado"</span>,
+  <span class="ky">"estado"</span>:      <span class="str">"procesado"</span>
+}
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('modelos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('prompts')">Siguiente: Paso 1 — Prompts →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · PROMPTS ══ -->
+    <section id="prompts" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 1 de 3</div>
+        <h1>Escribir <span>Prompts Efectivos</span></h1>
+        <p>El prompt es el código de la IA. Un prompt bien escrito hace que la IA devuelva siempre exactamente lo que necesitas. Un prompt vago produce respuestas impredecibles que rompen el workflow.</p>
+      </div>
+
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">✍️ Las 5 reglas de los prompts para workflows</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">1</span><div><strong style="color:var(--text);">Especifica el formato de salida exacto</strong><br><span style="font-size:13px;">Si necesitas JSON, dilo. Si necesitas una sola palabra, dilo. "Responde SOLO con un objeto JSON válido sin markdown ni texto adicional" es la instrucción más importante de cualquier prompt para workflows.</span></div></li>
+          <li><span class="ck">2</span><div><strong style="color:var(--text);">Define todas las opciones posibles</strong><br><span style="font-size:13px;">"Clasifica en: ventas | soporte | facturacion | otro" es mejor que "clasifica el mensaje". Con opciones fijas, la IA no puede inventar categorías nuevas que rompan tu Switch.</span></div></li>
+          <li><span class="ck">3</span><div><strong style="color:var(--text);">Da un ejemplo de output esperado</strong><br><span style="font-size:13px;">Few-shot prompting: incluir 1–2 ejemplos de input→output en el prompt mejora dramáticamente la consistencia de las respuestas. La IA imita el patrón.</span></div></li>
+          <li><span class="ck">4</span><div><strong style="color:var(--text);">Instrucciones en el system prompt, datos en el user</strong><br><span style="font-size:13px;">El system prompt define el comportamiento fijo ("Eres un clasificador de mensajes..."). El user message lleva los datos variables ("{{$json.mensaje}}"). Esta separación mejora la precisión.</span></div></li>
+          <li><span class="ck">5</span><div><strong style="color:var(--text);">Maneja el caso "no sé" explícitamente</strong><br><span style="font-size:13px;">Siempre incluye una categoría de fallback ("otro" o "desconocido") para que la IA no se invente una categoría cuando no está segura. Mejor un "otro" predecible que una categoría aleatoria.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="g2">
+        <div class="card lmb">
+          <div class="card-label">✅ Prompt de clasificación — versión producción</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// System prompt (fijo, va en el nodo OpenAI)</span>
+<span class="str">Eres un sistema de clasificación de mensajes
+para una empresa de software B2B.
+
+Analiza el mensaje del usuario y responde
+ÚNICAMENTE con un objeto JSON con este formato:
+{
+  "categoria": "ventas|soporte|facturacion|info|otro",
+  "confianza": "alta|media|baja",
+  "razon": "una frase corta explicando la clasificación"
+}
+
+Sin texto adicional, sin markdown, sin explicaciones.
+
+Ejemplos:
+INPUT: "quiero conocer los precios"
+OUTPUT: {"categoria":"ventas","confianza":"alta","razon":"consulta de pricing"}</span>
+
+<span class="cm">// User prompt (dinámico, usa datos del workflow)</span>
+<span class="str">Mensaje del usuario: {{$json.mensaje}}
+Canal: {{$json.canal || 'web'}}
+Plan actual: {{$json.plan || 'desconocido'}}</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">⚙️ Configurar nodo OpenAI en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: OpenAI — configuración</span>
+<span class="ky">Resource:</span>    Chat
+<span class="ky">Operation:</span>   Message a Model
+<span class="ky">Model:</span>       gpt-4o-mini
+<span class="ky">Max Tokens:</span>  150  <span class="cm">← limitar output ahorra costo</span>
+<span class="ky">Temperature:</span> 0    <span class="cm">← 0 = más determinista</span>
+                    <span class="cm">← 1 = más creativo</span>
+
+<span class="cm">// Messages:</span>
+<span class="ky">System:</span> [tu system prompt aquí — fijo]
+<span class="ky">User:</span>   <span class="kw">{{$json.mensaje}}</span>
+
+<span class="cm">// Alternativa: nodo HTTP Request</span>
+<span class="cm">// Para cualquier otro modelo (Claude, Gemini...)</span>
+<span class="cm">// usando sus APIs directamente</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Temperature 0 para clasificación, Temperature 0.7+ para generación.</strong> Cuando necesitas que la IA clasifique o extraiga datos (respuesta determinista), usa <code>temperature: 0</code>. Cuando necesitas que redacte un email o genere texto creativo, sube a <code>0.7</code> para más variedad. Nunca uses temperature alto para clasificación: las respuestas se vuelven impredecibles.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('arquitectura')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('clasificacion')">Siguiente: Paso 2 — Clasificación →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · CLASIFICACIÓN ══ -->
+    <section id="clasificacion" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 2 de 3</div>
+        <h1>Clasificación <span>Inteligente con IA</span></h1>
+        <p>La IA devuelve texto. El workflow necesita datos. Este paso muestra cómo parsear la respuesta de la IA, validarla y usarla para enrutar el flujo con un Switch.</p>
+      </div>
+
+      <div class="card proc ab" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Nodo Code — parsear y validar la respuesta de la IA</div>
+        <div class="code-block">
+<span class="cm">// Nodo: Code — después del nodo OpenAI</span>
+<span class="kw">const</span> d = $input.first().json;
+
+<span class="cm">// ── EXTRAER TEXTO DE LA RESPUESTA ────────────────</span>
+<span class="kw">const</span> textoIA = d.message?.content
+             || d.choices?.[<span class="vl">0</span>]?.message?.content
+             || <span class="str">''</span>;
+
+<span class="cm">// ── PARSEAR JSON DE LA RESPUESTA ─────────────────</span>
+<span class="kw">let</span> clasificacion;
+<span class="kw">try</span> {
+  <span class="cm">// Limpiar posibles backticks de markdown</span>
+  <span class="kw">const</span> limpio = textoIA
+    .replace(<span class="str">/```json|```/g</span>, <span class="str">''</span>)
+    .trim();
+  clasificacion = JSON.parse(limpio);
+} <span class="kw">catch</span> (e) {
+  <span class="cm">// Si no es JSON válido, usar fallback</span>
+  clasificacion = {
+    <span class="ky">categoria</span>:  <span class="str">'otro'</span>,
+    <span class="ky">confianza</span>:  <span class="str">'baja'</span>,
+    <span class="ky">razon</span>:      <span class="str">'parse_error: ' + textoIA.slice(0,50)</span>
+  };
+}
+
+<span class="cm">// ── VALIDAR CATEGORÍA ─────────────────────────────</span>
+<span class="kw">const</span> categoriasValidas = [
+  <span class="str">'ventas'</span>,<span class="str">'soporte'</span>,<span class="str">'facturacion'</span>,<span class="str">'info'</span>,<span class="str">'otro'</span>
+];
+<span class="kw">if</span> (!categoriasValidas.includes(clasificacion.categoria)) {
+  clasificacion.categoria = <span class="str">'otro'</span>;
+  clasificacion.confianza  = <span class="str">'baja'</span>;
+}
+
+<span class="kw">return</span> [{ json: {
+  ...$input.first().json,       <span class="cm">← datos originales</span>
+  <span class="ky">ia_categoria</span>: clasificacion.categoria,
+  <span class="ky">ia_confianza</span>: clasificacion.confianza,
+  <span class="ky">ia_razon</span>:     clasificacion.razon,
+  <span class="ky">ia_raw</span>:       textoIA         <span class="cm">← para debug</span>
+}}];
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card val sb">
+          <div class="card-label">🔢 Switch sobre ia_categoria</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Switch</span>
+<span class="ky">Campo:</span> <span class="kw">{{$json.ia_categoria}}</span>
+<span class="ky">Mode:</span>  Rules
+
+<span class="cm">// Output 0</span>
+Equals <span class="str">"ventas"</span>
+→ Nodo: generar propuesta comercial
+
+<span class="cm">// Output 1</span>
+Equals <span class="str">"soporte"</span>
+→ Nodo: crear ticket + notificar equipo
+
+<span class="cm">// Output 2</span>
+Equals <span class="str">"facturacion"</span>
+→ Nodo: verificar datos y emitir factura
+
+<span class="cm">// Output 3</span>
+Equals <span class="str">"info"</span>
+→ Nodo: respuesta automática FAQ
+
+<span class="cm">// Fallback</span>
+→ Nodo: escalar a revisión manual
+          </div>
+        </div>
+
+        <div class="card amb">
+          <div class="card-label">🔀 IF de confianza — segunda capa de validación</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Antes del Switch, verificar la confianza de la IA</span>
+<span class="cm">// Si la confianza es baja, no confiar en la clasificación</span>
+
+<span class="ky">Value 1:</span>   <span class="kw">{{$json.ia_confianza}}</span>
+<span class="ky">Operation:</span> Not Equals
+<span class="ky">Value 2:</span>   <span class="str">"baja"</span>
+
+<span class="str">✓ True</span>  → confianza alta/media
+           → continuar al Switch normalmente
+
+<span class="rd">✗ False</span> → confianza baja
+           → enviar a revisión humana:
+           Slack: "⚠️ Clasificación incierta:
+           {{$json.ia_razon}} — revisar"
+
+<span class="cm">// Esto evita que errores de la IA
+// enruten solicitudes por la ruta equivocada</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">🔥</span><div class="tt"><strong>IA + reglas = sistema robusto.</strong> Nunca dependas 100% de la IA en producción. El patrón correcto es: IA clasifica → regla valida la confianza → si confianza alta, actuar automáticamente; si baja, escalar a humano. La IA amplifica al equipo, no lo reemplaza completamente.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('prompts')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('respuestas')">Siguiente: Paso 3 — Respuestas →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · RESPUESTAS ══ -->
+    <section id="respuestas" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Paso 3 de 3</div>
+        <h1>Generación de <span>Respuestas Inteligentes</span></h1>
+        <p>El segundo uso de la IA en el workflow: redactar la respuesta. A diferencia de la clasificación (temperatura 0), aquí queremos creatividad controlada: respuestas personalizadas que suenan humanas.</p>
+      </div>
+
+      <div class="card" style="border-color:rgba(168,85,247,0.35);margin-bottom:16px;">
+        <div class="card-label">💬 Prompt de generación — respuesta para cada categoría</div>
+        <div class="g2" style="margin-bottom:0;">
+          <div class="code-block" style="margin-top:0;font-size:12px;">
+<span class="cm">// System prompt para rama VENTAS</span>
+<span class="str">Eres el asistente comercial de [Empresa].
+Tu tono es profesional, amigable y conciso.
+
+Escribe un email de respuesta personalizado
+para el siguiente lead. El email debe:
+- Usar el nombre del cliente
+- Mencionar específicamente su consulta
+- Incluir una propuesta de valor breve
+- Terminar con un CTA claro (llamada/demo)
+- Máximo 150 palabras
+- Tono: profesional pero cercano</span>
+
+<span class="cm">// User prompt — datos del lead</span>
+<span class="str">Nombre: {{$json.nombre}}
+Consulta original: {{$json.mensaje}}
+Plan de interés: {{$json.plan || 'no especificado'}}
+Empresa: {{$json.empresa || 'no especificada'}}</span>
+          </div>
+          <div class="code-block" style="margin-top:0;font-size:12px;">
+<span class="cm">// System prompt para rama SOPORTE</span>
+<span class="str">Eres el equipo de soporte de [Empresa].
+Tu tono es empático, claro y solucionador.
+
+Escribe la confirmación de recepción del
+ticket. El mensaje debe:
+- Confirmar que recibiste la solicitud
+- Mencionar el problema específico
+- Dar el número de ticket
+- Indicar el tiempo de respuesta según prioridad
+- Ofrecer alternativas de contacto urgente
+- Máximo 100 palabras</span>
+
+<span class="cm">// User prompt</span>
+<span class="str">Nombre: {{$json.nombre}}
+Problema: {{$json.mensaje}}
+Ticket ID: {{$json.solicitud_id}}
+Prioridad: {{$json.prioridad}}
+SLA: {{$json.sla_minutos}} minutos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">✅ Registrar la interacción completa en Sheets</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo: Google Sheets — Append al final del flujo</span>
+<span class="cm">// Una fila por cada mensaje procesado</span>
+
+A → <span class="kw">{{$now.toFormat('dd/MM/yyyy HH:mm')}}</span>
+B → <span class="kw">{{$json.nombre}}</span>
+C → <span class="kw">{{$json.email}}</span>
+D → <span class="kw">{{$json.mensaje.slice(0,100)}}</span>
+E → <span class="kw">{{$json.ia_categoria}}</span>
+F → <span class="kw">{{$json.ia_confianza}}</span>
+G → <span class="kw">{{$json.prioridad}}</span>
+H → <span class="str">"respuesta_enviada"</span>
+I → <span class="kw">{{$json.respuesta_ia.slice(0,200)}}</span>
+
+<span class="cm">// Este registro es el historial de interacciones
+// que el equipo puede revisar y usar para mejorar
+// los prompts con el tiempo</span>
+          </div>
+        </div>
+
+        <div class="card rb">
+          <div class="card-label">⚠️ Control de costos — límites y optimización</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Nodo Code — antes de llamar a la IA</span>
+<span class="cm">// Verificar si realmente necesitamos IA</span>
+<span class="kw">const</span> d = $input.first().json;
+<span class="kw">const</span> msg = d.mensaje.toLowerCase();
+
+<span class="cm">// Reglas rápidas sin costo de IA</span>
+<span class="kw">const</span> reglasRapidas = {
+  <span class="str">'precio'</span>:    <span class="str">'ventas'</span>,
+  <span class="str">'no funciona'</span>: <span class="str">'soporte'</span>,
+  <span class="str">'factura'</span>:    <span class="str">'facturacion'</span>
+};
+
+<span class="kw">for</span> (<span class="kw">const</span> [clave, cat] <span class="kw">of</span>
+     Object.entries(reglasRapidas)) {
+  <span class="kw">if</span> (msg.includes(clave)) {
+    <span class="kw">return</span> [{ json: {
+      ...d,
+      <span class="ky">ia_categoria</span>: cat,
+      <span class="ky">ia_confianza</span>: <span class="str">'alta'</span>,
+      <span class="ky">uso_ia</span>: <span class="kw">false</span>   <span class="cm">← gratis</span>
+    }}];
+  }
+}
+<span class="cm">// Si no hay regla → usar IA</span>
+<span class="kw">return</span> [{ json: { ...d, <span class="ky">uso_ia</span>: <span class="kw">true</span> } }];
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('clasificacion')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('practicas')">Siguiente: Buenas prácticas →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · PRÁCTICAS ══ -->
+    <section id="practicas" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Buenas Prácticas y <span>Errores Comunes</span></h1>
+        <p>Integrar IA en workflows de producción tiene sus particularidades. Estos son los patrones que hacen la diferencia entre un sistema que falla silenciosamente y uno confiable.</p>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">✅ Buenas prácticas</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Escribir prompts claros con formato explícito</strong><br><span style="font-size:13px;">"Responde SOLO con JSON válido, sin markdown, sin texto adicional." Esta instrucción es obligatoria en cualquier prompt que alimente un workflow automatizado.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Controlar siempre el formato de salida</strong><br><span style="font-size:13px;">Define el schema exacto del JSON que esperas. Incluye un ejemplo en el prompt. Usa temperature 0 para clasificación. Así la IA casi nunca se sale del formato.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Validar y tener fallback para respuestas de IA</strong><br><span style="font-size:13px;">Siempre envuelve el JSON.parse en try/catch. La IA puede devolver texto inesperado el 1–2% de las veces. Sin fallback, ese 2% rompe el workflow en producción.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Combinar IA + reglas + APIs</strong><br><span style="font-size:13px;">El mejor sistema es híbrido: reglas rápidas gratis para los casos obvios, IA para los ambiguos, y APIs externas para las acciones. No uses IA donde una regla funciona igual.</span></div></li>
+            <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probar múltiples casos incluyendo edge cases</strong><br><span style="font-size:13px;">Prueba con mensajes bien escritos, mensajes con errores de tipeo, mensajes muy cortos ("precio?"), mensajes en otro idioma y mensajes sin sentido. El sistema debe manejar todo.</span></div></li>
+          </ul>
+        </div>
+
+        <div class="card rb">
+          <div class="card-label">⚠️ Errores comunes</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Prompts ambiguos sin formato definido</strong><br><span style="font-size:13px;">"Analiza este mensaje y dime qué tipo es" devuelve un párrafo de análisis, no un valor parseable. La IA siempre necesita instrucciones explícitas del formato de salida esperado.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">No controlar la salida ni parsearla</strong><br><span style="font-size:13px;">Usar directamente <code>$json.message.content</code> como valor en el Switch. Si la IA responde "Ventas" en vez de "ventas", la regla no coincide y el Switch falla silenciosamente.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Depender 100% de la IA sin validación</strong><br><span style="font-size:13px;">La IA tiene una tasa de error del 1–3%. En 1000 solicitudes diarias son 10–30 errores. Sin validación de confianza y fallback, esos errores ejecutan acciones incorrectas en tu sistema.</span></div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">Costos innecesarios por prompts largos</strong><br><span style="font-size:13px;">Meter todo el historial de conversación en cada llamada, o usar modelos premium para tareas simples de clasificación. Define un presupuesto máximo y elige el modelo más barato que cumpla.</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:0;">
+        <div class="card-label">🚀 Bonus nivel pro</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div>
+            <div class="wtu"><span class="we">🧠</span><div class="wt"><strong>Memoria de conversaciones:</strong> guardar el historial de mensajes en Sheets o Redis y pasarlo como contexto en cada nueva llamada. La IA recuerda lo que se habló antes y las respuestas son mucho más coherentes.</div></div>
+            <div class="wtu"><span class="we">📱</span><div class="wt"><strong>Integración con WhatsApp/chatbots:</strong> conectar el webhook a Twilio o WhatsApp Business API. El mismo sistema de clasificación + respuesta IA funciona como chatbot en WhatsApp sin cambiar nada.</div></div>
+            <div class="wtu"><span class="we">😊</span><div class="wt"><strong>Análisis de sentimiento:</strong> agregar un campo "sentimiento" al prompt de clasificación (positivo / neutro / negativo). Los mensajes con sentimiento negativo activan una rama de respuesta más empática y urgente.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">🔗</span><div class="wt"><strong>Flujos híbridos IA + reglas + APIs:</strong> reglas gratis para el 70% de casos obvios, IA para el 25% ambiguo, APIs externas para acciones. El sistema más eficiente en costo y el más robusto en producción.</div></div>
+            <div class="wtu"><span class="we">🎯</span><div class="wt"><strong>Respuestas personalizadas con contexto CRM:</strong> antes de llamar a la IA para generar la respuesta, consultar el CRM (HubSpot, Sheets) para saber el historial del cliente. La IA redacta sabiendo si es cliente nuevo, frecuente o en riesgo.</div></div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>Dashboard de calidad IA:</strong> una hoja de Sheets que muestra la distribución de categorías, tasa de confianza baja y casos escalados a humanos. Con el tiempo puedes mejorar los prompts basándote en los datos reales.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('respuestas')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · ENTREGABLE ══ -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable — <span>Asistente IA Funcionando</span></h1>
+        <p>Al terminar esta clase tienes un sistema que no sigue reglas fijas: analiza el lenguaje natural, entiende la intención y genera respuestas personalizadas. Eso es automatización inteligente.</p>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Checklist del entregable</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Nodo OpenAI (o HTTP Request) conectado y funcionando</strong><br><span style="font-size:13px;">La llamada a la API devuelve respuesta. Las credenciales están configuradas en n8n. El nodo no da error 401 ni 429.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Prompt de clasificación devuelve JSON válido</strong><br><span style="font-size:13px;">El mensaje "quiero información sobre precios" devuelve <code>{"categoria":"ventas","confianza":"alta",...}</code> consistentemente. Probado 5 veces con el mismo input.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Parseo y validación del output IA</strong><br><span style="font-size:13px;">El nodo Code parsea correctamente el JSON. Un output inesperado de la IA cae en el fallback con <code>categoria: "otro"</code> en vez de romper el workflow.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Switch enruta por la categoría correcta</strong><br><span style="font-size:13px;">Un mensaje de ventas va al output 0, uno de soporte al output 1. Probado con mensajes de cada categoría.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Respuesta personalizada generada por IA</strong><br><span style="font-size:13px;">El email o mensaje generado menciona el nombre del cliente y hace referencia a su consulta específica. No es una respuesta genérica.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Registro en Sheets de cada interacción</strong><br><span style="font-size:13px;">Cada mensaje procesado genera una fila con: timestamp, nombre, email, mensaje, categoría IA, confianza y respuesta generada.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con 5 mensajes distintos</strong><br><span style="font-size:13px;">Uno por categoría + un mensaje ambiguo. Todos clasificados correctamente o escalados al fallback con confianza baja.</span></div></li>
+        </ul>
+      </div>
+
+      <!-- RESUMEN EVOLUCIÓN -->
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🏆 La evolución completa del sistema</div>
+        <div style="padding:8px 0;">
+          <div style="display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);width:70px;flex-shrink:0;">Clases 1–3</span>
+            <div style="flex:1;height:5px;background:var(--sky);border-radius:3px;width:20%;"></div>
+            <span style="font-size:13px;color:var(--text2);">Captura, limpia y guarda datos</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);width:70px;flex-shrink:0;">Clases 4–5</span>
+            <div style="flex:1;height:5px;background:var(--accent);border-radius:3px;width:40%;"></div>
+            <span style="font-size:13px;color:var(--text2);">CRM, pipeline, seguimiento temporal</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);width:70px;flex-shrink:0;">Clases 6–7</span>
+            <div style="flex:1;height:5px;background:var(--teal);border-radius:3px;width:65%;"></div>
+            <span style="font-size:13px;color:var(--text2);">Lógica condicional y operaciones end-to-end</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:11px 0;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#c084fc;width:70px;flex-shrink:0;">Clase 8</span>
+            <div style="flex:1;height:5px;background:linear-gradient(90deg,#c084fc,var(--accent2));border-radius:3px;width:92%;"></div>
+            <span style="font-size:13px;color:var(--text);">IA integrada — el sistema piensa y decide</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGUIENTE -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(124,110,245,0.08));border-color:rgba(168,85,247,0.3);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">⚡</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Clase 9 — Optimizar, Escalar y Producción</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:540px;margin:0 auto 20px;">Con un sistema completo funcionando, el siguiente paso es prepararlo para el mundo real: monitoreo de errores, sub-workflows reutilizables, manejo de carga alta y buenas prácticas de DevOps para automatizaciones.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">📊 Monitoreo</span>
+            <span class="b bg">🔁 Sub-workflows</span>
+            <span class="b bt">⚖️ Rate limiting</span>
+            <span class="b ba">🚀 Producción</span>
+          </div>
+          <p style="color:var(--text3);font-size:13px;margin-top:16px;font-family:'JetBrains Mono',monospace;">Inteligencia → Optimización → Escala</p>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('practicas')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  /* ─── NAVIGATION ─── */
+  const sections=['intro','conceptos','modelos','arquitectura','prompts','clasificacion','respuestas','practicas','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(id==='modelos' && !radarBuilt) buildRadar();
+  }
+  function goTo(id){const el=document.querySelector(`.nav-item[onclick*="'${id}'"]`);go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent=`Sección ${idx+1} de ${sections.length}`;
+  }
+
+  /* ─── RADAR CHART ─── */
+  const MODELS = {
+    gpt:    { label:'GPT-4o',        color:'#10a37f', scores:[95,88,75,80,90,70] },
+    claude: { label:'Claude 3.5',    color:'#c17a3c', scores:[92,95,80,85,88,75] },
+    gemini: { label:'Gemini 1.5',    color:'#4285f4', scores:[88,82,97,78,86,68] },
+    llama:  { label:'Llama 3.1 70B', color:'#a855f7', scores:[78,75,65,72,80,100] },
+    mistral:{ label:'Mistral Large', color:'#ff6b35', scores:[82,80,70,88,78,85]  }
+  };
+  const AXES = ['Razonamiento','Redacción','Contexto largo','Código','Velocidad','Privacidad / Open'];
+  const active = {gpt:true,claude:true,gemini:true,llama:true,mistral:true};
+  let radarBuilt = false;
+
+  function toggleModel(m,btn){
+    active[m] = !active[m];
+    btn.classList.toggle('active', active[m]);
+    drawRadar();
+    updateLegend();
+  }
+
+  function buildRadar(){
+    radarBuilt = true;
+    drawRadar();
+    updateLegend();
+  }
+
+  function polarToXY(angle, r, cx, cy){
+    const rad = (angle - 90) * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function drawRadar(){
+    const svg = document.getElementById('radarSvg');
+    svg.innerHTML = '';
+    const cx=210, cy=210, maxR=155, n=AXES.length;
+    const rings=[20,40,60,80,100];
+
+    // Rings
+    rings.forEach(pct=>{
+      const r = maxR * pct/100;
+      const pts = AXES.map((_,i)=>{
+        const {x,y}=polarToXY(i*(360/n),r,cx,cy);
+        return `${x},${y}`;
+      }).join(' ');
+      const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      poly.setAttribute('points',pts);
+      poly.setAttribute('fill','none');
+      poly.setAttribute('stroke','rgba(255,255,255,0.07)');
+      poly.setAttribute('stroke-width','1');
+      svg.appendChild(poly);
+      // ring label
+      const lp=polarToXY(0,r,cx,cy);
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',lp.x+3); t.setAttribute('y',lp.y-3);
+      t.setAttribute('fill','rgba(255,255,255,0.2)');
+      t.setAttribute('font-size','9');
+      t.setAttribute('font-family','JetBrains Mono,monospace');
+      t.textContent=pct;
+      svg.appendChild(t);
+    });
+
+    // Axes & labels
+    AXES.forEach((ax,i)=>{
+      const angle=i*(360/n);
+      const end=polarToXY(angle,maxR,cx,cy);
+      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',cx); line.setAttribute('y1',cy);
+      line.setAttribute('x2',end.x); line.setAttribute('y2',end.y);
+      line.setAttribute('stroke','rgba(255,255,255,0.1)');
+      line.setAttribute('stroke-width','1');
+      svg.appendChild(line);
+      const lp=polarToXY(angle,maxR+22,cx,cy);
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',lp.x); t.setAttribute('y',lp.y);
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('dominant-baseline','middle');
+      t.setAttribute('fill','rgba(255,255,255,0.45)');
+      t.setAttribute('font-size','10');
+      t.setAttribute('font-family','Syne,sans-serif');
+      t.setAttribute('font-weight','600');
+      // word wrap for 2 words
+      const words=ax.split(' / ');
+      if(words.length>1){
+        words.forEach((w,wi)=>{
+          const ts=document.createElementNS('http://www.w3.org/2000/svg','tspan');
+          ts.setAttribute('x',lp.x); ts.setAttribute('dy',wi===0?'0':'1.2em');
+          ts.textContent=w; t.appendChild(ts);
+        });
+      } else { t.textContent=ax; }
+      svg.appendChild(t);
+    });
+
+    // Model polygons
+    Object.entries(MODELS).forEach(([key,m])=>{
+      if(!active[key]) return;
+      const pts = m.scores.map((s,i)=>{
+        const r=maxR*s/100;
+        const {x,y}=polarToXY(i*(360/n),r,cx,cy);
+        return `${x},${y}`;
+      }).join(' ');
+      // fill
+      const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      poly.setAttribute('points',pts);
+      poly.setAttribute('fill',m.color);
+      poly.setAttribute('fill-opacity','0.08');
+      poly.setAttribute('stroke',m.color);
+      poly.setAttribute('stroke-width','2');
+      poly.setAttribute('stroke-opacity','0.85');
+      svg.appendChild(poly);
+      // dots
+      m.scores.forEach((s,i)=>{
+        const r=maxR*s/100;
+        const {x,y}=polarToXY(i*(360/n),r,cx,cy);
+        const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        c.setAttribute('cx',x); c.setAttribute('cy',y);
+        c.setAttribute('r','3.5');
+        c.setAttribute('fill',m.color);
+        c.setAttribute('fill-opacity','0.9');
+        svg.appendChild(c);
+      });
+    });
+  }
+
+  function updateLegend(){
+    const leg=document.getElementById('radarLegend');
+    leg.innerHTML='<div style="font-family:\'JetBrains Mono\',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:10px;">Modelos</div>';
+    Object.entries(MODELS).forEach(([key,m])=>{
+      const scores=m.scores;
+      const avg=Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+      const div=document.createElement('div');
+      div.className='radar-leg-item';
+      div.style.opacity=active[key]?'1':'0.3';
+      div.innerHTML=`
+        <div class="radar-leg-dot" style="background:${m.color};"></div>
+        <div>
+          <div class="radar-leg-name" style="color:${m.color};">${m.label}</div>
+          <div class="radar-leg-score">Promedio: ${avg}/100</div>
+          <div class="radar-leg-score">${AXES.map((ax,i)=>ax.split(' / ')[0]+': '+scores[i]).join(' · ')}</div>
+        </div>`;
+      leg.appendChild(div);
+    });
+  }
+
+  // Build on page load if modelos is visible
+  window.addEventListener('load',()=>{ if(document.getElementById('modelos').classList.contains('active')) buildRadar(); });
+</script>
+</body>
+</html>
