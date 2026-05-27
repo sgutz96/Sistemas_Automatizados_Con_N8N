@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 8 · Parte 2 — Módulos de Memoria en IA</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+    --oro:#f59e0b;   --oro-bg:rgba(245,158,11,0.1);
+    /* IA colors */
+    --gpt:#10a37f; --gpt-bg:rgba(16,163,127,0.12);
+    --claude:#c17a3c; --claude-bg:rgba(193,122,60,0.12);
+    --purple:#a855f7; --purple-bg:rgba(168,85,247,0.12);
+    /* memory type colors */
+    --mem-short:#38bdf8;  --mem-short-bg:rgba(56,189,248,0.1);
+    --mem-long:#22c97a;   --mem-long-bg:rgba(34,201,122,0.1);
+    --mem-conv:#e879a0;   --mem-conv-bg:rgba(232,121,160,0.1);
+    --mem-vec:#a855f7;    --mem-vec-bg:rgba(168,85,247,0.12);
+    --mem-sum:#f0a030;    --mem-sum-bg:rgba(240,160,48,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}
+  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}
+  .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}
+  .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}
+  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .pvb{border-color:rgba(168,85,247,0.35)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);} .vl{color:var(--teal);} .rd{color:var(--red);}
+  .pk{color:var(--pink);} .sk{color:var(--sky);} .lm{color:var(--lime);} .pv{color:var(--purple);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;text-align:center;flex-shrink:0;min-width:110px;}
+  .fn .fi{font-size:20px;margin-bottom:5px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:3px;}
+  .fn .fn2{font-size:12px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.mem {border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.07);}  .fn.mem .ft{color:var(--sky);}
+  .fn.ai  {border-color:rgba(168,85,247,0.5);background:rgba(168,85,247,0.08);}  .fn.ai .ft{color:#c084fc;}
+  .fn.db  {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.db .ft{color:var(--green);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* MEMORY TYPE HERO */
+  .mem-hero{border-radius:14px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .mem-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;opacity:0.08;pointer-events:none;}
+  .mh-short{background:var(--bg2);border:1px solid rgba(56,189,248,0.4);}   .mh-short::before{background:var(--mem-short);}
+  .mh-long {background:var(--bg2);border:1px solid rgba(34,201,122,0.4);}   .mh-long::before{background:var(--mem-long);}
+  .mh-conv {background:var(--bg2);border:1px solid rgba(232,121,160,0.4);}  .mh-conv::before{background:var(--mem-conv);}
+  .mh-vec  {background:var(--bg2);border:1px solid rgba(168,85,247,0.4);}   .mh-vec::before{background:var(--mem-vec);}
+  .mh-sum  {background:var(--bg2);border:1px solid rgba(240,160,48,0.4);}   .mh-sum::before{background:var(--mem-sum);}
+
+  .mh-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;}
+  .mh-icon{font-size:30px;width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .mh-short .mh-icon{background:rgba(56,189,248,0.12);}
+  .mh-long  .mh-icon{background:rgba(34,201,122,0.12);}
+  .mh-conv  .mh-icon{background:rgba(232,121,160,0.12);}
+  .mh-vec   .mh-icon{background:rgba(168,85,247,0.12);}
+  .mh-sum   .mh-icon{background:rgba(240,160,48,0.12);}
+
+  .mh-type{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;}
+  .mh-short .mh-type{color:var(--mem-short);}
+  .mh-long  .mh-type{color:var(--mem-long);}
+  .mh-conv  .mh-type{color:var(--mem-conv);}
+  .mh-vec   .mh-type{color:var(--mem-vec);}
+  .mh-sum   .mh-type{color:var(--mem-sum);}
+
+  .mh-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .mh-desc{font-size:14px;color:var(--text2);line-height:1.6;}
+  .mh-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .mh-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;}
+  .mh-short .mh-tag{background:var(--mem-short-bg);color:var(--mem-short);}
+  .mh-long  .mh-tag{background:var(--mem-long-bg);color:var(--mem-long);}
+  .mh-conv  .mh-tag{background:var(--mem-conv-bg);color:var(--mem-conv);}
+  .mh-vec   .mh-tag{background:var(--mem-vec-bg);color:var(--mem-vec);}
+  .mh-sum   .mh-tag{background:var(--mem-sum-bg);color:var(--mem-sum);}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}
+  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);}
+  .bt{background:var(--teal-bg);color:var(--teal);}
+  .br{background:var(--red-bg);color:var(--red);}
+  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);}
+  .bp{background:var(--pink-bg);color:var(--pink);}
+  .bpv{background:var(--purple-bg);color:var(--purple);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* IO ROW */
+  .io-row{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;align-items:start;margin-top:14px;}
+  .io-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8;}
+  .io-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+  .io-arr{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);padding-top:28px;}
+
+  /* MEMORY PILL */
+  .mem-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
+  .mp-short{background:var(--mem-short-bg);color:var(--mem-short);border:1px solid rgba(56,189,248,0.3);}
+  .mp-long {background:var(--mem-long-bg);color:var(--mem-long);border:1px solid rgba(34,201,122,0.3);}
+  .mp-conv {background:var(--mem-conv-bg);color:var(--mem-conv);border:1px solid rgba(232,121,160,0.3);}
+  .mp-vec  {background:var(--mem-vec-bg);color:var(--mem-vec);border:1px solid rgba(168,85,247,0.3);}
+  .mp-sum  {background:var(--mem-sum-bg);color:var(--mem-sum);border:1px solid rgba(240,160,48,0.3);}
+
+  /* STEP */
+  .step-list{list-style:none;}
+  .step-item{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .step-item:last-child{border-bottom:none;}
+  .step-num{width:32px;height:32px;border-radius:9px;background:var(--accent-glow);border:1px solid rgba(124,110,245,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--accent2);flex-shrink:0;margin-top:1px;}
+  .step-content h4{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px;}
+  .step-content p{font-size:13px;color:var(--text2);line-height:1.6;}
+  .step-tag{display:inline-block;margin-top:6px;padding:2px 9px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--bg4);color:var(--text3);border:1px solid var(--border);}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{opacity:0.85;}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Clase 8 · Parte 2</div>
+      <h2>Módulos de Memoria en IA</h2>
+      <p>n8n · memoria · contexto · agentes</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> ¿Por qué memoria?</a>
+    <a class="nav-item" onclick="go('tipos',this)"><span class="ni">🗂️</span> Tipos de memoria</a>
+    <a class="nav-item" onclick="go('short',this)"><span class="ni">⚡</span> Memoria a corto plazo</a>
+    <a class="nav-item" onclick="go('long',this)"><span class="ni">💾</span> Memoria a largo plazo</a>
+    <a class="nav-item" onclick="go('conv',this)"><span class="ni">💬</span> Memoria de conversación</a>
+    <a class="nav-item" onclick="go('vec',this)"><span class="ni">🧬</span> Memoria vectorial</a>
+    <a class="nav-item" onclick="go('summary',this)"><span class="ni">📝</span> Memoria de resumen</a>
+    <a class="nav-item" onclick="go('agente',this)"><span class="ni">🤖</span> Agente con memoria completa</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable y bonus</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ══ 1 · INTRO ══ -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Clase 8 · Parte 2</div>
+        <h1>Módulos de <span>Memoria en IA</span></h1>
+        <p>La IA sin memoria responde bien una vez. La IA con memoria aprende, recuerda y mejora cada interacción. Esta es la diferencia entre un chatbot y un asistente real.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🧠 El problema que resuelve la memoria</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">Cada llamada a la IA es, por defecto, completamente sin contexto</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">Los modelos de IA no recuerdan nada entre llamadas. Si el usuario pregunta "¿y cuánto cuesta?" después de haber dicho "me interesa el plan Pro", la IA no sabe de qué habla. La memoria es lo que <strong style="color:var(--text);">conecta conversaciones, almacena preferencias y hace que la IA se comporte como si conociera al usuario.</strong></p>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn">5</div><div class="sl">tipos de módulo de memoria que verás hoy</div></div>
+        <div class="stat"><div class="sn" style="color:var(--sky);">0</div><div class="sl">memoria nativa entre llamadas en cualquier LLM</div></div>
+        <div class="stat"><div class="sn" style="color:var(--purple);">∞</div><div class="sl">contexto que puedes construir con los módulos correctos</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">n8n</div><div class="sl">tiene nodos nativos para cada tipo de memoria</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🔁 Sin memoria vs con memoria — la diferencia real</div>
+        <div class="g2" style="margin-top:12px;">
+          <div style="background:var(--bg3);border:1px solid var(--red-bg);border-radius:10px;padding:18px;">
+            <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:12px;">❌ IA sin memoria</div>
+            <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="str">Usuario:</span>  Me llamo Carlos, busco CRM
+<span class="pv">IA:</span>       Claro, ¿qué tipo de CRM?
+
+<span class="str">Usuario:</span>  Algo económico
+<span class="pv">IA:</span>       Hay muchas opciones...
+              <span class="cm">// No sabe quién es Carlos</span>
+              <span class="cm">// No sabe que busca CRM</span>
+              <span class="cm">// Contexto perdido</span>
+            </div>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(56,189,248,0.06),rgba(168,85,247,0.06));border-radius:10px;padding:18px;border:1px solid rgba(56,189,248,0.3);">
+            <div style="font-size:12px;font-weight:700;color:var(--sky);margin-bottom:12px;">✅ IA con memoria de conversación</div>
+            <div class="code-block" style="font-size:12px;margin-top:0;">
+<span class="str">Usuario:</span>  Me llamo Carlos, busco CRM
+<span class="pv">IA:</span>       Hola Carlos, ¿equipo pequeño?
+
+<span class="str">Usuario:</span>  Algo económico
+<span class="pv">IA:</span>       Para CRM económico, Carlos,
+              te recomendaría HubSpot free
+              o Notion para tu equipo.
+              <span class="cm">// Recuerda: nombre + contexto</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);">
+        <div class="card-label">🗺️ Los 5 módulos de memoria</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px;">
+          <div style="background:var(--bg2);border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">⚡</div>
+            <div style="font-size:11px;font-weight:700;color:var(--sky);">Corto plazo</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px;">Dentro de la ejecución</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid rgba(34,201,122,0.35);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">💾</div>
+            <div style="font-size:11px;font-weight:700;color:var(--green);">Largo plazo</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px;">Persiste entre sesiones</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid rgba(232,121,160,0.35);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">💬</div>
+            <div style="font-size:11px;font-weight:700;color:var(--pink);">Conversación</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px;">Historial de chat</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid rgba(168,85,247,0.35);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">🧬</div>
+            <div style="font-size:11px;font-weight:700;color:var(--purple);">Vectorial</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px;">Búsqueda semántica</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid rgba(240,160,48,0.35);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:6px;">📝</div>
+            <div style="font-size:11px;font-weight:700;color:var(--amber);">Resumen</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px;">Comprime el historial</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-p" onclick="goTo('tipos')">Siguiente: Tipos de memoria →</button>
+      </div>
+    </section>
+
+    <!-- ══ 2 · TIPOS ══ -->
+    <section id="tipos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Tipos de <span>Memoria</span></h1>
+        <p>Cada tipo de memoria resuelve un problema distinto. Elegir el incorrecto es guardar todo sin poder encontrar nada, o olvidar lo que importa.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🗂️ Mapa completo — cómo se relacionan los tipos</div>
+        <div class="code-block">
+<span class="cm">// Analogía con la memoria humana</span>
+
+<span class="sk">Corto plazo</span>  = lo que tienes en mente ahora mismo
+              → Variables en la ejecución actual del workflow
+              → Se pierde al terminar el run
+
+<span class="str">Largo plazo</span>  = lo que recuerdas de hace semanas
+              → Datos del usuario en Sheets / DB
+              → Persiste entre sesiones indefinidamente
+
+<span class="pk">Conversación</span>= el hilo de la charla de hoy
+              → Mensajes previos pasados a la IA como contexto
+              → Ventana deslizante de N turnos recientes
+
+<span class="pv">Vectorial</span>   = tu biblioteca de conocimiento
+              → Documentos indexados por significado
+              → "¿Qué sé sobre X?" → búsqueda semántica
+
+<span class="ky">Resumen</span>     = el diario de lo importante
+              → La IA resume lo que pasó para no exceder contexto
+              → Balance entre memoria y costo de tokens
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-label">⚖️ Comparativa — cuándo usar cada tipo</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Tipo</th><th>Duración</th><th>Dónde se guarda</th><th>Mejor para</th><th>Costo</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mem-pill mp-short">⚡ Corto plazo</span></td><td>1 ejecución</td><td>Variables del nodo Set</td><td>Pasar contexto entre nodos del mismo run</td><td>💚 Gratis</td></tr>
+            <tr><td><span class="mem-pill mp-long">💾 Largo plazo</span></td><td>Permanente</td><td>Sheets / DB / Airtable</td><td>Perfil del usuario, historial de acciones</td><td>💚 Casi gratis</td></tr>
+            <tr><td><span class="mem-pill mp-conv">💬 Conversación</span></td><td>Sesión</td><td>Array en variable / Redis</td><td>Chatbots, soporte, asistentes interactivos</td><td>💛 Tokens extra</td></tr>
+            <tr><td><span class="mem-pill mp-vec">🧬 Vectorial</span></td><td>Permanente</td><td>Pinecone / Supabase</td><td>RAG, base de conocimiento, documentos</td><td>🔴 Moderado</td></tr>
+            <tr><td><span class="mem-pill mp-sum">📝 Resumen</span></td><td>Sesión larga</td><td>Variable / DB</td><td>Conversaciones largas sin exceder contexto</td><td>💛 Tokens resumen</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="g2">
+        <div class="tip"><span class="ti">💡</span><div class="tt"><strong>La mayoría de casos necesita combinar dos tipos:</strong> memoria de conversación (para el hilo actual) + memoria a largo plazo (para el perfil del usuario). Juntas dan la experiencia de "la IA me conoce".</div></div>
+        <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>El contexto de los LLMs no es infinito.</strong> GPT-4 tiene ~128k tokens, Claude ~200k. Pasar demasiado historial sube el costo y puede degradar la calidad. Por eso existen los módulos de resumen.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('short')">Siguiente: Corto plazo →</button>
+      </div>
+    </section>
+
+    <!-- ══ 3 · CORTO PLAZO ══ -->
+    <section id="short" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Módulo 1 de 5</div>
+        <h1>Memoria a <span>Corto Plazo</span></h1>
+        <p>El contexto que vive dentro de una sola ejecución del workflow. Nada persiste, pero dentro del run la IA tiene todo lo que necesita.</p>
+      </div>
+
+      <div class="mem-hero mh-short">
+        <div class="mh-top">
+          <div class="mh-icon">⚡</div>
+          <div>
+            <div class="mh-type">Memoria a corto plazo · In-execution context</div>
+            <div class="mh-title">Contexto que vive en el run actual</div>
+            <div class="mh-desc">En el corto plazo, la memoria son simplemente las variables que construyes con nodos Set y pasas al prompt de la IA. El nombre del usuario, su intención, datos del trigger — todo lo que necesitas para dar contexto al modelo en esa ejecución específica, sin guardarlo en ningún lugar externo.</div>
+          </div>
+        </div>
+        <div class="mh-tags">
+          <span class="mh-tag">⚡ Dentro del run</span>
+          <span class="mh-tag">🔧 Nodo Set</span>
+          <span class="mh-tag">💬 Inyectado en el prompt</span>
+          <span class="mh-tag">🆓 Sin costo extra</span>
+          <span class="mh-tag">🗑️ Se pierde al terminar</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card sb">
+          <div class="card-label">⚙️ Cómo se implementa en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Paso 1: Webhook recibe datos del usuario</span>
+{
+  <span class="ky">"nombre"</span>: <span class="str">"Carlos"</span>,
+  <span class="ky">"consulta"</span>: <span class="str">"busco un CRM económico"</span>,
+  <span class="ky">"historial_compras"</span>: <span class="str">"plan básico x2"</span>
+}
+
+<span class="cm">// Paso 2: Set construye el contexto</span>
+contexto_usuario = <span class="str">"
+Nombre: {{$json.nombre}}
+Historial: {{$json.historial_compras}}
+Consulta actual: {{$json.consulta}}
+"</span>
+
+<span class="cm">// Paso 3: Se inyecta en el prompt</span>
+prompt = <span class="str">"Eres un asistente de ventas.
+Contexto del usuario:
+{{contexto_usuario}}
+
+Responde a su consulta:"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos reales</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">🛍️</span><div class="wt"><strong>E-commerce:</strong> el pedido actual + historial del cliente se inyectan para que la IA dé recomendaciones personalizadas en ese momento</div></div>
+            <div class="wtu"><span class="we">💬</span><div class="wt"><strong>Soporte:</strong> el ticket actual + el producto que compró + el plan se pasan como contexto para que la IA responda con precisión</div></div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>Análisis:</strong> los datos del reporte del día se pasan para que la IA genere el resumen con los números correctos de esa ejecución</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('tipos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('long')">Siguiente: Largo plazo →</button>
+      </div>
+    </section>
+
+    <!-- ══ 4 · LARGO PLAZO ══ -->
+    <section id="long" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Módulo 2 de 5</div>
+        <h1>Memoria a <span>Largo Plazo</span></h1>
+        <p>Lo que la IA recuerda de ti entre sesiones. Preferencias, historial, nombre, plan, interacciones pasadas — persiste indefinidamente en una base de datos externa.</p>
+      </div>
+
+      <div class="mem-hero mh-long">
+        <div class="mh-top">
+          <div class="mh-icon">💾</div>
+          <div>
+            <div class="mh-type">Memoria a largo plazo · Persistent user profile</div>
+            <div class="mh-title">El perfil del usuario que vive entre sesiones</div>
+            <div class="mh-desc">La IA no tiene memoria entre llamadas, pero tu workflow sí puede tenerla. Cada vez que el usuario interactúa, n8n lee su perfil de Sheets o una DB, se lo pasa a la IA como contexto, y al final actualiza el perfil con lo nuevo. La próxima vez, la IA ya "lo conoce".</div>
+          </div>
+        </div>
+        <div class="mh-tags">
+          <span class="mh-tag">💾 Persiste siempre</span>
+          <span class="mh-tag">📊 Sheets / DB / Airtable</span>
+          <span class="mh-tag">👤 Perfil del usuario</span>
+          <span class="mh-tag">🔄 Leer → usar → actualizar</span>
+        </div>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ El patrón completo — leer, usar, actualizar</div>
+        <div class="code-block">
+<span class="cm">// PASO 1: Identificar al usuario</span>
+Webhook recibe: { user_id: <span class="str">"usr_123"</span>, mensaje: <span class="str">"..."</span> }
+
+<span class="cm">// PASO 2: Leer perfil de la DB</span>
+Sheets READ: buscar fila donde user_id == <span class="str">"usr_123"</span>
+Resultado:
+{
+  <span class="ky">"nombre"</span>:       <span class="str">"Carlos"</span>,
+  <span class="ky">"plan"</span>:         <span class="str">"pro"</span>,
+  <span class="ky">"interacciones"</span>: <span class="vl">14</span>,
+  <span class="ky">"temas_previos"</span>: <span class="str">"CRM, facturación, API"</span>,
+  <span class="ky">"ultima_sesion"</span>:  <span class="str">"2025-01-10"</span>
+}
+
+<span class="cm">// PASO 3: Construir prompt con el perfil</span>
+system_prompt = <span class="str">"
+Usuario: Carlos (plan Pro, 14 interacciones previas)
+Temas que ya conoce: CRM, facturación, API
+No repetir lo básico — va directo al grano.
+"</span>
+
+<span class="cm">// PASO 4: Llamar a la IA con ese contexto</span>
+HTTP Request → IA API → respuesta personalizada
+
+<span class="cm">// PASO 5: Actualizar el perfil</span>
+Sheets UPDATE: user_id = <span class="str">"usr_123"</span>
+  interacciones = interacciones + <span class="vl">1</span>
+  ultima_sesion  = <span class="kw">{{$now}}</span>
+  temas_previos  = temas_previos + <span class="str">", integración"</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">📊 Estructura del perfil en Sheets</div>
+          <table class="ct" style="margin-top:8px;">
+            <thead><tr><th>Campo</th><th>Qué guarda</th></tr></thead>
+            <tbody>
+              <tr><td>user_id</td><td>Identificador único del usuario</td></tr>
+              <tr><td>nombre</td><td>Nombre para personalizar respuestas</td></tr>
+              <tr><td>plan</td><td>Plan actual — adaptar recomendaciones</td></tr>
+              <tr><td>preferencias</td><td>Qué le gusta, qué evitar</td></tr>
+              <tr><td>temas_previos</td><td>Qué ya se trató — no repetir</td></tr>
+              <tr><td>interacciones</td><td>Conteo de sesiones</td></tr>
+              <tr><td>ultima_sesion</td><td>Cuándo fue la última vez</td></tr>
+              <tr><td>notas</td><td>Observaciones del agente</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos reales</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">🎓</span><div class="wt"><strong>Cursos online:</strong> el asistente sabe qué módulos completó el estudiante y adapta las explicaciones al nivel demostrado</div></div>
+            <div class="wtu"><span class="we">🏥</span><div class="wt"><strong>Salud:</strong> el bot recuerda condiciones previas, alergias y medicamentos para dar respuestas seguras</div></div>
+            <div class="wtu"><span class="we">🛒</span><div class="wt"><strong>E-commerce:</strong> "Carlos siempre elige envío express" — la IA proactivamente lo recomienda sin que lo pida</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('short')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('conv')">Siguiente: Memoria de conversación →</button>
+      </div>
+    </section>
+
+    <!-- ══ 5 · CONVERSACIÓN ══ -->
+    <section id="conv" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Módulo 3 de 5</div>
+        <h1>Memoria de <span>Conversación</span></h1>
+        <p>El historial del chat que se pasa a la IA como contexto. La diferencia entre un chatbot amnésico y uno que entiende el hilo de la conversación.</p>
+      </div>
+
+      <div class="mem-hero mh-conv">
+        <div class="mh-top">
+          <div class="mh-icon">💬</div>
+          <div>
+            <div class="mh-type">Memoria de conversación · Chat history buffer</div>
+            <div class="mh-title">El historial del chat como contexto de la IA</div>
+            <div class="mh-desc">Los LLMs procesan conversaciones como un array de mensajes: roles "user" y "assistant" alternados. Al pasar los mensajes anteriores en cada llamada, la IA puede responder con coherencia al hilo de la conversación. n8n guarda y acumula este array entre llamadas del mismo usuario.</div>
+          </div>
+        </div>
+        <div class="mh-tags">
+          <span class="mh-tag">💬 Array de mensajes</span>
+          <span class="mh-tag">👤 user / 🤖 assistant</span>
+          <span class="mh-tag">🪟 Ventana deslizante</span>
+          <span class="mh-tag">💾 Redis / Sheets</span>
+          <span class="mh-tag">🔁 Multi-turno</span>
+        </div>
+      </div>
+
+      <div class="card pb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Estructura del historial de mensajes</div>
+        <div class="code-block">
+<span class="cm">// Formato estándar que aceptan todos los LLMs</span>
+messages: [
+  {
+    <span class="ky">"role"</span>:    <span class="str">"system"</span>,
+    <span class="ky">"content"</span>: <span class="str">"Eres un asistente de ventas de n8n Corp."</span>
+  },
+  {
+    <span class="ky">"role"</span>:    <span class="str">"user"</span>,
+    <span class="ky">"content"</span>: <span class="str">"Hola, me llamo Carlos"</span>
+  },
+  {
+    <span class="ky">"role"</span>:    <span class="str">"assistant"</span>,
+    <span class="ky">"content"</span>: <span class="str">"Hola Carlos, ¿en qué te puedo ayudar?"</span>
+  },
+  {
+    <span class="ky">"role"</span>:    <span class="str">"user"</span>,
+    <span class="ky">"content"</span>: <span class="str">"¿Tienen plan gratuito?"</span>
+  }
+  <span class="cm">// ← aquí va la respuesta del asistente</span>
+]
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">⚙️ Implementación en n8n con Sheets</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Guardar historial en Sheets por session_id</span>
+
+<span class="cm">// LEER historial previo</span>
+Sheets READ: donde session_id == <span class="str">"{{$json.session_id}}"</span>
+→ resultado: [{ role, content }, ...]
+
+<span class="cm">// AGREGAR el nuevo mensaje del usuario</span>
+<span class="kw">const</span> historial = resultado ?? [];
+historial.push({
+  <span class="ky">role</span>: <span class="str">"user"</span>,
+  <span class="ky">content</span>: <span class="kw">{{$json.mensaje}}</span>
+});
+
+<span class="cm">// LLAMAR a la IA con el historial completo</span>
+HTTP → IA API:
+  messages: [system_prompt, ...historial]
+
+<span class="cm">// GUARDAR la respuesta de la IA</span>
+historial.push({
+  <span class="ky">role</span>: <span class="str">"assistant"</span>,
+  <span class="ky">content</span>: respuesta_ia
+});
+Sheets UPDATE: historial = JSON.stringify(historial)
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🪟 Ventana deslizante — controlar el tamaño</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Si el historial crece demasiado → tokens caros
+// Solución: ventana deslizante de N últimos turnos</span>
+
+<span class="kw">const</span> MAX_TURNOS = <span class="vl">10</span>;  <span class="cm">// 5 intercambios</span>
+<span class="kw">const</span> historialCompleto = cargarHistorial();
+
+<span class="kw">const</span> historialRecortado = historialCompleto
+  .slice(<span class="cm">-MAX_TURNOS * 2</span>);  <span class="cm">// ×2 = user+assistant</span>
+
+<span class="cm">// Siempre incluir el system prompt primero</span>
+<span class="kw">const</span> mensajes = [
+  system_prompt,
+  ...historialRecortado,
+  { <span class="ky">role</span>: <span class="str">"user"</span>, <span class="ky">content</span>: nuevoMensaje }
+];
+
+<span class="cm">// Para conversaciones muy largas → usar Resumen</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('long')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('vec')">Siguiente: Memoria vectorial →</button>
+      </div>
+    </section>
+
+    <!-- ══ 6 · VECTORIAL ══ -->
+    <section id="vec" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Módulo 4 de 5</div>
+        <h1>Memoria <span>Vectorial</span></h1>
+        <p>La base de conocimiento de la IA. Documentos, manuales, FAQs indexados por significado. La IA encuentra lo relevante aunque no uses las palabras exactas.</p>
+      </div>
+
+      <div class="mem-hero mh-vec">
+        <div class="mh-top">
+          <div class="mh-icon">🧬</div>
+          <div>
+            <div class="mh-type">Memoria vectorial · RAG — Retrieval Augmented Generation</div>
+            <div class="mh-title">Búsqueda por significado en tu base de conocimiento</div>
+            <div class="mh-desc">La memoria vectorial convierte documentos en vectores numéricos (embeddings) que representan su significado. Cuando el usuario pregunta algo, su pregunta también se convierte en vector y se buscan los fragmentos más similares semánticamente. Eso se pasa a la IA como contexto. La IA responde basada en TU documentación, no en su entrenamiento.</div>
+          </div>
+        </div>
+        <div class="mh-tags">
+          <span class="mh-tag">📐 Embeddings</span>
+          <span class="mh-tag">🔍 Búsqueda semántica</span>
+          <span class="mh-tag">📄 Documentos propios</span>
+          <span class="mh-tag">🏛️ Pinecone / Supabase</span>
+          <span class="mh-tag">🎯 RAG pattern</span>
+        </div>
+      </div>
+
+      <div class="card pvb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ El patrón RAG completo en n8n</div>
+        <div class="code-block">
+<span class="cm">// FASE 1: Indexación (se hace una vez)</span>
+PDF / Docs de tu empresa
+  → <span class="kw">Split en chunks</span> (fragmentos de ~500 tokens)
+  → <span class="kw">HTTP Request</span> → OpenAI Embeddings API
+     POST /v1/embeddings
+     body: { <span class="ky">"input"</span>: chunk_texto, <span class="ky">"model"</span>: <span class="str">"text-embedding-3-small"</span> }
+     → devuelve: vector de 1536 dimensiones
+  → <span class="kw">Supabase / Pinecone</span>: guardar vector + texto original + metadata
+
+<span class="cm">// FASE 2: Consulta (por cada pregunta)</span>
+Webhook: { pregunta: <span class="str">"¿Cuál es la política de reembolso?"</span> }
+  → <span class="kw">Embed la pregunta</span>: misma API de embeddings
+  → <span class="kw">Buscar similares</span>: vector store devuelve top 3-5 chunks más cercanos
+  → <span class="kw">Construir prompt</span>:
+     <span class="str">"Contexto de la documentación:
+     {{chunk_1}}
+     {{chunk_2}}
+     {{chunk_3}}
+
+     Pregunta: {{pregunta}}
+     Responde SOLO con el contexto dado."</span>
+  → <span class="kw">IA responde</span> con información de TU empresa, no inventada
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">🏛️ Opciones de vector store</div>
+          <table class="ct" style="margin-top:8px;">
+            <thead><tr><th>Opción</th><th>Ventaja</th><th>Integración n8n</th></tr></thead>
+            <tbody>
+              <tr><td>Supabase</td><td>SQL + pgvector, gratis hasta 500MB</td><td>HTTP Request + nodo nativo</td></tr>
+              <tr><td>Pinecone</td><td>Más rápido, hecho para vectors</td><td>HTTP Request</td></tr>
+              <tr><td>Weaviate</td><td>Open source, self-hosted</td><td>HTTP Request</td></tr>
+              <tr><td>Qdrant</td><td>Self-hosted, muy rápido</td><td>HTTP Request</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos reales de RAG</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">📋</span><div class="wt"><strong>Soporte técnico:</strong> indexar manual del producto. El bot responde con información exacta de la documentación, no alucinaciones</div></div>
+            <div class="wtu"><span class="we">⚖️</span><div class="wt"><strong>Legal / Contratos:</strong> indexar políticas y contratos. La IA responde sobre cláusulas específicas citando el documento</div></div>
+            <div class="wtu"><span class="we">🏥</span><div class="wt"><strong>Salud:</strong> indexar guías clínicas. El asistente responde basado en protocolos oficiales, no en entrenamiento general</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>RAG no es magia, es calidad de datos.</strong> Si tus documentos están desactualizados o mal redactados, la IA responderá con esa información incorrecta. La calidad del resultado depende directamente de la calidad de lo indexado.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('conv')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('summary')">Siguiente: Memoria de resumen →</button>
+      </div>
+    </section>
+
+    <!-- ══ 7 · RESUMEN ══ -->
+    <section id="summary" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Módulo 5 de 5</div>
+        <h1>Memoria de <span>Resumen</span></h1>
+        <p>El truco para conversaciones largas sin explotar el contexto ni el presupuesto. La IA resume lo que pasó para recordar lo importante sin cargar todo el historial.</p>
+      </div>
+
+      <div class="mem-hero mh-sum">
+        <div class="mh-top">
+          <div class="mh-icon">📝</div>
+          <div>
+            <div class="mh-type">Memoria de resumen · Summarization buffer</div>
+            <div class="mh-title">Comprimir el historial antes de que explote</div>
+            <div class="mh-desc">Cuando el historial de conversación supera cierto límite de tokens, en vez de descartar los mensajes más antiguos, le pides a la IA que los resuma en un párrafo. Ese resumen reemplaza los mensajes originales. El contexto se mantiene comprensible pero compacto.</div>
+          </div>
+        </div>
+        <div class="mh-tags">
+          <span class="mh-tag">📝 Comprime historial</span>
+          <span class="mh-tag">💰 Reduce costo de tokens</span>
+          <span class="mh-tag">🧠 Mantiene coherencia</span>
+          <span class="mh-tag">🔄 Automático en n8n</span>
+        </div>
+      </div>
+
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ Implementación — cuándo y cómo resumir</div>
+        <div class="code-block">
+<span class="cm">// Trigger: cuando el historial supera N tokens</span>
+<span class="kw">const</span> tokens_estimados = historial.length * <span class="vl">4</span>; <span class="cm">// ~4 chars/token</span>
+<span class="kw">const</span> LIMITE_TOKENS = <span class="vl">6000</span>;
+
+<span class="kw">IF</span> tokens_estimados > LIMITE_TOKENS:
+
+  <span class="cm">// Pedir a la IA que resuma la conversación previa</span>
+  HTTP → IA API:
+    messages: [{
+      <span class="ky">role</span>: <span class="str">"user"</span>,
+      <span class="ky">content</span>: <span class="str">"Resume esta conversación en 3 frases
+                manteniendo los puntos clave y
+                los compromisos del asistente:
+                {{historial_antiguo}}"</span>
+    }]
+  → respuesta: <span class="str">"Carlos es cliente Pro. Preguntó sobre integraciones
+               de pago. Le prometimos acceso a la API de Stripe."</span>
+
+  <span class="cm">// Reemplazar historial antiguo con el resumen</span>
+  nuevo_historial = [
+    { <span class="ky">role</span>: <span class="str">"system"</span>, <span class="ky">content</span>: <span class="str">"Resumen previo: {{resumen}}"</span> },
+    ...mensajes_recientes  <span class="cm">// últimos 4 turnos intactos</span>
+  ]
+
+<span class="cm">// Resultado: contexto compacto + coherencia total</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">💰 Impacto en costos con resumen</div>
+          <div style="margin-top:14px;">
+            <div style="margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span style="color:var(--text);">Sin resumen — turno 20</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red);">~8.000 tokens</span></div>
+              <div style="background:var(--bg4);border-radius:4px;height:8px;"><div style="width:80%;height:100%;background:var(--red);border-radius:4px;"></div></div>
+            </div>
+            <div style="margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span style="color:var(--text);">Con ventana de 10 turnos</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);">~2.000 tokens</span></div>
+              <div style="background:var(--bg4);border-radius:4px;height:8px;"><div style="width:40%;height:100%;background:var(--amber);border-radius:4px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span style="color:var(--text);">Con resumen acumulativo</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green);">~800 tokens</span></div>
+              <div style="background:var(--bg4);border-radius:4px;height:8px;"><div style="width:16%;height:100%;background:var(--green);border-radius:4px;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo usar cada estrategia</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">1-5</span><div class="wt"><strong>Menos de 5 turnos:</strong> pasar todo el historial sin resumen — simple y sin pérdida de información</div></div>
+            <div class="wtu"><span class="we">5-20</span><div class="wt"><strong>5 a 20 turnos:</strong> ventana deslizante de los últimos 10 — equilibrio ideal entre costo y contexto</div></div>
+            <div class="wtu"><span class="we">20+</span><div class="wt"><strong>Más de 20 turnos:</strong> resumen + últimos 4 turnos — conversaciones de soporte largas o sesiones extendidas</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('vec')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('agente')">Siguiente: Agente con memoria completa →</button>
+      </div>
+    </section>
+
+    <!-- ══ 8 · AGENTE ══ -->
+    <section id="agente" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Agente con <span>Memoria Completa</span></h1>
+        <p>Los 5 módulos combinados en un solo sistema. El agente que recuerda quién eres, qué hablaron, qué sabe sobre el tema y te responde con todo ese contexto.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🤖 Arquitectura del agente con memoria completa</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="fn trig"><div class="fi">💬</div><div class="ft">Input</div><div class="fn2">Mensaje usuario</div><div class="fn3">session_id + texto</div></div>
+          <div class="fa">→</div>
+          <div class="fn mem"><div class="fi">💾</div><div class="ft">Largo plazo</div><div class="fn2">Leer perfil</div><div class="fn3">Sheets/DB</div></div>
+          <div class="fa">→</div>
+          <div class="fn mem" style="border-color:rgba(232,121,160,0.4);background:rgba(232,121,160,0.05);"><div class="fi">💬</div><div class="ft" style="color:var(--pink);">Conversación</div><div class="fn2">Cargar historial</div><div class="fn3">Últimos N turnos</div></div>
+          <div class="fa">→</div>
+          <div class="fn mem" style="border-color:rgba(168,85,247,0.4);background:rgba(168,85,247,0.07);"><div class="fi">🧬</div><div class="ft" style="color:var(--purple);">Vectorial</div><div class="fn2">Buscar contexto</div><div class="fn3">Docs relevantes</div></div>
+          <div class="fa">→</div>
+          <div class="fn ai"><div class="fi">🤖</div><div class="ft">IA</div><div class="fn2">Generar respuesta</div><div class="fn3">Todo el contexto</div></div>
+          <div class="fa">→</div>
+          <div class="fn act"><div class="fi">💾</div><div class="ft">Guardar</div><div class="fn2">Actualizar todo</div><div class="fn3">Perfil + historial</div></div>
+        </div>
+      </div>
+
+      <div class="card pvb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ El prompt completo que recibe la IA</div>
+        <div class="code-block">
+<span class="cm">// System prompt construido en n8n con todos los módulos</span>
+
+<span class="str">SYSTEM:
+Eres un asistente de soporte de n8n Corp.
+
+━━━ PERFIL DEL USUARIO (largo plazo) ━━━
+Nombre: Carlos
+Plan: Pro
+Interacciones previas: 14
+Temas ya conoce: CRM, APIs, webhooks
+Preferencias: respuestas directas, ejemplos de código
+
+━━━ RESUMEN DE CONVERSACIÓN ANTERIOR ━━━
+Carlos preguntó sobre integración con Stripe.
+Le explicamos el webhook de pagos y prometimos
+enviarle un ejemplo de workflow.
+
+━━━ DOCUMENTACIÓN RELEVANTE (vectorial) ━━━
+[Fragmento 1: Manual de Stripe en n8n...]
+[Fragmento 2: Configuración de webhooks...]
+
+━━━ ÚLTIMOS TURNOS DEL CHAT (conversación) ━━━
+Carlos: ¿y cómo manejo los errores de Stripe?
+Tú: Los errores se procesan con...
+
+━━━ INSTRUCCIONES ━━━
+Responde como si conocieras a Carlos desde hace tiempo.
+No expliques lo básico — ya sabe usar n8n.
+Cita la documentación cuando sea relevante.</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">🏢 Casos de uso del agente completo</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">🎓</span><div class="wt"><strong>Tutor de aprendizaje:</strong> recuerda qué aprendió el estudiante, adapta la dificultad, no repite lo ya visto, cita los materiales del curso</div></div>
+            <div class="wtu"><span class="we">💼</span><div class="wt"><strong>Asistente de ventas:</strong> conoce el historial del cliente, sabe qué propuestas le hicieron, busca en catálogo, personaliza la respuesta</div></div>
+            <div class="wtu"><span class="we">🏥</span><div class="wt"><strong>Asistente médico:</strong> recuerda condiciones del paciente, historial de consultas, busca en protocolos clínicos indexados</div></div>
+            <div class="wtu"><span class="we">🛒</span><div class="wt"><strong>Shopping assistant:</strong> recuerda preferencias, historial de compras, busca en catálogo, recomienda con contexto real</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">⚠️ Consideraciones al combinar memorias</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">→</span><div><strong style="color:var(--text);">Orden importa:</strong> siempre system → perfil → resumen → docs → chat reciente → pregunta actual</div></li>
+            <li><span class="ck">→</span><div><strong style="color:var(--text);">Relevancia sobre cantidad:</strong> 3 fragmentos vectoriales relevantes &gt; 10 irrelevantes que confunden</div></li>
+            <li><span class="ck">→</span><div><strong style="color:var(--text);">Costo crece con capas:</strong> empieza con corto + conversación, agrega vectorial solo cuando sea necesario</div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">No guardar datos sensibles en el historial:</strong> contraseñas, tokens o datos personales delicados nunca en el array de mensajes</div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('summary')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- ══ 9 · ENTREGABLE ══ -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable y <span>Bonus</span></h1>
+        <p>Lo que debes construir, la comparativa final de módulos y el camino hacia sistemas de IA verdaderamente inteligentes.</p>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Entregable — agente con al menos 2 módulos de memoria</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Memoria a largo plazo funcionando</strong><br><span style="font-size:13px;">Perfil del usuario en Sheets: se lee al inicio de cada conversación y se actualiza al final con los datos nuevos.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Memoria de conversación multi-turno</strong><br><span style="font-size:13px;">El historial de mensajes se mantiene entre llamadas. La IA recuerda lo que se dijo hace 3 turnos sin que el usuario lo repita.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Ventana deslizante configurada</strong><br><span style="font-size:13px;">El historial no crece infinitamente. Máximo N turnos pasados al modelo para controlar el costo de tokens.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Prompt que integra todos los contextos</strong><br><span style="font-size:13px;">Un solo prompt bien construido que combina perfil del usuario + historial reciente + instrucciones del sistema.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con 3 turnos de conversación</strong><br><span style="font-size:13px;">Verificar que en el turno 3 la IA recuerde lo dicho en el turno 1 sin que el usuario lo repita.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📋 Resumen final — los 5 módulos</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Módulo</th><th>Qué aporta</th><th>Complejidad</th><th>Empezar con</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mem-pill mp-short">⚡ Corto plazo</span></td><td>Datos del trigger en el prompt</td><td><span class="b bg">Baja</span></td><td>✅ Siempre</td></tr>
+            <tr><td><span class="mem-pill mp-long">💾 Largo plazo</span></td><td>Perfil que persiste entre sesiones</td><td><span class="b bg">Baja-media</span></td><td>✅ Clase 8 P2</td></tr>
+            <tr><td><span class="mem-pill mp-conv">💬 Conversación</span></td><td>Coherencia en el hilo del chat</td><td><span class="b ba">Media</span></td><td>✅ Clase 8 P2</td></tr>
+            <tr><td><span class="mem-pill mp-sum">📝 Resumen</span></td><td>Comprime historial largo</td><td><span class="b ba">Media</span></td><td>Cuando el historial supera 10 turnos</td></tr>
+            <tr><td><span class="mem-pill mp-vec">🧬 Vectorial</span></td><td>Conocimiento de docs propios</td><td><span class="b br">Alta</span></td><td>Cuando necesites RAG</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">🚀 Bonus — memoria avanzada</div>
+        <div class="g2" style="margin-top:12px;">
+          <div>
+            <div class="wtu"><span class="we">🔍</span><div class="wt"><strong>Memoria episódica:</strong> guardar eventos clave de la conversación con timestamp y tags (ej: "Cliente aceptó propuesta el 15/01"). La IA puede referirse a ellos en futuras sesiones.</div></div>
+            <div class="wtu"><span class="we">🧩</span><div class="wt"><strong>Memoria de entidades:</strong> extraer y guardar automáticamente nombres, empresas, productos y fechas mencionados. La IA los conoce sin que el usuario los repita.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">🗄️</span><div class="wt"><strong>Redis para sesiones activas:</strong> para alta concurrencia, guardar el historial de conversación en Redis en vez de Sheets — latencia de 1ms vs 500ms.</div></div>
+            <div class="wtu"><span class="we">🔄</span><div class="wt"><strong>Memoria compartida entre agentes:</strong> múltiples agentes especializados comparten la misma base de conocimiento vectorial y el perfil del usuario, colaborando en la respuesta.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,rgba(168,85,247,0.08) 0%,rgba(124,110,245,0.08) 100%);border-color:rgba(168,85,247,0.35);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">🚀</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Clase 9 — Optimización y Escalabilidad</h3>
+          <p style="color:var(--text2);font-size:14px;max-width:520px;margin:0 auto 20px;">Con IA y memoria dominadas, la Clase 9 lleva todos los sistemas a producción: optimización de rendimiento, manejo robusto de errores, logging, monitoreo y escalabilidad para manejar volumen real.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">⚡ Rendimiento</span>
+            <span class="b bg">🛡️ Errores robustos</span>
+            <span class="b bt">📊 Monitoreo</span>
+            <span class="b ba">📦 Alto volumen</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('agente')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','tipos','short','long','conv','vec','summary','agente','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(".nav-item[onclick*=\"'"+id+"'\"]");go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent='Sección '+(idx+1)+' de '+sections.length;
+  }
+</script>
+</body>
+</html>

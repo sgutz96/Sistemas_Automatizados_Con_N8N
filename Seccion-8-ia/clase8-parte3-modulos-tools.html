@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 8 · Parte 3 — Módulos de Tools en IA</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+    --oro:#f59e0b;   --oro-bg:rgba(245,158,11,0.1);
+    --purple:#a855f7; --purple-bg:rgba(168,85,247,0.12);
+    --gpt:#10a37f;   --gpt-bg:rgba(16,163,127,0.12);
+    --claude:#c17a3c; --claude-bg:rgba(193,122,60,0.12);
+    /* tool category colors */
+    --tc-data:  #38bdf8; --tc-data-bg:rgba(56,189,248,0.1);
+    --tc-code:  #a855f7; --tc-code-bg:rgba(168,85,247,0.12);
+    --tc-api:   #20d4b0; --tc-api-bg: rgba(32,212,176,0.1);
+    --tc-search:#f0a030; --tc-search-bg:rgba(240,160,48,0.1);
+    --tc-notif: #22c97a; --tc-notif-bg:rgba(34,201,122,0.1);
+    --tc-logic: #e879a0; --tc-logic-bg:rgba(232,121,160,0.1);
+    --tc-file:  #f59e0b; --tc-file-bg: rgba(245,158,11,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}   .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}   .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}   .pvb{border-color:rgba(168,85,247,0.35)!important;}
+  .orb{border-color:rgba(245,158,11,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);}   .vl{color:var(--teal);}   .rd{color:var(--red);}
+  .pk{color:var(--pink);}    .sk{color:var(--sky);}    .lm{color:var(--lime);}
+  .pv{color:var(--purple);}  .or{color:var(--oro);}
+
+  /* FLOW */
+  .flow-row{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;}
+  .fn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;text-align:center;flex-shrink:0;min-width:110px;}
+  .fn .fi{font-size:20px;margin-bottom:5px;}
+  .fn .ft{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:3px;}
+  .fn .fn2{font-size:12px;font-weight:600;color:var(--text);}
+  .fn .fn3{font-size:10px;color:var(--text3);margin-top:2px;}
+  .fn.trig{border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.05);} .fn.trig .ft{color:var(--amber);}
+  .fn.proc{border-color:rgba(124,110,245,0.4);background:rgba(124,110,245,0.05);} .fn.proc .ft{color:var(--accent2);}
+  .fn.act {border-color:rgba(34,201,122,0.4);background:rgba(34,201,122,0.05);}  .fn.act .ft{color:var(--green);}
+  .fn.ai  {border-color:rgba(168,85,247,0.5);background:rgba(168,85,247,0.08);}  .fn.ai .ft{color:#c084fc;}
+  .fn.tool{border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.07);}  .fn.tool .ft{color:var(--sky);}
+  .fn.out {border-color:rgba(32,212,176,0.4);background:rgba(32,212,176,0.05);}  .fn.out .ft{color:var(--teal);}
+  .fa{display:flex;align-items:center;padding:0 6px;color:var(--text3);font-size:16px;flex-shrink:0;}
+
+  /* TOOL HERO */
+  .tool-hero{border-radius:14px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .tool-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;opacity:0.07;pointer-events:none;}
+  .th-data  {background:var(--bg2);border:1px solid rgba(56,189,248,0.4);}    .th-data::before{background:var(--tc-data);}
+  .th-code  {background:var(--bg2);border:1px solid rgba(168,85,247,0.4);}    .th-code::before{background:var(--tc-code);}
+  .th-api   {background:var(--bg2);border:1px solid rgba(32,212,176,0.4);}    .th-api::before{background:var(--tc-api);}
+  .th-search{background:var(--bg2);border:1px solid rgba(240,160,48,0.4);}    .th-search::before{background:var(--tc-search);}
+  .th-notif {background:var(--bg2);border:1px solid rgba(34,201,122,0.4);}    .th-notif::before{background:var(--tc-notif);}
+  .th-logic {background:var(--bg2);border:1px solid rgba(232,121,160,0.4);}   .th-logic::before{background:var(--tc-logic);}
+
+  .th-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;}
+  .th-icon{font-size:30px;width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .th-data   .th-icon{background:rgba(56,189,248,0.12);}
+  .th-code   .th-icon{background:rgba(168,85,247,0.12);}
+  .th-api    .th-icon{background:rgba(32,212,176,0.12);}
+  .th-search .th-icon{background:rgba(240,160,48,0.12);}
+  .th-notif  .th-icon{background:rgba(34,201,122,0.12);}
+  .th-logic  .th-icon{background:rgba(232,121,160,0.12);}
+
+  .th-type{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;}
+  .th-data   .th-type{color:var(--tc-data);}
+  .th-code   .th-type{color:var(--tc-code);}
+  .th-api    .th-type{color:var(--tc-api);}
+  .th-search .th-type{color:var(--tc-search);}
+  .th-notif  .th-type{color:var(--tc-notif);}
+  .th-logic  .th-type{color:var(--tc-logic);}
+
+  .th-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .th-desc{font-size:14px;color:var(--text2);line-height:1.6;}
+  .th-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .th-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;}
+  .th-data   .th-tag{background:var(--tc-data-bg);color:var(--tc-data);}
+  .th-code   .th-tag{background:var(--tc-code-bg);color:var(--tc-code);}
+  .th-api    .th-tag{background:var(--tc-api-bg);color:var(--tc-api);}
+  .th-search .th-tag{background:var(--tc-search-bg);color:var(--tc-search);}
+  .th-notif  .th-tag{background:var(--tc-notif-bg);color:var(--tc-notif);}
+  .th-logic  .th-tag{background:var(--tc-logic-bg);color:var(--tc-logic);}
+
+  /* TOOL PILL */
+  .tool-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;margin:3px;}
+  .tp-data  {background:var(--tc-data-bg);color:var(--tc-data);border:1px solid rgba(56,189,248,0.3);}
+  .tp-code  {background:var(--tc-code-bg);color:var(--tc-code);border:1px solid rgba(168,85,247,0.3);}
+  .tp-api   {background:var(--tc-api-bg);color:var(--tc-api);border:1px solid rgba(32,212,176,0.3);}
+  .tp-search{background:var(--tc-search-bg);color:var(--tc-search);border:1px solid rgba(240,160,48,0.3);}
+  .tp-notif {background:var(--tc-notif-bg);color:var(--tc-notif);border:1px solid rgba(34,201,122,0.3);}
+  .tp-logic {background:var(--tc-logic-bg);color:var(--tc-logic);border:1px solid rgba(232,121,160,0.3);}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);} .bt{background:var(--teal-bg);color:var(--teal);}
+  .br{background:var(--red-bg);color:var(--red);}  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bl{background:var(--lime-bg);color:var(--lime);} .bp{background:var(--pink-bg);color:var(--pink);}
+  .bpv{background:var(--purple-bg);color:var(--purple);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* DECISION FLOW */
+  .decide-box{background:var(--bg3);border-radius:10px;padding:18px;margin-bottom:12px;}
+  .db-q{font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .db-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+  .db-opts{display:flex;gap:10px;flex-wrap:wrap;}
+  .db-opt{background:var(--bg4);border-radius:8px;padding:10px 14px;border:1px solid var(--border);font-size:13px;color:var(--text2);line-height:1.5;flex:1;min-width:180px;}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{opacity:0.85;}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Clase 8 · Parte 3</div>
+      <h2>Módulos de Tools en IA</h2>
+      <p>n8n · function calling · agentes</p>
+    </div>
+    <div class="nav-section">Contenido</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> ¿Qué son los Tools?</a>
+    <a class="nav-item" onclick="go('como',this)"><span class="ni">⚙️</span> Cómo funcionan</a>
+    <a class="nav-item" onclick="go('datos',this)"><span class="ni">📊</span> Tools de datos</a>
+    <a class="nav-item" onclick="go('codigo',this)"><span class="ni">⚡</span> Tools de código</a>
+    <a class="nav-item" onclick="go('api',this)"><span class="ni">🌐</span> Tools de APIs externas</a>
+    <a class="nav-item" onclick="go('busqueda',this)"><span class="ni">🔍</span> Tools de búsqueda</a>
+    <a class="nav-item" onclick="go('notif',this)"><span class="ni">🔔</span> Tools de acción</a>
+    <a class="nav-item" onclick="go('agente',this)"><span class="ni">🤖</span> Agente con múltiples tools</a>
+    <a class="nav-item" onclick="go('entregable',this)"><span class="nn">9</span> Entregable y bonus</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:11.1%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 9</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- 1 INTRO -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Clase 8 · Parte 3</div>
+        <h1>Módulos de <span>Tools en IA</span></h1>
+        <p>La IA deja de solo responder texto y empieza a hacer cosas reales. Con Tools, el modelo decide qué acciones ejecutar, cuándo y con qué parámetros.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🔥 El salto de la Parte 2 a la Parte 3</div>
+        <div class="g2" style="margin-top:12px;margin-bottom:0;">
+          <div style="background:var(--bg4);border-radius:10px;padding:18px;border:1px solid var(--border);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Parte 1 y 2 — IA que responde con contexto</div>
+            <div style="font-size:17px;font-weight:800;color:var(--text2);margin-bottom:8px;">"Lee, recuerda y genera texto"</div>
+            <p style="font-size:13px;color:var(--text3);line-height:1.6;">La IA toma el prompt, usa la memoria y devuelve una respuesta en texto. El workflow ejecuta lo que el humano decidió programar.</p>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(56,189,248,0.06),rgba(168,85,247,0.06));border-radius:10px;padding:18px;border:1px solid rgba(56,189,248,0.35);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sky);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Parte 3 — IA que actúa con Tools</div>
+            <div style="font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:8px;">"Decide qué acción ejecutar y la ejecuta"</div>
+            <p style="font-size:13px;color:var(--text2);line-height:1.6;">La IA tiene acceso a un conjunto de herramientas. Cuando el usuario pide algo, el modelo decide solo qué tool usar, con qué parámetros, y n8n lo ejecuta.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn">6</div><div class="sl">categorías de tools que verás hoy</div></div>
+        <div class="stat"><div class="sn" style="color:var(--sky);">∞</div><div class="sl">tools que puedes darle a un agente en n8n</div></div>
+        <div class="stat"><div class="sn" style="color:var(--purple);">FC</div><div class="sl">Function Calling — el mecanismo detrás de los tools</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">1</div><div class="sl">llamada del usuario puede disparar N acciones</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">🔧 Qué puede hacer la IA con Tools — ejemplos reales</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;">
+          <div style="background:var(--bg3);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:14px;">
+            <div style="font-size:18px;margin-bottom:6px;">💬</div>
+            <div style="font-size:12px;color:var(--text2);">Usuario: <em>"¿Cuántos leads recibimos hoy?"</em></div>
+            <div style="font-size:12px;color:var(--sky);margin-top:6px;font-family:'JetBrains Mono',monospace;">→ Tool: leer_sheets("Leads", fecha=hoy)</div>
+            <div style="font-size:12px;color:var(--green);margin-top:3px;">IA: "Recibiste 23 leads hoy"</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(168,85,247,0.3);border-radius:10px;padding:14px;">
+            <div style="font-size:18px;margin-bottom:6px;">💬</div>
+            <div style="font-size:12px;color:var(--text2);">Usuario: <em>"Crea un lead para Carlos"</em></div>
+            <div style="font-size:12px;color:var(--purple);margin-top:6px;font-family:'JetBrains Mono',monospace;">→ Tool: crear_crm({ nombre: "Carlos" })</div>
+            <div style="font-size:12px;color:var(--green);margin-top:3px;">IA: "Lead creado con ID clt_789"</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,160,48,0.3);border-radius:10px;padding:14px;">
+            <div style="font-size:18px;margin-bottom:6px;">💬</div>
+            <div style="font-size:12px;color:var(--text2);">Usuario: <em>"¿Qué dice la política de reembolso?"</em></div>
+            <div style="font-size:12px;color:var(--amber);margin-top:6px;font-family:'JetBrains Mono',monospace;">→ Tool: buscar_docs("reembolso")</div>
+            <div style="font-size:12px;color:var(--green);margin-top:3px;">IA: responde con la sección exacta</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(32,212,176,0.3);border-radius:10px;padding:14px;">
+            <div style="font-size:18px;margin-bottom:6px;">💬</div>
+            <div style="font-size:12px;color:var(--text2);">Usuario: <em>"¿Cuánto es 15% de $2.300.000?"</em></div>
+            <div style="font-size:12px;color:var(--teal);margin-top:6px;font-family:'JetBrains Mono',monospace;">→ Tool: calcular("2300000 * 0.15")</div>
+            <div style="font-size:12px;color:var(--green);margin-top:3px;">IA: "El 15% es $345.000"</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(34,201,122,0.3);border-radius:10px;padding:14px;">
+            <div style="font-size:18px;margin-bottom:6px;">💬</div>
+            <div style="font-size:12px;color:var(--text2);">Usuario: <em>"Avisa al equipo del nuevo cliente"</em></div>
+            <div style="font-size:12px;color:var(--green);margin-top:6px;font-family:'JetBrains Mono',monospace;">→ Tool: enviar_slack("#ventas", msg)</div>
+            <div style="font-size:12px;color:var(--green);margin-top:3px;">IA: "Notificación enviada"</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(232,121,160,0.3);border-radius:10px;padding:14px;">
+            <div style="font-size:18px;margin-bottom:6px;">💬</div>
+            <div style="font-size:12px;color:var(--text2);">Usuario: <em>"Busca noticias de IA de hoy"</em></div>
+            <div style="font-size:12px;color:var(--pink);margin-top:6px;font-family:'JetBrains Mono',monospace;">→ Tool: buscar_web("IA noticias hoy")</div>
+            <div style="font-size:12px;color:var(--green);margin-top:3px;">IA: resume los 3 artículos relevantes</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-p" onclick="goTo('como')">Siguiente: Cómo funcionan →</button>
+      </div>
+    </section>
+
+    <!-- 2 CÓMO FUNCIONAN -->
+    <section id="como" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 2</div>
+        <h1>Cómo <span>Funcionan</span> los Tools</h1>
+        <p>El mecanismo detrás: Function Calling. La IA no ejecuta las tools — decide cuáles usar y con qué argumentos. n8n es quien las ejecuta.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ El ciclo completo de un Tool call</div>
+        <div class="code-block">
+<span class="cm">// PASO 1: Definir las tools disponibles para la IA</span>
+tools: [
+  {
+    <span class="ky">"name"</span>:        <span class="str">"buscar_lead"</span>,
+    <span class="ky">"description"</span>: <span class="str">"Busca un lead en la base de datos por email"</span>,
+    <span class="ky">"parameters"</span>: {
+      <span class="ky">"email"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span>, <span class="ky">"required"</span>: <span class="kw">true</span> }
+    }
+  },
+  {
+    <span class="ky">"name"</span>:        <span class="str">"crear_lead"</span>,
+    <span class="ky">"description"</span>: <span class="str">"Crea un nuevo lead en el CRM"</span>,
+    <span class="ky">"parameters"</span>: {
+      <span class="ky">"nombre"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span>, <span class="ky">"required"</span>: <span class="kw">true</span> },
+      <span class="ky">"email"</span>:  { <span class="ky">"type"</span>: <span class="str">"string"</span>, <span class="ky">"required"</span>: <span class="kw">true</span> }
+    }
+  }
+]
+
+<span class="cm">// PASO 2: Usuario envía un mensaje</span>
+<span class="str">"¿Existe un lead llamado Carlos con email carlos@x.com?"</span>
+
+<span class="cm">// PASO 3: La IA decide qué tool usar (NO la ejecuta)</span>
+→ tool_call: {
+    <span class="ky">"name"</span>:      <span class="str">"buscar_lead"</span>,
+    <span class="ky">"arguments"</span>: { <span class="ky">"email"</span>: <span class="str">"carlos@x.com"</span> }
+  }
+
+<span class="cm">// PASO 4: n8n intercepta el tool_call y lo ejecuta</span>
+→ Sheets SEARCH: email == <span class="str">"carlos@x.com"</span>
+→ resultado: { nombre: <span class="str">"Carlos"</span>, estado: <span class="str">"nuevo"</span> }
+
+<span class="cm">// PASO 5: n8n devuelve el resultado a la IA</span>
+→ tool_result: { <span class="ky">"lead"</span>: { <span class="ky">"nombre"</span>: <span class="str">"Carlos"</span>, <span class="ky">"estado"</span>: <span class="str">"nuevo"</span> } }
+
+<span class="cm">// PASO 6: La IA genera la respuesta final</span>
+→ <span class="str">"Sí, Carlos existe como lead en estado 'nuevo'."</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-label">🔑 Reglas del Function Calling</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">→</span><div><strong style="color:var(--text);">La IA decide, n8n ejecuta.</strong> El modelo solo produce JSON con el nombre de la tool y sus argumentos. Nunca corre código directamente.</div></li>
+            <li><span class="ck">→</span><div><strong style="color:var(--text);">La descripción importa más que el nombre.</strong> La IA elige la tool basándose en su descripción. Una descripción clara = tool usada correctamente.</div></li>
+            <li><span class="ck">→</span><div><strong style="color:var(--text);">Puede llamar varias tools en secuencia.</strong> Si necesita buscar Y luego actualizar, hace dos tool_calls consecutivos antes de responder.</div></li>
+            <li><span class="cx">✗</span><div><strong style="color:var(--text);">No dar tools que no necesita.</strong> Demasiadas tools confunden al modelo. Máximo 10-15 por agente, bien enfocadas en el dominio.</div></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏗️ Implementación en n8n — IF Switch por tool_call</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// n8n intercepta la respuesta de la IA</span>
+IF respuesta contiene tool_calls:
+  → extraer nombre de la tool
+  → extraer argumentos (JSON)
+  ↓
+  <span class="kw">Switch</span> por nombre de tool:
+    <span class="str">"buscar_lead"</span>   → nodo Sheets Search
+    <span class="str">"crear_lead"</span>    → nodo Sheets Append
+    <span class="str">"enviar_slack"</span>  → nodo Slack
+    <span class="str">"buscar_web"</span>    → nodo HTTP Search
+    default         → log "tool desconocida"
+  ↓
+  <span class="cm">// Devolver resultado a la IA en el historial</span>
+  messages.push({
+    <span class="ky">role</span>: <span class="str">"tool"</span>,
+    <span class="ky">tool_call_id</span>: id,
+    <span class="ky">content</span>: JSON.stringify(resultado)
+  })
+  <span class="cm">// → nueva llamada a la IA con el resultado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('datos')">Siguiente: Tools de datos →</button>
+      </div>
+    </section>
+
+    <!-- 3 TOOLS DE DATOS -->
+    <section id="datos" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Categoría 1 de 5</div>
+        <h1>Tools de <span>Datos</span></h1>
+        <p>Leer, escribir y actualizar bases de datos, hojas de cálculo y CRMs. La IA accede a la información real del negocio bajo demanda.</p>
+      </div>
+
+      <div class="tool-hero th-data">
+        <div class="th-top">
+          <div class="th-icon">📊</div>
+          <div>
+            <div class="th-type">Tools de datos · Google Sheets · CRM · Base de datos</div>
+            <div class="th-title">La IA consulta y modifica datos reales</div>
+            <div class="th-desc">Las tools de datos le dan a la IA acceso de lectura y escritura a las fuentes de datos del negocio. El modelo puede consultar cuántos leads hay, crear un registro nuevo, actualizar un estado o buscar un cliente específico — todo desde una conversación natural.</div>
+          </div>
+        </div>
+        <div class="th-tags">
+          <span class="th-tag">📖 Leer registros</span><span class="th-tag">➕ Crear filas</span>
+          <span class="th-tag">✏️ Actualizar estado</span><span class="th-tag">🔍 Buscar por campo</span><span class="th-tag">📊 Agregar métricas</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card sb">
+          <div class="card-label">⚙️ Definición de tools de datos para la IA</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Tool 1: Leer leads del día</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"obtener_leads_hoy"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Devuelve todos los leads
+                    recibidos en el día de hoy"</span>,
+  <span class="ky">"parameters"</span>: {}  <span class="cm">// sin parámetros</span>
+}
+<span class="cm">// n8n ejecuta: Sheets READ donde fecha == hoy</span>
+
+<span class="cm">// Tool 2: Buscar cliente</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"buscar_cliente"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Busca un cliente por email
+                    o nombre en la base de datos"</span>,
+  <span class="ky">"parameters"</span>: {
+    <span class="ky">"query"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span>, <span class="ky">"required"</span>: <span class="kw">true</span>,
+               <span class="ky">"description"</span>: <span class="str">"Email o nombre a buscar"</span> }
+  }
+}
+
+<span class="cm">// Tool 3: Actualizar estado</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"actualizar_estado_lead"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Cambia el estado de un lead
+                    (nuevo/contactado/calificado/cerrado)"</span>,
+  <span class="ky">"parameters"</span>: {
+    <span class="ky">"lead_id"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span> },
+    <span class="ky">"estado"</span>:  { <span class="ky">"type"</span>: <span class="str">"string"</span>,
+                  <span class="ky">"enum"</span>: [<span class="str">"nuevo"</span>,<span class="str">"contactado"</span>,<span class="str">"calificado"</span>,<span class="str">"cerrado"</span>] }
+  }
+}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos reales</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">💼</span><div class="wt"><strong>"¿Cuántos leads tenemos esta semana?"</strong><br>IA llama <code>obtener_leads_semana()</code> → Sheets → responde con el número y breakdown por día</div></div>
+            <div class="wtu"><span class="we">🔄</span><div class="wt"><strong>"Marca a Carlos como calificado"</strong><br>IA llama <code>buscar_cliente("Carlos")</code> → obtiene ID → llama <code>actualizar_estado("clt_123", "calificado")</code></div></div>
+            <div class="wtu"><span class="we">📈</span><div class="wt"><strong>"¿Cuál es nuestra tasa de conversión?"</strong><br>IA llama <code>obtener_metricas()</code> → calcula en la respuesta → comunica el porcentaje</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('como')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('codigo')">Siguiente: Tools de código →</button>
+      </div>
+    </section>
+
+    <!-- 4 TOOLS DE CÓDIGO -->
+    <section id="codigo" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Categoría 2 de 5</div>
+        <h1>Tools de <span>Código</span></h1>
+        <p>La IA ejecuta cálculos, transforma datos, genera archivos o corre scripts. Sin herramientas de código, la IA puede alucinar resultados matemáticos.</p>
+      </div>
+
+      <div class="tool-hero th-code">
+        <div class="th-top">
+          <div class="th-icon">⚡</div>
+          <div>
+            <div class="th-type">Tools de código · Calculadora · Transformaciones · Scripts</div>
+            <div class="th-title">Cálculos exactos y transformaciones deterministas</div>
+            <div class="th-desc">Los LLMs son notoriamente malos en aritmética compleja. Una tool de código es la solución: la IA identifica qué calcular, pasa la expresión a la tool, el código la ejecuta con precisión 100% y devuelve el resultado. Aplica a cálculos, conversiones, formateo de datos y generación de reportes.</div>
+          </div>
+        </div>
+        <div class="th-tags">
+          <span class="th-tag">🧮 Cálculos exactos</span><span class="th-tag">🔄 Transformar datos</span>
+          <span class="th-tag">📄 Generar CSV/JSON</span><span class="th-tag">📅 Fechas y tiempos</span><span class="th-tag">💱 Conversiones</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card pvb">
+          <div class="card-label">⚙️ Tools de cálculo — implementación en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Tool: calculadora con mathjs</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"calcular"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Evalúa una expresión matemática
+                    con precisión. Usar para sumas,
+                    porcentajes, promedios, etc."</span>,
+  <span class="ky">"parameters"</span>: {
+    <span class="ky">"expresion"</span>: {
+      <span class="ky">"type"</span>: <span class="str">"string"</span>,
+      <span class="ky">"description"</span>: <span class="str">"Ej: '2300000 * 0.19'"</span>
+    }
+  }
+}
+
+<span class="cm">// n8n ejecuta con Function node:</span>
+<span class="kw">const</span> math = require(<span class="str">'mathjs'</span>);
+<span class="kw">const</span> expresion = $input.first().json.expresion;
+<span class="kw">const</span> resultado = math.evaluate(expresion);
+<span class="kw">return</span> [{ json: { resultado, expresion } }];
+
+<span class="cm">// Resultado al modelo:
+// { "resultado": 437000, "expresion": "2300000 * 0.19" }</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">⚙️ Más tools de código útiles</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Tool: convertir moneda</span>
+<span class="str">"convertir_moneda"</span>: (monto, de, a)
+→ GET api.exchangerate.com/<span class="kw">{{de}}</span>/<span class="kw">{{a}}</span>
+→ calcular: monto × tasa
+→ resultado: { <span class="ky">convertido</span>: X, <span class="ky">tasa</span>: Y }
+
+<span class="cm">// Tool: calcular fecha</span>
+<span class="str">"dias_desde"</span>: (fecha)
+→ Function: Date.now() - new Date(fecha)
+→ resultado: { <span class="ky">dias</span>: 45 }
+
+<span class="cm">// Tool: formatear datos para reporte</span>
+<span class="str">"generar_resumen_stats"</span>: (array_numeros)
+→ Function: min, max, promedio, mediana
+→ resultado: estadísticas completas
+
+<span class="cm">// Tool: generar CSV</span>
+<span class="str">"array_a_csv"</span>: (datos, columnas)
+→ Function: convertir JSON → CSV string
+→ resultado: string listo para descargar
+          </div>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Nunca confíes en la IA para aritmética crítica.</strong> Los LLMs pueden calcular mal 23% de $1.847.500. Siempre usa una tool de código para cualquier cálculo financiero, tributario o estadístico. La precisión es 100% con código, ~80% con el modelo solo.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('datos')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('api')">Siguiente: Tools de APIs →</button>
+      </div>
+    </section>
+
+    <!-- 5 TOOLS DE API -->
+    <section id="api" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Categoría 3 de 5</div>
+        <h1>Tools de <span>APIs Externas</span></h1>
+        <p>La IA llama a servicios del mundo real: clima, mapas, pagos, CRMs, ERPs. Cualquier API con endpoint se convierte en una tool disponible para el agente.</p>
+      </div>
+
+      <div class="tool-hero th-api">
+        <div class="th-top">
+          <div class="th-icon">🌐</div>
+          <div>
+            <div class="th-type">Tools de APIs · HTTP Request · Servicios externos</div>
+            <div class="th-title">El agente se conecta con cualquier servicio</div>
+            <div class="th-desc">Cada tool de API es un wrapper alrededor de un HTTP Request. La IA decide cuándo llamarla y qué parámetros enviar. n8n ejecuta el request, recibe la respuesta y se la devuelve al modelo. El agente puede consultar clima, geocodificar, procesar pagos o leer datos de cualquier SaaS.</div>
+          </div>
+        </div>
+        <div class="th-tags">
+          <span class="th-tag">🌤️ Clima</span><span class="th-tag">🗺️ Geolocalización</span>
+          <span class="th-tag">💳 Pagos</span><span class="th-tag">🤖 Otras IAs</span><span class="th-tag">📱 Redes sociales</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card tb">
+          <div class="card-label">⚙️ Ejemplos de tools de API en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Tool: Consultar clima</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"obtener_clima"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Obtiene el clima actual
+                    de una ciudad"</span>,
+  <span class="ky">"parameters"</span>: { <span class="ky">"ciudad"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span> } }
+}
+<span class="cm">→ n8n: GET api.open-meteo.com/v1/forecast?city={{ciudad}}
+→ resultado: { temp: 18, estado: "nublado" }</span>
+
+<span class="cm">// Tool: Consultar estado de pago</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"verificar_pago"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Verifica si un pago fue
+                    procesado exitosamente"</span>,
+  <span class="ky">"parameters"</span>: { <span class="ky">"payment_id"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span> } }
+}
+<span class="cm">→ n8n: GET api.stripe.com/v1/charges/{{payment_id}}
+→ resultado: { status: "succeeded", amount: 150000 }</span>
+
+<span class="cm">// Tool: Llamar a otra IA (encadenar modelos)</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"analizar_imagen"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Analiza el contenido de
+                    una imagen con vision IA"</span>,
+  <span class="ky">"parameters"</span>: { <span class="ky">"url_imagen"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span> } }
+}
+<span class="cm">→ n8n: POST api.openai.com/v1/chat con gpt-4o vision</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos reales con tools de API</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">🚚</span><div class="wt"><strong>"¿Dónde está mi pedido?"</strong><br>IA → <code>rastrear_envio(num_guia)</code> → API transportadora → responde con ubicación actual y ETA</div></div>
+            <div class="wtu"><span class="we">💳</span><div class="wt"><strong>"¿El pago de Laura fue aprobado?"</strong><br>IA → <code>verificar_pago(email)</code> → Stripe API → "Sí, $450.000 aprobado el 15/01"</div></div>
+            <div class="wtu"><span class="we">📍</span><div class="wt"><strong>"¿A cuánto tiempo está el cliente?"</strong><br>IA → <code>calcular_ruta(origen, destino)</code> → Google Maps API → "A 23 minutos en coche"</div></div>
+            <div class="wtu"><span class="we">🤖</span><div class="wt"><strong>Encadenar IAs:</strong> GPT-4 decide el flujo → llama tool → Claude analiza un documento → devuelve síntesis a GPT-4 para responder</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('codigo')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('busqueda')">Siguiente: Tools de búsqueda →</button>
+      </div>
+    </section>
+
+    <!-- 6 TOOLS DE BÚSQUEDA -->
+    <section id="busqueda" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Categoría 4 de 5</div>
+        <h1>Tools de <span>Búsqueda</span></h1>
+        <p>La IA accede a información actualizada del mundo real. Web search, búsqueda en documentos propios y consulta de bases de conocimiento internas.</p>
+      </div>
+
+      <div class="tool-hero th-search">
+        <div class="th-top">
+          <div class="th-icon">🔍</div>
+          <div>
+            <div class="th-type">Tools de búsqueda · Web · Docs · Base de conocimiento</div>
+            <div class="th-title">Información actualizada más allá del entrenamiento</div>
+            <div class="th-desc">El conocimiento de los LLMs tiene un corte de entrenamiento. Las tools de búsqueda les dan acceso a información real y actualizada: precios de hoy, noticias de esta hora, documentación de tu empresa, o cualquier página web. La IA decide buscar cuando necesita datos que no tiene.</div>
+          </div>
+        </div>
+        <div class="th-tags">
+          <span class="th-tag">🌐 Web search</span><span class="th-tag">📄 Buscar en docs</span>
+          <span class="th-tag">🧬 Búsqueda vectorial</span><span class="th-tag">📰 Noticias actuales</span><span class="th-tag">💰 Precios en tiempo real</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card amb">
+          <div class="card-label">⚙️ Tool: búsqueda web en tiempo real</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Definición de la tool</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"buscar_web"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Busca información actual en
+                    internet. Usar cuando necesites
+                    datos recientes o noticias"</span>,
+  <span class="ky">"parameters"</span>: {
+    <span class="ky">"query"</span>: {
+      <span class="ky">"type"</span>: <span class="str">"string"</span>,
+      <span class="ky">"description"</span>: <span class="str">"Términos de búsqueda"</span>
+    }
+  }
+}
+
+<span class="cm">// n8n ejecuta con Serper / Google Search API</span>
+HTTP POST https://google.serper.dev/search
+headers: { <span class="ky">"X-API-KEY"</span>: <span class="str">"{{API_KEY}}"</span> }
+body: { <span class="ky">"q"</span>: query, <span class="ky">"num"</span>: <span class="vl">5</span> }
+
+<span class="cm">// Retorna al modelo:</span>
+{ <span class="ky">"resultados"</span>: [
+  { <span class="ky">"titulo"</span>: <span class="str">"..."</span>, <span class="ky">"snippet"</span>: <span class="str">"..."</span>, <span class="ky">"url"</span>: <span class="str">"..."</span> }
+]}
+<span class="cm">// La IA sintetiza los resultados en su respuesta</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">⚙️ Tool: buscar en documentación interna</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Usar el vector store de la Parte 2</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"buscar_documentacion"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Busca en los manuales,
+                    políticas y FAQs de la empresa.
+                    Usar para preguntas sobre
+                    productos, precios o procesos"</span>,
+  <span class="ky">"parameters"</span>: {
+    <span class="ky">"pregunta"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span> }
+  }
+}
+
+<span class="cm">// n8n ejecuta:</span>
+1. Embed la pregunta → OpenAI Embeddings
+2. Buscar similares → Supabase / Pinecone
+3. Retornar top 3 chunks relevantes
+
+<span class="cm">// La IA responde citando la fuente exacta
+// en vez de inventar la respuesta</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">🧠 Cuándo la IA debe buscar vs cuándo sabe</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Pregunta</th><th>La IA sabe</th><th>Necesita tool</th></tr></thead>
+          <tbody>
+            <tr><td>"¿Qué es una API REST?"</td><td>✅ Conocimiento general</td><td>❌</td></tr>
+            <tr><td>"¿Cuál es el precio del plan Pro?"</td><td>❌ Datos de tu empresa</td><td>✅ buscar_documentacion</td></tr>
+            <tr><td>"¿Qué noticias hay hoy de IA?"</td><td>❌ Corte de entrenamiento</td><td>✅ buscar_web</td></tr>
+            <tr><td>"¿Cuántos leads recibimos ayer?"</td><td>❌ Datos en tiempo real</td><td>✅ obtener_leads</td></tr>
+            <tr><td>"¿Cómo se escribe un prompt?"</td><td>✅ Conocimiento general</td><td>❌</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">La descripción de cada tool le dice a la IA cuándo debe usarla →</p>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('api')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('notif')">Siguiente: Tools de acción →</button>
+      </div>
+    </section>
+
+    <!-- 7 TOOLS DE ACCIÓN -->
+    <section id="notif" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Categoría 5 de 5</div>
+        <h1>Tools de <span>Acción</span></h1>
+        <p>La IA no solo responde — actúa. Envía notificaciones, crea tareas, manda emails, dispara otros workflows. El agente se convierte en un ejecutor autónomo.</p>
+      </div>
+
+      <div class="tool-hero th-notif">
+        <div class="th-top">
+          <div class="th-icon">🚀</div>
+          <div>
+            <div class="th-type">Tools de acción · Notificaciones · Tareas · Workflows</div>
+            <div class="th-title">El agente hace cosas, no solo dice cosas</div>
+            <div class="th-desc">Las tools de acción son las más poderosas y las más peligrosas. Le dan a la IA la capacidad de modificar el mundo: enviar mensajes, crear registros, activar procesos. Un agente bien configurado puede resolver un ticket completo — leer, analizar, responder y cerrar — sin intervención humana.</div>
+          </div>
+        </div>
+        <div class="th-tags">
+          <span class="th-tag">💬 Enviar Slack</span><span class="th-tag">📧 Mandar email</span>
+          <span class="th-tag">📝 Crear tarea</span><span class="th-tag">⚡ Disparar workflow</span><span class="th-tag">📱 Notif WhatsApp</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">⚙️ Tools de acción más usadas</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Tool: Enviar mensaje a Slack</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"notificar_equipo"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Envía un mensaje al canal
+                    de Slack del equipo de ventas"</span>,
+  <span class="ky">"parameters"</span>: {
+    <span class="ky">"mensaje"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span> },
+    <span class="ky">"urgente"</span>: { <span class="ky">"type"</span>: <span class="str">"boolean"</span>, <span class="ky">"default"</span>: <span class="kw">false</span> }
+  }
+}
+
+<span class="cm">// Tool: Crear tarea en CRM</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"crear_tarea"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Crea una tarea de seguimiento
+                    asignada a un vendedor"</span>,
+  <span class="ky">"parameters"</span>: {
+    <span class="ky">"titulo"</span>:     { <span class="ky">"type"</span>: <span class="str">"string"</span> },
+    <span class="ky">"asignado_a"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span> },
+    <span class="ky">"vence_en"</span>:   { <span class="ky">"type"</span>: <span class="str">"string"</span>,
+                    <span class="ky">"description"</span>: <span class="str">"Ej: '2 días'"</span> }
+  }
+}
+
+<span class="cm">// Tool: Disparar un sub-workflow</span>
+{
+  <span class="ky">"name"</span>:        <span class="str">"iniciar_onboarding"</span>,
+  <span class="ky">"description"</span>: <span class="str">"Inicia el proceso de onboarding
+                    para un nuevo cliente"</span>,
+  <span class="ky">"parameters"</span>: {
+    <span class="ky">"cliente_id"</span>: { <span class="ky">"type"</span>: <span class="str">"string"</span> }
+  }
+}
+<span class="cm">→ n8n: Execute Workflow "Onboarding-Cliente"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🛡️ Seguridad en tools de acción</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">⚠️</span><div class="wt"><strong>Confirmación humana para acciones irreversibles.</strong> Antes de enviar email masivo o eliminar registros, el agente debe pedir confirmación explícita al usuario</div></div>
+            <div class="wtu"><span class="we">🔒</span><div class="wt"><strong>Scope mínimo.</strong> Si el agente solo necesita leer Slack, no darle la tool de escribir. Principio de mínimo privilegio también para IA</div></div>
+            <div class="wtu"><span class="we">📋</span><div class="wt"><strong>Log de todas las acciones ejecutadas.</strong> Registrar qué tool usó, cuándo y con qué argumentos — auditoría completa del agente</div></div>
+            <div class="wtu"><span class="we">🚫</span><div class="wt"><strong>Límites de uso.</strong> Máximo N acciones por sesión para evitar loops o comportamientos inesperados en producción</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('busqueda')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('agente')">Siguiente: Agente con múltiples tools →</button>
+      </div>
+    </section>
+
+    <!-- 8 AGENTE COMPLETO -->
+    <section id="agente" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 8</div>
+        <h1>Agente con <span>Múltiples Tools</span></h1>
+        <p>Todo junto. Un agente de ventas que puede consultar datos, buscar en documentación, calcular, notificar y crear tareas — todo desde una conversación natural.</p>
+      </div>
+
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🤖 Arquitectura del agente de ventas completo</div>
+        <div class="flow-row" style="margin-top:16px;">
+          <div class="fn trig"><div class="fi">💬</div><div class="ft">Input</div><div class="fn2">Mensaje usuario</div></div>
+          <div class="fa">→</div>
+          <div class="fn proc"><div class="fi">🧠</div><div class="ft">Contexto</div><div class="fn2">Perfil + historial</div></div>
+          <div class="fa">→</div>
+          <div class="fn ai"><div class="fi">🤖</div><div class="ft">LLM</div><div class="fn2">Decide tools</div><div class="fn3">Function Calling</div></div>
+          <div class="fa">→</div>
+          <div class="fn tool"><div class="fi">🔧</div><div class="ft">Switch</div><div class="fn2">Ejecutar tool</div><div class="fn3">n8n lo corre</div></div>
+          <div class="fa">→</div>
+          <div class="fn ai"><div class="fi">🤖</div><div class="ft">LLM</div><div class="fn2">Con resultado</div><div class="fn3">Respuesta final</div></div>
+          <div class="fa">→</div>
+          <div class="fn out"><div class="fi">💬</div><div class="ft">Output</div><div class="fn2">Respuesta usuario</div></div>
+        </div>
+      </div>
+
+      <div class="card pvb" style="margin-bottom:16px;">
+        <div class="card-label">⚙️ El toolkit completo del agente de ventas</div>
+        <div class="code-block">
+<span class="cm">// Tools disponibles para el agente</span>
+
+<span class="cm">── DATOS ─────────────────────────────────────────</span>
+<span class="sk">obtener_leads</span>(fecha?)          → lista de leads del período
+<span class="sk">buscar_cliente</span>(query)          → busca por nombre o email
+<span class="sk">actualizar_lead</span>(id, campos)   → modifica estado, notas, etc.
+<span class="sk">obtener_metricas</span>(periodo)      → KPIs de ventas
+
+<span class="cm">── CÁLCULO ───────────────────────────────────────</span>
+<span class="pv">calcular</span>(expresion)            → aritmética exacta
+<span class="pv">calcular_descuento</span>(monto, %)   → cálculo de precio con descuento
+
+<span class="cm">── BÚSQUEDA ──────────────────────────────────────</span>
+<span class="ky">buscar_documentacion</span>(pregunta) → busca en FAQs y políticas
+<span class="ky">buscar_precios</span>(producto)       → tabla de precios actualizada
+
+<span class="cm">── ACCIÓN ────────────────────────────────────────</span>
+<span class="str">notificar_equipo</span>(msg, urgente?) → Slack al canal de ventas
+<span class="str">crear_tarea</span>(titulo, asignado)  → tarea en CRM
+<span class="str">enviar_propuesta</span>(cliente_id)   → dispara workflow de propuesta
+<span class="str">agendar_llamada</span>(cliente, hora) → crea evento en calendario
+        </div>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">💬 Conversación real con el agente usando múltiples tools</div>
+        <div class="code-block">
+<span class="str">Usuario:</span> <span class="kw">"Cuántos leads calificados tenemos esta semana
+           y cuál es el de mayor score?"</span>
+
+<span class="cm">// IA llama tool 1:</span>
+tool_call: <span class="sk">obtener_leads</span>({ periodo: <span class="str">"semana"</span>, estado: <span class="str">"calificado"</span> })
+→ resultado: [{ nombre: <span class="str">"Laura"</span>, score: <span class="vl">95</span> }, { nombre: <span class="str">"Pedro"</span>, score: <span class="vl">72</span> }, ...]
+
+<span class="cm">// IA llama tool 2 (sin que el usuario lo pida):</span>
+tool_call: <span class="pv">calcular</span>({ expresion: <span class="str">"contar_array(leads)"</span> })
+→ resultado: <span class="vl">8</span>
+
+<span class="cm">// IA responde con ambos resultados:</span>
+<span class="kw">IA:</span> <span class="str">"Esta semana tienen 8 leads calificados.
+     El de mayor score es Laura García con 95/100.
+     ¿Quieres que cree una tarea para contactarla hoy?"</span>
+
+<span class="str">Usuario:</span> <span class="kw">"Sí, asígnala a Carlos"</span>
+
+<span class="cm">// IA llama tool 3:</span>
+tool_call: <span class="str">crear_tarea</span>({
+  titulo:     <span class="str">"Contactar a Laura García — Score 95"</span>,
+  asignado_a: <span class="str">"Carlos"</span>,
+  vence_en:   <span class="str">"hoy"</span>
+})
+→ resultado: { tarea_id: <span class="str">"task_456"</span>, estado: <span class="str">"creada"</span> }
+
+<span class="kw">IA:</span> <span class="str">"Listo. Tarea creada y asignada a Carlos
+     para contactar a Laura hoy."</span>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('notif')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('entregable')">Siguiente: Entregable →</button>
+      </div>
+    </section>
+
+    <!-- 9 ENTREGABLE -->
+    <section id="entregable" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Entregable, Buenas Prácticas <span>y Bonus</span></h1>
+        <p>El agente con tools que debes construir, los errores que debes evitar y el mapa completo de la Clase 8 ensamblada.</p>
+      </div>
+
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">✅ Entregable — agente con mínimo 3 tools funcionando</div>
+        <ul class="cl" style="margin-top:12px;">
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Al menos 3 tools definidas con descripción clara</strong><br><span style="font-size:13px;">Una de datos, una de búsqueda y una de acción. Cada tool con name, description y parameters bien documentados.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Switch en n8n que enruta por nombre de tool</strong><br><span style="font-size:13px;">La respuesta de la IA se evalúa: si contiene tool_call, el Switch dirige a la rama correcta.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Resultado de la tool devuelto a la IA</strong><br><span style="font-size:13px;">El resultado de cada tool se agrega al historial de mensajes con role "tool" antes de la siguiente llamada al LLM.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Probado con una conversación de 2 pasos</strong><br><span style="font-size:13px;">Un mensaje que dispara una tool, y una respuesta del usuario que dispara una acción basada en el resultado anterior.</span></div></li>
+          <li><span class="ck">✓</span><div><strong style="color:var(--text);">Log de tools usadas</strong><br><span style="font-size:13px;">Registrar en Sheets qué tool usó, cuándo y con qué argumentos. Auditoría básica del agente.</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📋 Resumen — las 5 categorías de tools</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Categoría</th><th>Para qué sirve</th><th>Ejemplo de tool</th><th>Prioridad</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tool-pill tp-data">📊 Datos</span></td><td>Leer y escribir en bases de datos</td><td>obtener_leads, crear_cliente</td><td><span class="b bg">Alta</span></td></tr>
+            <tr><td><span class="tool-pill tp-code">⚡ Código</span></td><td>Cálculos exactos y transformaciones</td><td>calcular, convertir_moneda</td><td><span class="b bg">Alta</span></td></tr>
+            <tr><td><span class="tool-pill tp-search">🔍 Búsqueda</span></td><td>Info actualizada web o docs internos</td><td>buscar_web, buscar_docs</td><td><span class="b ba">Media</span></td></tr>
+            <tr><td><span class="tool-pill tp-api">🌐 APIs</span></td><td>Servicios externos (clima, pagos, maps)</td><td>verificar_pago, rastrear</td><td><span class="b ba">Media</span></td></tr>
+            <tr><td><span class="tool-pill tp-notif">🚀 Acción</span></td><td>Enviar, crear, notificar, disparar</td><td>notificar_equipo, crear_tarea</td><td><span class="b br">Con cuidado</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">🚀 Bonus — tools avanzadas</div>
+        <div class="g2" style="margin-top:12px;">
+          <div>
+            <div class="wtu"><span class="we">🔄</span><div class="wt"><strong>Tool de introspección:</strong> una tool que le permite a la IA consultar qué otras tools tiene disponibles y cuándo usarlas. Meta-tool para agentes más autónomos.</div></div>
+            <div class="wtu"><span class="we">🤖</span><div class="wt"><strong>Tool que llama a otro agente:</strong> el agente principal delega tareas complejas a agentes especializados. Ej: el agente de ventas llama al agente de soporte técnico.</div></div>
+          </div>
+          <div>
+            <div class="wtu"><span class="we">🧠</span><div class="wt"><strong>Tool de razonamiento extendido:</strong> para problemas complejos, una tool que llama a un modelo con más capacidad de razonamiento y devuelve la solución al agente principal.</div></div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>Tool de generación de gráficos:</strong> el agente puede pedir que se genere una visualización de datos como imagen y adjuntarla a la respuesta al usuario.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAPA COMPLETO DE CLASE 8 -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(168,85,247,0.08) 0%,rgba(56,189,248,0.06) 100%);border-color:rgba(168,85,247,0.35);">
+        <div class="card-label" style="color:#c084fc;">🗺️ Clase 8 completa — las 3 partes ensambladas</div>
+        <div class="code-block" style="font-size:12px;margin-top:12px;">
+<span class="cm">// Parte 1 — IA en n8n (la base)</span>
+<span class="pv">Prompts</span> bien escritos → JSON estructurado → Clasificación → Respuestas
+
+<span class="cm">// Parte 2 — Módulos de Memoria (el contexto)</span>
+<span class="sk">Corto plazo</span>   → datos del trigger en el prompt
+<span class="sk">Largo plazo</span>   → perfil del usuario persistente en DB
+<span class="sk">Conversación</span>  → historial multi-turno con ventana deslizante
+<span class="sk">Vectorial</span>     → base de conocimiento propia (RAG)
+<span class="sk">Resumen</span>       → compresión inteligente del historial largo
+
+<span class="cm">// Parte 3 — Módulos de Tools (las acciones)</span>
+<span class="ky">Datos</span>          → leer/escribir bases de datos reales
+<span class="ky">Código</span>         → cálculos exactos y transformaciones
+<span class="ky">Búsqueda</span>       → web y documentación interna
+<span class="ky">APIs externas</span>  → cualquier servicio del mundo
+<span class="ky">Acciones</span>       → notificar, crear, disparar workflows
+
+<span class="cm">// RESULTADO: Agente autónomo completo</span>
+<span class="str">Recibe mensaje → Recupera contexto (P2) → Decide tools (P3)
+→ Ejecuta acciones → Responde con toda la información</span>
+        </div>
+        <div style="text-align:center;margin-top:20px;">
+          <div style="font-size:32px;margin-bottom:10px;">🏆</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;">Clase 9 — Optimización y Escalabilidad</div>
+          <p style="font-size:14px;color:var(--text2);max-width:480px;margin:0 auto 16px;">Con agentes completos construidos, la Clase 9 los lleva a producción robusta: manejo de errores, logging, monitoreo y escala para miles de usuarios.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">⚡ Rendimiento</span>
+            <span class="b bg">🛡️ Errores robustos</span>
+            <span class="b bt">📊 Monitoreo</span>
+            <span class="b ba">📦 Alto volumen</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('agente')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','como','datos','codigo','api','busqueda','notif','agente','entregable'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(".nav-item[onclick*=\"'"+id+"'\"]");go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent='Sección '+(idx+1)+' de '+sections.length;
+  }
+</script>
+</body>
+</html>
