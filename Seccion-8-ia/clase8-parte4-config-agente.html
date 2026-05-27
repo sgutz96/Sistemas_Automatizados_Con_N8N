@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clase 8 · Parte 4 — Configuración del Agente IA</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1f1f28;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#f0eeff; --text2:#9b95b8; --text3:#5c577a;
+    --accent:#7c6ef5; --accent2:#a598ff; --accent-glow:rgba(124,110,245,0.18);
+    --green:#22c97a; --green-bg:rgba(34,201,122,0.1);
+    --red:#f05a5a;   --red-bg:rgba(240,90,90,0.1);
+    --amber:#f0a030; --amber-bg:rgba(240,160,48,0.1);
+    --teal:#20d4b0;  --teal-bg:rgba(32,212,176,0.1);
+    --pink:#e879a0;  --pink-bg:rgba(232,121,160,0.1);
+    --sky:#38bdf8;   --sky-bg:rgba(56,189,248,0.1);
+    --lime:#84cc16;  --lime-bg:rgba(132,204,22,0.1);
+    --oro:#f59e0b;   --oro-bg:rgba(245,158,11,0.1);
+    --purple:#a855f7; --purple-bg:rgba(168,85,247,0.12);
+    /* option colors */
+    --op-sys:  #7c6ef5; --op-sys-bg:  rgba(124,110,245,0.12);
+    --op-iter: #f0a030; --op-iter-bg: rgba(240,160,48,0.1);
+    --op-step: #38bdf8; --op-step-bg: rgba(56,189,248,0.1);
+    --op-img:  #e879a0; --op-img-bg:  rgba(232,121,160,0.1);
+    --op-trac: #20d4b0; --op-trac-bg: rgba(32,212,176,0.1);
+    --op-save: #22c97a; --op-save-bg: rgba(34,201,122,0.1);
+    --op-strm: #a855f7; --op-strm-bg: rgba(168,85,247,0.12);
+    --op-btch: #f59e0b; --op-btch-bg: rgba(245,158,11,0.1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,110,245,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(124,110,245,0.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .week{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;}
+  .sidebar-logo h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+  .nav-section{padding:16px 12px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all 0.15s;border:1px solid transparent;text-decoration:none;}
+  .nav-item:hover{background:var(--bg3);color:var(--text);}
+  .nav-item.active{background:var(--accent-glow);border-color:rgba(124,110,245,0.3);color:var(--accent2);}
+  .nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+  .nav-item .nn{width:20px;height:20px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+  .nav-item.active .nn{background:rgba(124,110,245,0.25);color:var(--accent2);}
+  .sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);}
+  .progress-bar{background:var(--bg4);border-radius:4px;height:4px;margin-bottom:8px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:4px;transition:width 0.4s ease;}
+  .progress-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+
+  /* MAIN */
+  .main{margin-left:260px;flex:1;padding:40px 48px;max-width:calc(100% - 260px);}
+  .section{display:none;animation:fadeIn 0.25s ease;}
+  .section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HEADERS */
+  .section-header{margin-bottom:36px;}
+  .section-tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+  .section-tag .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .section-header h1{font-size:36px;font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+  .section-header h1 span{color:var(--accent2);}
+  .section-header p{font-size:16px;color:var(--text2);line-height:1.7;max-width:640px;}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+  .ab{border-color:rgba(124,110,245,0.3)!important;}  .gb{border-color:rgba(34,201,122,0.3)!important;}
+  .rb{border-color:rgba(240,90,90,0.25)!important;}   .amb{border-color:rgba(240,160,48,0.3)!important;}
+  .tb{border-color:rgba(32,212,176,0.3)!important;}   .pb{border-color:rgba(232,121,160,0.3)!important;}
+  .sb{border-color:rgba(56,189,248,0.3)!important;}   .pvb{border-color:rgba(168,85,247,0.35)!important;}
+  .orb{border-color:rgba(245,158,11,0.3)!important;}  .lmb{border-color:rgba(132,204,22,0.3)!important;}
+  .card-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:12px;}
+  .card p{font-size:14px;color:var(--text2);line-height:1.7;}
+
+  /* CODE */
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);line-height:1.9;margin-top:12px;overflow-x:auto;}
+  .kw{color:var(--accent2);} .str{color:var(--green);} .cm{color:var(--text3);}
+  .ky{color:var(--amber);}   .vl{color:var(--teal);}   .rd{color:var(--red);}
+  .pk{color:var(--pink);}    .sk{color:var(--sky);}    .lm{color:var(--lime);}
+  .pv{color:var(--purple);}  .or{color:var(--oro);}
+
+  /* OPTION HERO — una card grande por opción */
+  .opt-hero{border-radius:14px;padding:28px;margin-bottom:24px;position:relative;overflow:hidden;}
+  .opt-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;opacity:0.08;pointer-events:none;}
+  .oh-sys  {background:var(--bg2);border:1px solid rgba(124,110,245,0.45);} .oh-sys::before{background:var(--op-sys);}
+  .oh-iter {background:var(--bg2);border:1px solid rgba(240,160,48,0.45);}  .oh-iter::before{background:var(--op-iter);}
+  .oh-step {background:var(--bg2);border:1px solid rgba(56,189,248,0.45);}  .oh-step::before{background:var(--op-step);}
+  .oh-img  {background:var(--bg2);border:1px solid rgba(232,121,160,0.45);} .oh-img::before{background:var(--op-img);}
+  .oh-trac {background:var(--bg2);border:1px solid rgba(32,212,176,0.45);}  .oh-trac::before{background:var(--op-trac);}
+  .oh-save {background:var(--bg2);border:1px solid rgba(34,201,122,0.45);}  .oh-save::before{background:var(--op-save);}
+  .oh-strm {background:var(--bg2);border:1px solid rgba(168,85,247,0.45);}  .oh-strm::before{background:var(--op-strm);}
+  .oh-btch {background:var(--bg2);border:1px solid rgba(245,158,11,0.45);}  .oh-btch::before{background:var(--op-btch);}
+
+  .oh-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;}
+  .oh-icon{font-size:28px;width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .oh-sys  .oh-icon{background:rgba(124,110,245,0.14);}
+  .oh-iter .oh-icon{background:rgba(240,160,48,0.14);}
+  .oh-step .oh-icon{background:rgba(56,189,248,0.14);}
+  .oh-img  .oh-icon{background:rgba(232,121,160,0.14);}
+  .oh-trac .oh-icon{background:rgba(32,212,176,0.14);}
+  .oh-save .oh-icon{background:rgba(34,201,122,0.14);}
+  .oh-strm .oh-icon{background:rgba(168,85,247,0.14);}
+  .oh-btch .oh-icon{background:rgba(245,158,11,0.14);}
+
+  .oh-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;}
+  .oh-sys  .oh-label{color:var(--op-sys);}
+  .oh-iter .oh-label{color:var(--op-iter);}
+  .oh-step .oh-label{color:var(--op-step);}
+  .oh-img  .oh-label{color:var(--op-img);}
+  .oh-trac .oh-label{color:var(--op-trac);}
+  .oh-save .oh-label{color:var(--op-save);}
+  .oh-strm .oh-label{color:var(--op-strm);}
+  .oh-btch .oh-label{color:var(--op-btch);}
+
+  .oh-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .oh-desc{font-size:14px;color:var(--text2);line-height:1.6;}
+  .oh-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .oh-tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;}
+  .oh-sys  .oh-tag{background:var(--op-sys-bg);color:var(--op-sys);}
+  .oh-iter .oh-tag{background:var(--op-iter-bg);color:var(--op-iter);}
+  .oh-step .oh-tag{background:var(--op-step-bg);color:var(--op-step);}
+  .oh-img  .oh-tag{background:var(--op-img-bg);color:var(--op-img);}
+  .oh-trac .oh-tag{background:var(--op-trac-bg);color:var(--op-trac);}
+  .oh-save .oh-tag{background:var(--op-save-bg);color:var(--op-save);}
+  .oh-strm .oh-tag{background:var(--op-strm-bg);color:var(--op-strm);}
+  .oh-btch .oh-tag{background:var(--op-btch-bg);color:var(--op-btch);}
+
+  /* UI MOCKUP PANEL */
+  .ui-panel{background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:0;overflow:hidden;margin-top:14px;}
+  .ui-header{background:var(--bg4);padding:10px 16px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;}
+  .ui-dot{width:8px;height:8px;border-radius:50%;}
+  .ui-body{padding:16px;}
+  .ui-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+  .ui-row:last-child{border-bottom:none;}
+  .ui-field{font-size:13px;color:var(--text2);}
+  .ui-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--teal);}
+  .ui-textarea{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);line-height:1.6;width:100%;margin-top:8px;}
+  .ui-toggle{display:flex;align-items:center;gap:8px;}
+  .toggle-on{width:36px;height:20px;border-radius:10px;background:var(--accent);position:relative;flex-shrink:0;}
+  .toggle-on::after{content:'';position:absolute;right:3px;top:3px;width:14px;height:14px;border-radius:50%;background:white;}
+  .toggle-off{width:36px;height:20px;border-radius:10px;background:var(--bg4);border:1px solid var(--border2);position:relative;flex-shrink:0;}
+  .toggle-off::after{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--text3);}
+
+  /* CHECKLIST */
+  .cl{list-style:none;}
+  .cl li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border);line-height:1.5;}
+  .cl li:last-child{border-bottom:none;}
+  .ck{color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0;}
+  .cx{color:var(--red);font-size:14px;margin-top:1px;flex-shrink:0;}
+
+  /* WTU */
+  .wtu{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);}
+  .wtu:last-child{border-bottom:none;}
+  .we{font-size:16px;flex-shrink:0;width:24px;text-align:center;margin-top:1px;}
+  .wt{font-size:13px;color:var(--text2);line-height:1.55;}
+  .wt strong{color:var(--text);}
+
+  /* STAT */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+  .sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent2);line-height:1;margin-bottom:6px;}
+  .sl{font-size:12px;color:var(--text2);line-height:1.4;}
+
+  /* BADGES */
+  .b{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;}
+  .bg{background:var(--green-bg);color:var(--green);}  .ba{background:var(--amber-bg);color:var(--amber);}
+  .bac{background:var(--accent-glow);color:var(--accent2);} .bt{background:var(--teal-bg);color:var(--teal);}
+  .br{background:var(--red-bg);color:var(--red);}  .bs{background:var(--sky-bg);color:var(--sky);}
+  .bp{background:var(--pink-bg);color:var(--pink);} .bpv{background:var(--purple-bg);color:var(--purple);}
+  .bor{background:var(--oro-bg);color:var(--oro);}
+
+  /* TABLE */
+  .ct{width:100%;border-collapse:collapse;margin-top:12px;}
+  .ct th{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border2);}
+  .ct td{padding:12px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  .ct tr:last-child td{border-bottom:none;}
+  .ct td:first-child{font-weight:600;color:var(--text);}
+
+  /* TIP */
+  .tip{display:flex;gap:14px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--border);}
+  .ti{font-size:18px;flex-shrink:0;margin-top:2px;}
+  .tt{font-size:13px;color:var(--text2);line-height:1.6;}
+  .tt strong{color:var(--text);}
+  code{color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  /* HIGHLIGHT */
+  .hl{background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.05) 100%);border:1px solid rgba(124,110,245,0.25);border-radius:12px;padding:24px;margin-bottom:16px;}
+
+  /* PROFILE CARDS (config presets) */
+  .preset{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:10px;}
+  .preset-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .preset-settings{display:flex;flex-direction:column;gap:6px;}
+  .preset-row{display:flex;justify-content:space-between;font-size:12px;}
+  .preset-key{color:var(--text3);font-family:'JetBrains Mono',monospace;}
+  .preset-value{color:var(--teal);font-family:'JetBrains Mono',monospace;font-weight:700;}
+
+  /* NAV */
+  .nav-btns{display:flex;gap:12px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);}
+  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.15s;border:none;}
+  .btn-p{background:var(--accent);color:white;} .btn-p:hover{opacity:0.85;}
+  .btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2);} .btn-g:hover{background:var(--bg3);color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="week">Clase 8 · Parte 4</div>
+      <h2>Configuración del Agente IA</h2>
+      <p>n8n · AI Agent · opciones</p>
+    </div>
+    <div class="nav-section">Opciones del nodo</div>
+    <a class="nav-item active" onclick="go('intro',this)"><span class="nn">1</span> El nodo AI Agent</a>
+    <a class="nav-item" onclick="go('system',this)"><span class="ni">💬</span> System Message</a>
+    <a class="nav-item" onclick="go('iter',this)"><span class="ni">🔁</span> Max Iterations</a>
+    <a class="nav-item" onclick="go('steps',this)"><span class="ni">🪜</span> Return Intermediate Steps</a>
+    <a class="nav-item" onclick="go('images',this)"><span class="ni">🖼️</span> Passthrough Binary Images</a>
+    <a class="nav-item" onclick="go('tracing',this)"><span class="ni">🔬</span> Tracing Metadata</a>
+    <a class="nav-item" onclick="go('save',this)"><span class="ni">💾</span> Auto-save Highlighted Data</a>
+    <a class="nav-item" onclick="go('stream',this)"><span class="ni">⚡</span> Enable Streaming</a>
+    <a class="nav-item" onclick="go('batch',this)"><span class="ni">📦</span> Batch Processing</a>
+    <a class="nav-item" onclick="go('perfiles',this)"><span class="nn">9</span> Perfiles de configuración</a>
+    <div class="sidebar-footer">
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:10%"></div></div>
+      <div class="progress-text" id="progress-text">Sección 1 de 10</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- 1 INTRO -->
+    <section id="intro" class="section active">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Clase 8 · Parte 4</div>
+        <h1>Configuración del <span>Agente IA</span></h1>
+        <p>Las 8 opciones del nodo AI Agent de n8n. Cada una controla un aspecto distinto del comportamiento del agente — desde cómo piensa hasta cómo procesa imágenes y datos en lote.</p>
+      </div>
+
+      <div class="hl">
+        <div class="card-label">🎯 ¿Por qué importa configurar bien el agente?</div>
+        <h3 style="font-size:19px;font-weight:700;color:var(--text);margin:10px 0 8px;">Un agente mal configurado gasta tokens, se cuelga en loops o ignora el contexto correcto</h3>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7;">Las opciones del AI Agent no son decorativas. Controlan el <strong style="color:var(--text);">límite de razonamiento</strong>, la <strong style="color:var(--text);">identidad del agente</strong>, la <strong style="color:var(--text);">visibilidad del proceso</strong> y la <strong style="color:var(--text);">capacidad de procesar archivos y datos masivos</strong>. Configurarlas correctamente es la diferencia entre un agente que funciona bien y uno que falla silenciosamente.</p>
+      </div>
+
+      <div class="g4">
+        <div class="stat"><div class="sn">8</div><div class="sl">opciones disponibles en el nodo AI Agent</div></div>
+        <div class="stat"><div class="sn" style="color:var(--amber);">10</div><div class="sl">iteraciones por defecto — puede ser poco o demasiado</div></div>
+        <div class="stat"><div class="sn" style="color:var(--purple);">∞</div><div class="sl">loops posibles si Max Iterations está mal configurado</div></div>
+        <div class="stat"><div class="sn" style="color:var(--green);">1</div><div class="sl">System Message que define todo el comportamiento</div></div>
+      </div>
+
+      <!-- MAPA VISUAL DE LAS OPCIONES -->
+      <div class="card">
+        <div class="card-label">🗺️ Las 8 opciones del nodo — Add Option</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+          <div style="background:var(--bg3);border:1px solid rgba(124,110,245,0.35);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="font-size:22px;flex-shrink:0;">💬</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--op-sys);">System Message</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Define la personalidad, rol y reglas del agente</div></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(240,160,48,0.35);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="font-size:22px;flex-shrink:0;">🔁</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--op-iter);">Max Iterations</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Límite de vueltas del ciclo razonamiento→tool</div></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="font-size:22px;flex-shrink:0;">🪜</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--op-step);">Return Intermediate Steps</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Exponer el razonamiento interno del agente</div></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(232,121,160,0.35);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="font-size:22px;flex-shrink:0;">🖼️</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--op-img);">Passthrough Binary Images</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Pasar imágenes directamente al modelo vision</div></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(32,212,176,0.35);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="font-size:22px;flex-shrink:0;">🔬</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--op-trac);">Tracing Metadata</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Adjuntar metadatos a cada ejecución para observabilidad</div></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(34,201,122,0.35);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="font-size:22px;flex-shrink:0;">💾</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--op-save);">Auto-save Highlighted Data</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Guardar automáticamente datos marcados en la UI</div></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(168,85,247,0.35);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="font-size:22px;flex-shrink:0;">⚡</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--op-strm);">Enable Streaming</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Respuesta token a token para UI en tiempo real</div></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid rgba(245,158,11,0.35);border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="font-size:22px;flex-shrink:0;">📦</div>
+            <div><div style="font-size:13px;font-weight:700;color:var(--op-btch);">Batch Processing</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Procesar múltiples items en paralelo o serie</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-p" onclick="goTo('system')">Siguiente: System Message →</button>
+      </div>
+    </section>
+
+    <!-- 2 SYSTEM MESSAGE -->
+    <section id="system" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Opción 1 de 8</div>
+        <h1><span>System Message</span></h1>
+        <p>La instrucción más importante del agente. Define quién es, qué puede hacer, qué no puede hacer y cómo debe responder. Todo lo que no está aquí, el modelo lo inventa.</p>
+      </div>
+
+      <div class="opt-hero oh-sys">
+        <div class="oh-top">
+          <div class="oh-icon">💬</div>
+          <div>
+            <div class="oh-label">System Message · Identidad del agente</div>
+            <div class="oh-title">El prompt que define todo el comportamiento</div>
+            <div class="oh-desc">El System Message es el primer mensaje que recibe el LLM — el que establece las reglas del juego antes de cualquier interacción del usuario. Un System Message bien escrito hace que el agente sea preciso, consistente y predecible. Uno vago produce un agente errático.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🎭 Rol y personalidad</span>
+          <span class="oh-tag">📋 Reglas de comportamiento</span>
+          <span class="oh-tag">🚫 Lo que NO debe hacer</span>
+          <span class="oh-tag">📐 Formato de respuesta</span>
+          <span class="oh-tag">🌍 Idioma y tono</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card ab">
+          <div class="card-label">⚙️ Sistema Message en n8n — dónde configurarlo</div>
+          <div class="ui-panel">
+            <div class="ui-header">
+              <div class="ui-dot" style="background:#ff5f56;"></div>
+              <div class="ui-dot" style="background:#ffbd2e;margin-left:4px;"></div>
+              <div class="ui-dot" style="background:#27c93f;margin-left:4px;"></div>
+              <span style="margin-left:8px;">AI Agent · Options</span>
+            </div>
+            <div class="ui-body">
+              <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:6px;">System Message</div>
+              <div class="ui-textarea">You are a sales assistant for n8n Corp.
+
+Your role:
+- Help users with CRM and lead questions
+- Answer using the available tools
+- Always respond in Spanish
+- Be concise and professional
+
+You must NOT:
+- Make up data not returned by tools
+- Discuss competitor products
+- Share internal pricing not in the docs</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📋 Estructura de un System Message efectivo</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// SECCIÓN 1: Identidad y rol</span>
+<span class="str">"Eres un asistente de ventas de [Empresa].
+Tu trabajo es ayudar al equipo comercial
+con consultas sobre leads y clientes."</span>
+
+<span class="cm">// SECCIÓN 2: Capacidades (qué SÍ puede hacer)</span>
+<span class="str">"Puedes:
+- Consultar y actualizar la base de leads
+- Calcular métricas de ventas
+- Buscar en la documentación de productos
+- Notificar al equipo por Slack"</span>
+
+<span class="cm">// SECCIÓN 3: Restricciones (qué NO puede hacer)</span>
+<span class="str">"NO debes:
+- Inventar datos no devueltos por las tools
+- Compartir información de otros clientes
+- Hacer promesas sobre precios o descuentos"</span>
+
+<span class="cm">// SECCIÓN 4: Formato y tono</span>
+<span class="str">"Responde siempre en español.
+Sé conciso — máximo 3 párrafos.
+Usa datos concretos cuando los tengas."</span>
+
+<span class="cm">// SECCIÓN 5: Contexto dinámico (opcional)</span>
+<span class="str">"Fecha actual: {{$now.toFormat('dd/MM/yyyy')}}
+Usuario: {{$json.nombre_usuario}}"</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="tip"><span class="ti">💡</span><div class="tt"><strong>Usa expresiones dinámicas en el System Message.</strong> Puedes inyectar <code>{{$now}}</code>, <code>{{$json.nombre}}</code> o cualquier variable del workflow. Así la IA siempre sabe la fecha actual, el usuario que pregunta y el contexto de la ejecución.</div></div>
+        <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Sin System Message el modelo usa sus defaults.</strong> Por defecto OpenAI/Claude responden como asistentes genéricos. Sin System Message, el agente puede responder en inglés, inventar datos o salirse del dominio del negocio.</div></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('intro')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('iter')">Siguiente: Max Iterations →</button>
+      </div>
+    </section>
+
+    <!-- 3 MAX ITERATIONS -->
+    <section id="iter" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Opción 2 de 8</div>
+        <h1><span>Max Iterations</span></h1>
+        <p>El límite de ciclos que puede hacer el agente. Cada iteración es: pensar → llamar tool → recibir resultado → pensar de nuevo. Sin límite, puede quedar en loop infinito.</p>
+      </div>
+
+      <div class="opt-hero oh-iter">
+        <div class="oh-top">
+          <div class="oh-icon">🔁</div>
+          <div>
+            <div class="oh-label">Max Iterations · Límite de razonamiento</div>
+            <div class="oh-title">Cuántas veces puede razonar y usar tools antes de responder</div>
+            <div class="oh-desc">El agente trabaja en ciclos: piensa, llama una tool, recibe el resultado, piensa de nuevo, puede llamar otra tool, etc. Max Iterations define cuántos de esos ciclos puede hacer. Si llega al límite sin responder, n8n para la ejecución y retorna un error. Protege contra loops y costos desbocados.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🔢 Default: 10</span>
+          <span class="oh-tag">🛡️ Protege contra loops</span>
+          <span class="oh-tag">💰 Controla costos</span>
+          <span class="oh-tag">⏱️ Limita tiempo</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card amb">
+          <div class="card-label">⚙️ Cómo contar una iteración</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Cada "vuelta" del ReAct loop = 1 iteración</span>
+
+Iteración 1:
+  IA piensa → llama <span class="str">buscar_cliente(email)</span>
+  → recibe: { nombre: <span class="str">"Carlos"</span>, id: <span class="str">"123"</span> }
+
+Iteración 2:
+  IA piensa → llama <span class="str">obtener_deals(cliente_id: "123")</span>
+  → recibe: [{ deal: <span class="str">"Plan Pro"</span>, monto: 500000 }]
+
+Iteración 3:
+  IA piensa → llama <span class="str">calcular(deal.monto * 0.15)</span>
+  → recibe: { resultado: 75000 }
+
+Iteración 4:
+  IA piensa → respuesta final al usuario
+  (sin tool call = última iteración)
+
+<span class="cm">// Total: 4 iteraciones para esta tarea
+// Si Max Iterations = 3, falla en la 3ra</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🎚️ Valores recomendados por caso de uso</div>
+          <table class="ct" style="margin-top:8px;">
+            <thead><tr><th>Tipo de agente</th><th>Max Iterations</th><th>Razón</th></tr></thead>
+            <tbody>
+              <tr><td>Chatbot simple (FAQ)</td><td><span style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace;">3-5</span></td><td>1-2 búsquedas máximo</td></tr>
+              <tr><td>Asistente con datos</td><td><span style="color:var(--teal);font-weight:700;font-family:'JetBrains Mono',monospace;">5-10</span></td><td>Varias consultas posibles</td></tr>
+              <tr><td>Agente de ventas</td><td><span style="color:var(--amber);font-weight:700;font-family:'JetBrains Mono',monospace;">10-15</span></td><td>Buscar + calcular + actuar</td></tr>
+              <tr><td>Agente de análisis</td><td><span style="color:var(--amber);font-weight:700;font-family:'JetBrains Mono',monospace;">15-20</span></td><td>Múltiples fuentes de datos</td></tr>
+              <tr><td>Agente autónomo</td><td><span style="color:var(--red);font-weight:700;font-family:'JetBrains Mono',monospace;">25-50</span></td><td>Tareas complejas multi-paso</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:10px;">⚠️ Más iteraciones = más tokens = más costo. Calibrar según la tarea real.</p>
+        </div>
+      </div>
+
+      <div class="tip"><span class="ti">⚠️</span><div class="tt"><strong>Loop infinito sin Max Iterations.</strong> Si el agente entra en un ciclo (busca → no encuentra → busca de nuevo → no encuentra...) sin límite, el workflow corre hasta agotar tiempo o dinero. Siempre setear un valor razonable. Con el default de 10 generalmente es suficiente.</div></div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('system')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('steps')">Siguiente: Return Intermediate Steps →</button>
+      </div>
+    </section>
+
+    <!-- 4 INTERMEDIATE STEPS -->
+    <section id="steps" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Opción 3 de 8</div>
+        <h1>Return <span>Intermediate Steps</span></h1>
+        <p>Hacer visible el razonamiento interno del agente. Cada tool call, cada resultado intermedio — todo disponible en el output del nodo para debugging y auditoría.</p>
+      </div>
+
+      <div class="opt-hero oh-step">
+        <div class="oh-top">
+          <div class="oh-icon">🪜</div>
+          <div>
+            <div class="oh-label">Return Intermediate Steps · Transparencia del razonamiento</div>
+            <div class="oh-title">Ver cada paso del pensamiento del agente</div>
+            <div class="oh-desc">Con esta opción activada, el output del nodo AI Agent incluye no solo la respuesta final, sino también el detalle de cada iteración: qué tool llamó, con qué argumentos, qué resultado obtuvo y cómo usó ese resultado en el siguiente paso. Indispensable para debugging y construcción inicial de agentes.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🔍 Debugging</span>
+          <span class="oh-tag">📋 Auditoría</span>
+          <span class="oh-tag">🧠 Razonamiento visible</span>
+          <span class="oh-tag">OFF en producción</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card sb">
+          <div class="card-label">⚙️ Output con Intermediate Steps activado</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Output del nodo con la opción ON</span>
+{
+  <span class="ky">"output"</span>: <span class="str">"Carlos tiene 3 deals abiertos por $1.5M"</span>,
+
+  <span class="ky">"intermediateSteps"</span>: [
+    {
+      <span class="ky">"action"</span>: {
+        <span class="ky">"tool"</span>:  <span class="str">"buscar_cliente"</span>,
+        <span class="ky">"input"</span>: { <span class="ky">"query"</span>: <span class="str">"Carlos"</span> }
+      },
+      <span class="ky">"observation"</span>: { <span class="ky">"id"</span>: <span class="str">"clt_123"</span>, <span class="ky">"nombre"</span>: <span class="str">"Carlos"</span> }
+    },
+    {
+      <span class="ky">"action"</span>: {
+        <span class="ky">"tool"</span>:  <span class="str">"obtener_deals"</span>,
+        <span class="ky">"input"</span>: { <span class="ky">"cliente_id"</span>: <span class="str">"clt_123"</span> }
+      },
+      <span class="ky">"observation"</span>: [
+        { <span class="ky">"monto"</span>: <span class="vl">500000</span> },
+        { <span class="ky">"monto"</span>: <span class="vl">750000</span> },
+        { <span class="ky">"monto"</span>: <span class="vl">250000</span> }
+      ]
+    }
+  ]
+}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo activarlo y cuándo no</div>
+          <ul class="cl" style="margin-top:8px;">
+            <li><span class="ck">✅</span><div><strong style="color:var(--text);">Activar durante desarrollo</strong> — para ver exactamente qué tools está usando el agente y detectar si las descripciones están funcionando</div></li>
+            <li><span class="ck">✅</span><div><strong style="color:var(--text);">Activar para auditoría</strong> — si el cliente necesita saber qué hizo el agente paso a paso para cada decisión</div></li>
+            <li><span class="ck">✅</span><div><strong style="color:var(--text);">Activar para debugging</strong> — cuando el agente da respuestas incorrectas y necesitas entender por qué</div></li>
+            <li><span class="cx">❌</span><div><strong style="color:var(--text);">Desactivar en producción</strong> — aumenta el tamaño del output significativamente y puede exponer datos internos al usuario final</div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('iter')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('images')">Siguiente: Passthrough Binary Images →</button>
+      </div>
+    </section>
+
+    <!-- 5 BINARY IMAGES -->
+    <section id="images" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Opción 4 de 8</div>
+        <h1>Automatically Passthrough <span>Binary Images</span></h1>
+        <p>Cuando el nodo anterior al agente produce una imagen (PDF renderizado, captura, foto), esta opción la pasa directamente al modelo de visión sin pasos intermedios.</p>
+      </div>
+
+      <div class="opt-hero oh-img">
+        <div class="oh-top">
+          <div class="oh-icon">🖼️</div>
+          <div>
+            <div class="oh-label">Passthrough Binary Images · Vision IA</div>
+            <div class="oh-title">Imágenes al modelo de visión sin configuración extra</div>
+            <div class="oh-desc">Cuando el workflow procesa imágenes — capturas de pantalla, fotos de productos, páginas de documentos escaneados — y el nodo anterior al AI Agent genera datos binarios de imagen, esta opción automáticamente los adjunta al mensaje para que el LLM multimodal (GPT-4o, Claude 3) los procese y razone sobre ellos.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">👁️ Modelos vision</span>
+          <span class="oh-tag">📸 Fotos y capturas</span>
+          <span class="oh-tag">📄 PDFs renderizados</span>
+          <span class="oh-tag">🔄 Sin Set extra</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card pb">
+          <div class="card-label">⚙️ Flujos donde se usa</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Flujo 1: Analizar factura recibida por email</span>
+Email Trigger (con adjunto PDF)
+→ Nodo: Extract PDF page → imagen binaria
+→ AI Agent (Passthrough ON)
+  → LLM ve la imagen + prompt:
+    <span class="str">"Extrae: proveedor, monto, fecha, número"</span>
+  → retorna JSON estructurado
+
+<span class="cm">// Flujo 2: Clasificar foto de producto</span>
+Webhook (recibe foto del cliente)
+→ AI Agent (Passthrough ON)
+  → LLM analiza la imagen + prompt:
+    <span class="str">"¿Qué producto es? ¿Tiene daños visibles?"</span>
+  → retorna: { producto, estado, accion }
+
+<span class="cm">// Flujo 3: Leer captura de pantalla de error</span>
+Webhook (screenshot del error)
+→ AI Agent (Passthrough ON)
+  → LLM lee el texto en la imagen + prompt:
+    <span class="str">"¿Qué tipo de error es? Categoriza el ticket"</span>
+  → retorna: { tipo, prioridad, resolucion }
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">⚠️ Consideraciones</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">🤖</span><div class="wt"><strong>Solo funciona con modelos multimodales:</strong> GPT-4o, Claude 3 Sonnet/Opus, Gemini Pro Vision. Con modelos de solo texto, el agente ignora la imagen.</div></div>
+            <div class="wtu"><span class="we">💰</span><div class="wt"><strong>Las imágenes cuestan más tokens:</strong> una imagen de 1024×1024 puede costar 765 tokens en GPT-4o. Considerar el costo si el volumen es alto.</div></div>
+            <div class="wtu"><span class="we">📦</span><div class="wt"><strong>Formato soportado:</strong> PNG, JPG, WEBP, GIF. El nodo anterior debe producir datos binarios, no una URL. Si viene como URL, usar HTTP Request para descargarla primero.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('steps')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('tracing')">Siguiente: Tracing Metadata →</button>
+      </div>
+    </section>
+
+    <!-- 6 TRACING METADATA -->
+    <section id="tracing" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Opción 5 de 8</div>
+        <h1>Tracing <span>Metadata</span></h1>
+        <p>Adjuntar metadatos de identificación a cada ejecución del agente. Esencial para observabilidad, trazabilidad y correlacionar ejecuciones con usuarios o sesiones específicas en plataformas como LangSmith o Langfuse.</p>
+      </div>
+
+      <div class="opt-hero oh-trac">
+        <div class="oh-top">
+          <div class="oh-icon">🔬</div>
+          <div>
+            <div class="oh-label">Tracing Metadata · Observabilidad del agente</div>
+            <div class="oh-title">Etiquetar cada ejecución para rastrearla después</div>
+            <div class="oh-desc">Tracing Metadata permite adjuntar pares clave-valor a cada llamada del agente. Esos metadatos aparecen en herramientas de observabilidad de LLMs como LangSmith, Langfuse o Helicone. Puedes identificar qué usuario generó qué respuesta, a qué sesión pertenece, de qué workflow vino y cualquier dimensión de análisis que necesites.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🏷️ Tags por ejecución</span>
+          <span class="oh-tag">👤 ID de usuario</span>
+          <span class="oh-tag">🔍 LangSmith / Langfuse</span>
+          <span class="oh-tag">📊 Análisis de costos por usuario</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card tb">
+          <div class="card-label">⚙️ Metadatos típicos a adjuntar</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Configuración en el nodo</span>
+Tracing Metadata:
+  <span class="ky">user_id</span>:      <span class="str">"{{$json.user_id}}"</span>
+  <span class="ky">session_id</span>:   <span class="str">"{{$json.session_id}}"</span>
+  <span class="ky">workflow</span>:     <span class="str">"agente-ventas-v2"</span>
+  <span class="ky">environment</span>:  <span class="str">"production"</span>
+  <span class="ky">customer</span>:     <span class="str">"{{$json.empresa}}"</span>
+  <span class="ky">plan</span>:         <span class="str">"{{$json.plan}}"</span>
+
+<span class="cm">// En LangSmith/Langfuse verás:</span>
+→ Ejecuciones agrupadas por user_id
+→ Costo total por customer
+→ Latencia promedio por plan
+→ Tasa de éxito por workflow
+→ Qué tools usa más cada usuario
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">🏢 Casos de uso</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">💰</span><div class="wt"><strong>Billing por uso:</strong> rastrear cuántos tokens consume cada cliente para cobrar según uso real en modelos de precios variables</div></div>
+            <div class="wtu"><span class="we">🐛</span><div class="wt"><strong>Debugging por usuario:</strong> cuando un cliente reporta un problema, filtrar en LangSmith por su user_id y ver exactamente qué pasó</div></div>
+            <div class="wtu"><span class="we">📊</span><div class="wt"><strong>A/B testing de prompts:</strong> etiquetar con <code>version: "prompt_v1"</code> vs <code>v2</code> y comparar métricas de calidad y costo</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('images')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('save')">Siguiente: Auto-save Highlighted Data →</button>
+      </div>
+    </section>
+
+    <!-- 7 AUTO-SAVE -->
+    <section id="save" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Opción 6 de 8</div>
+        <h1>Auto-save <span>Highlighted Data</span></h1>
+        <p>Guardar automáticamente los datos que el agente identifica como relevantes durante la conversación, sin necesidad de configurar nodos de almacenamiento adicionales.</p>
+      </div>
+
+      <div class="opt-hero oh-save">
+        <div class="oh-top">
+          <div class="oh-icon">💾</div>
+          <div>
+            <div class="oh-label">Auto-save Highlighted Data · Persistencia automática</div>
+            <div class="oh-title">El agente guarda lo que considera importante</div>
+            <div class="oh-desc">Cuando esta opción está activada, los datos que la IA "resalta" durante su razonamiento — entidades extraídas, decisiones clave, valores importantes — se guardan automáticamente en la memoria del workflow. Útil para capturar información sin necesidad de configurar un nodo Set + Sheets explícito por cada dato.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🏷️ Entidades detectadas</span>
+          <span class="oh-tag">📝 Decisiones clave</span>
+          <span class="oh-tag">🔄 Sin nodos extra</span>
+          <span class="oh-tag">💡 Útil con memoria</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card gb">
+          <div class="card-label">⚙️ Cuándo es útil</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Extracción de entidades:</strong> el agente detecta nombres, fechas, montos y los guarda para usarlos en herramientas posteriores sin re-procesar</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Construcción de contexto incremental:</strong> en conversaciones largas, los hechos importantes se van acumulando sin necesidad de resumir manualmente</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Pipeline de datos con IA:</strong> el agente procesa texto no estructurado y destaca los campos relevantes que luego van a Sheets</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Relación con los módulos de memoria (Parte 2)</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Funciona como complemento a la memoria a largo plazo</span>
+
+Sin auto-save:
+  Agente detecta: cliente = "Carlos", monto = $500k
+  → Solo en la respuesta final
+  → Si quieres guardarlo: nodo Set + Sheets manual
+
+Con auto-save:
+  Agente detecta: cliente = "Carlos", monto = $500k
+  → Se guarda en highlighted_data automáticamente
+  → Disponible para el siguiente nodo vía
+    <span class="kw">{{$('AI Agent').first().json.highlighted_data}}</span>
+
+<span class="cm">// Ideal para agentes de extracción de datos
+// que procesan documentos o conversaciones</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('tracing')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('stream')">Siguiente: Enable Streaming →</button>
+      </div>
+    </section>
+
+    <!-- 8 STREAMING -->
+    <section id="stream" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Opción 7 de 8</div>
+        <h1>Enable <span>Streaming</span></h1>
+        <p>La respuesta llega token a token en vez de toda de golpe. La diferencia entre una UI donde el texto "escribe" en tiempo real y una que espera 5 segundos y aparece todo junto.</p>
+      </div>
+
+      <div class="opt-hero oh-strm">
+        <div class="oh-top">
+          <div class="oh-icon">⚡</div>
+          <div>
+            <div class="oh-label">Enable Streaming · Respuesta en tiempo real</div>
+            <div class="oh-title">Token a token para una experiencia como ChatGPT</div>
+            <div class="oh-desc">Con Streaming activado, n8n recibe la respuesta del LLM token a token y la puede reenviar a la interfaz de usuario en tiempo real. El usuario ve el texto "escribiéndose" mientras el modelo piensa — exactamente como ChatGPT. Sin streaming, el workflow espera la respuesta completa antes de enviar cualquier cosa, lo que se percibe como lag.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🔤 Token a token</span>
+          <span class="oh-tag">👁️ UX en tiempo real</span>
+          <span class="oh-tag">📡 Websocket o SSE</span>
+          <span class="oh-tag">⚡ Latencia percibida menor</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card pvb">
+          <div class="card-label">⚙️ Cómo funciona el streaming en n8n</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Sin streaming (por defecto)</span>
+Usuario envía mensaje
+  ↓ n8n espera...
+  ↓ n8n espera...  (5-15 segundos)
+  ↓ n8n espera...
+Respuesta completa → usuario la ve toda de golpe
+
+<span class="cm">// Con streaming activado</span>
+Usuario envía mensaje
+  ↓ "H" → UI muestra "H"
+  ↓ "Ho" → UI muestra "Ho"
+  ↓ "Hola" → UI muestra "Hola"
+  ↓ "Hola," → ...
+  ↓ "Hola, encontré" → ...
+Respuesta completa al terminar
+<span class="cm">// La latencia percibida es mucho menor</span>
+
+<span class="cm">// En n8n: usar con Respond to Webhook
+// que soporta SSE (Server-Sent Events)</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📌 Cuándo usar Streaming</div>
+          <div style="margin-top:8px;">
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Chatbots con UI propia:</strong> cuando construyes una interfaz de chat que muestra respuestas en tiempo real</div></div>
+            <div class="wtu"><span class="we">✅</span><div class="wt"><strong>Respuestas largas:</strong> resúmenes, análisis de documentos — el usuario empieza a leer mientras el modelo termina de generar</div></div>
+            <div class="wtu"><span class="we">❌</span><div class="wt"><strong>No usar en batch o reportes:</strong> si la respuesta se va a procesar con otros nodos después, el streaming no ayuda y complica el pipeline</div></div>
+            <div class="wtu"><span class="we">❌</span><div class="wt"><strong>No usar con tools complejas:</strong> el streaming interrumpe el ciclo razonamiento→tool. Mejor desactivarlo si el agente usa múltiples iteraciones</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('save')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('batch')">Siguiente: Batch Processing →</button>
+      </div>
+    </section>
+
+    <!-- 9 BATCH PROCESSING -->
+    <section id="batch" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Opción 8 de 8</div>
+        <h1>Batch <span>Processing</span></h1>
+        <p>Procesar múltiples items con el agente en paralelo o en serie controlada. La solución cuando tienes 50 emails, 200 registros o 1000 tickets que analizar con IA.</p>
+      </div>
+
+      <div class="opt-hero oh-btch">
+        <div class="oh-top">
+          <div class="oh-icon">📦</div>
+          <div>
+            <div class="oh-label">Batch Processing · Procesamiento masivo con IA</div>
+            <div class="oh-title">El agente procesa N items sin saturar la API</div>
+            <div class="oh-desc">Cuando el nodo AI Agent recibe múltiples items (un array de emails, tickets, registros), Batch Processing controla cuántos procesa simultáneamente. Sin esto, todos los items se envían a la API de IA al mismo tiempo, lo que puede agotar el rate limit, generar errores 429 y elevar el costo de forma incontrolada.</div>
+          </div>
+        </div>
+        <div class="oh-tags">
+          <span class="oh-tag">🔢 Tamaño del lote</span>
+          <span class="oh-tag">⏱️ Pausa entre lotes</span>
+          <span class="oh-tag">📊 Procesar 100s de items</span>
+          <span class="oh-tag">🛡️ Evitar rate limits</span>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card orb">
+          <div class="card-label">⚙️ Configuración de Batch Processing</div>
+          <div class="code-block" style="font-size:12px;">
+<span class="cm">// Opciones disponibles</span>
+<span class="ky">Batch Size:</span>   <span class="vl">5</span>     <span class="cm">← items por lote</span>
+<span class="ky">Wait Between:</span> <span class="vl">2000</span>  <span class="cm">← ms entre lotes</span>
+
+<span class="cm">// Cómo funciona con 100 emails:</span>
+Lote 1: emails 1-5  → procesar → esperar 2s
+Lote 2: emails 6-10 → procesar → esperar 2s
+...
+Lote 20: emails 96-100 → procesar
+
+<span class="cm">// Sin Batch Processing:</span>
+100 emails → 100 requests simultáneos a la API
+→ Rate limit 429 → falla masiva
+
+<span class="cm">// Con Batch Processing (5 items, 2s wait):</span>
+5 requests × 20 lotes = 100 procesados
+Tiempo total: ~40 segundos
+Sin un solo 429
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">📊 Valores recomendados según el modelo</div>
+          <table class="ct" style="margin-top:8px;">
+            <thead><tr><th>Modelo IA</th><th>Batch Size</th><th>Wait (ms)</th></tr></thead>
+            <tbody>
+              <tr><td>GPT-4o mini (pago)</td><td>10-20</td><td>500</td></tr>
+              <tr><td>GPT-4o (pago)</td><td>5-10</td><td>1000</td></tr>
+              <tr><td>Claude Haiku</td><td>10-20</td><td>500</td></tr>
+              <tr><td>Claude Sonnet</td><td>5-10</td><td>1000</td></tr>
+              <tr><td>Cualquier plan free</td><td>1-3</td><td>5000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('stream')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('perfiles')">Siguiente: Perfiles de configuración →</button>
+      </div>
+    </section>
+
+    <!-- 10 PERFILES -->
+    <section id="perfiles" class="section">
+      <div class="section-header">
+        <div class="section-tag"><div class="dot"></div> Sección 9</div>
+        <h1>Perfiles de <span>Configuración</span></h1>
+        <p>Las 8 opciones combinadas según el caso de uso. Copia el perfil que más se acerque a lo que estás construyendo y ajusta los detalles.</p>
+      </div>
+
+      <!-- PERFIL 1 -->
+      <div class="card ab" style="margin-bottom:16px;">
+        <div class="card-label">🤖 Perfil 1 — Chatbot de soporte al cliente</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Responde preguntas frecuentes, busca en documentación y crea tickets. Conversación en tiempo real.</div>
+        <div class="g2" style="margin-bottom:0;">
+          <div class="preset">
+            <div class="preset-name">⚙️ Configuración</div>
+            <div class="preset-settings">
+              <div class="preset-row"><span class="preset-key">System Message</span><span class="preset-value">✅ Definido</span></div>
+              <div class="preset-row"><span class="preset-key">Max Iterations</span><span class="preset-value">5</span></div>
+              <div class="preset-row"><span class="preset-key">Return Intermediate Steps</span><span class="preset-value">OFF</span></div>
+              <div class="preset-row"><span class="preset-key">Passthrough Images</span><span class="preset-value">OFF</span></div>
+              <div class="preset-row"><span class="preset-key">Tracing Metadata</span><span class="preset-value">user_id, session_id</span></div>
+              <div class="preset-row"><span class="preset-key">Auto-save</span><span class="preset-value">ON</span></div>
+              <div class="preset-row"><span class="preset-key">Enable Streaming</span><span class="preset-value">ON</span></div>
+              <div class="preset-row"><span class="preset-key">Batch Processing</span><span class="preset-value">OFF</span></div>
+            </div>
+          </div>
+          <div>
+            <p style="font-size:13px;color:var(--text2);line-height:1.7;"><strong style="color:var(--text);">Por qué esta config:</strong> Streaming ON para buena UX. Iteraciones bajas porque las consultas son simples. Auto-save para capturar el número de ticket o datos del cliente sin nodos extra. Streaming incompatible con muchas iteraciones de tools.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFIL 2 -->
+      <div class="card gb" style="margin-bottom:16px;">
+        <div class="card-label">💼 Perfil 2 — Agente de ventas con datos y acciones</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Consulta CRM, calcula métricas, notifica al equipo y crea tareas. Múltiples tools por sesión.</div>
+        <div class="g2" style="margin-bottom:0;">
+          <div class="preset">
+            <div class="preset-name">⚙️ Configuración</div>
+            <div class="preset-settings">
+              <div class="preset-row"><span class="preset-key">System Message</span><span class="preset-value">✅ Rol + restricciones</span></div>
+              <div class="preset-row"><span class="preset-key">Max Iterations</span><span class="preset-value">15</span></div>
+              <div class="preset-row"><span class="preset-key">Return Intermediate Steps</span><span class="preset-value">OFF (prod) / ON (dev)</span></div>
+              <div class="preset-row"><span class="preset-key">Passthrough Images</span><span class="preset-value">OFF</span></div>
+              <div class="preset-row"><span class="preset-key">Tracing Metadata</span><span class="preset-value">user_id, workflow, env</span></div>
+              <div class="preset-row"><span class="preset-key">Auto-save</span><span class="preset-value">ON</span></div>
+              <div class="preset-row"><span class="preset-key">Enable Streaming</span><span class="preset-value">OFF</span></div>
+              <div class="preset-row"><span class="preset-key">Batch Processing</span><span class="preset-value">OFF</span></div>
+            </div>
+          </div>
+          <div>
+            <p style="font-size:13px;color:var(--text2);line-height:1.7;"><strong style="color:var(--text);">Por qué esta config:</strong> Iteraciones altas para cubrir: buscar cliente → obtener deals → calcular → notificar → crear tarea. Streaming OFF porque el pipeline de tools interrumpiría el stream. Tracing para analizar qué consultas hace cada vendedor.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFIL 3 -->
+      <div class="card amb" style="margin-bottom:16px;">
+        <div class="card-label">📄 Perfil 3 — Procesador masivo de documentos</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Analiza 100+ documentos, facturas o emails. Extrae datos estructurados en lote.</div>
+        <div class="g2" style="margin-bottom:0;">
+          <div class="preset">
+            <div class="preset-name">⚙️ Configuración</div>
+            <div class="preset-settings">
+              <div class="preset-row"><span class="preset-key">System Message</span><span class="preset-value">✅ Extracción exacta</span></div>
+              <div class="preset-row"><span class="preset-key">Max Iterations</span><span class="preset-value">3</span></div>
+              <div class="preset-row"><span class="preset-key">Return Intermediate Steps</span><span class="preset-value">OFF</span></div>
+              <div class="preset-row"><span class="preset-key">Passthrough Images</span><span class="preset-value">ON (si son PDFs)</span></div>
+              <div class="preset-row"><span class="preset-key">Tracing Metadata</span><span class="preset-value">batch_id, doc_type</span></div>
+              <div class="preset-row"><span class="preset-key">Auto-save</span><span class="preset-value">ON</span></div>
+              <div class="preset-row"><span class="preset-key">Enable Streaming</span><span class="preset-value">OFF</span></div>
+              <div class="preset-row"><span class="preset-key">Batch Processing</span><span class="preset-value">ON — size: 10, wait: 1000ms</span></div>
+            </div>
+          </div>
+          <div>
+            <p style="font-size:13px;color:var(--text2);line-height:1.7;"><strong style="color:var(--text);">Por qué esta config:</strong> Batch Processing obligatorio para no saturar la API. Iteraciones bajas porque cada documento se procesa una vez sin tools complejas. Passthrough Images si los documentos son PDFs renderizados como imagen. Auto-save para capturar los campos extraídos.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESUMEN FINAL -->
+      <div class="card" style="background:var(--bg3);margin-bottom:16px;">
+        <div class="card-label">📋 Resumen — las 8 opciones de un vistazo</div>
+        <table class="ct" style="margin-top:8px;">
+          <thead><tr><th>Opción</th><th>Por defecto</th><th>Cuándo cambiarla</th></tr></thead>
+          <tbody>
+            <tr><td>💬 System Message</td><td>Vacío</td><td>Siempre — sin esto el agente no tiene identidad</td></tr>
+            <tr><td>🔁 Max Iterations</td><td>10</td><td>Bajar a 3-5 para FAQs, subir a 20+ para agentes complejos</td></tr>
+            <tr><td>🪜 Intermediate Steps</td><td>OFF</td><td>ON durante desarrollo y debugging</td></tr>
+            <tr><td>🖼️ Passthrough Images</td><td>OFF</td><td>ON cuando el nodo anterior produce imágenes</td></tr>
+            <tr><td>🔬 Tracing Metadata</td><td>Vacío</td><td>Siempre en producción para observabilidad</td></tr>
+            <tr><td>💾 Auto-save</td><td>OFF</td><td>ON para extracción de datos y memoria incremental</td></tr>
+            <tr><td>⚡ Enable Streaming</td><td>OFF</td><td>ON para chatbots con UI que muestra texto en tiempo real</td></tr>
+            <tr><td>📦 Batch Processing</td><td>OFF</td><td>ON cuando procesas +10 items con el agente</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- CIERRE -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.08) 0%,rgba(32,212,176,0.06) 100%);border-color:rgba(124,110,245,0.25);">
+        <div style="text-align:center;padding:16px 0 8px;">
+          <div style="font-size:44px;margin-bottom:12px;">🏆</div>
+          <h3 style="font-size:22px;margin-bottom:10px;">Clase 8 completa — Las 4 partes</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:560px;margin:0 auto 20px;text-align:left;">
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid var(--border);">
+              <div style="font-size:11px;font-weight:700;color:var(--accent2);font-family:'JetBrains Mono',monospace;margin-bottom:4px;">PARTE 1 — IA en n8n</div>
+              <div style="font-size:12px;color:var(--text2);">Prompts, clasificación, respuestas inteligentes</div>
+            </div>
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid var(--border);">
+              <div style="font-size:11px;font-weight:700;color:var(--sky);font-family:'JetBrains Mono',monospace;margin-bottom:4px;">PARTE 2 — Módulos de Memoria</div>
+              <div style="font-size:12px;color:var(--text2);">Corto, largo, conversación, vectorial, resumen</div>
+            </div>
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid var(--border);">
+              <div style="font-size:11px;font-weight:700;color:var(--purple);font-family:'JetBrains Mono',monospace;margin-bottom:4px;">PARTE 3 — Módulos de Tools</div>
+              <div style="font-size:12px;color:var(--text2);">Datos, código, APIs, búsqueda, acciones</div>
+            </div>
+            <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;border:1px solid rgba(124,110,245,0.3);">
+              <div style="font-size:11px;font-weight:700;color:var(--accent2);font-family:'JetBrains Mono',monospace;margin-bottom:4px;">PARTE 4 — Configuración ← esta</div>
+              <div style="font-size:12px;color:var(--text2);">8 opciones del nodo AI Agent</div>
+            </div>
+          </div>
+          <p style="color:var(--text2);font-size:14px;max-width:480px;margin:0 auto 20px;">Con la Clase 8 completa, la Clase 9 lleva todos estos agentes a producción robusta: optimización, manejo de errores, logging y escalabilidad.</p>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span class="b bac">⚡ Clase 9 — Optimización</span>
+            <span class="b bg">🛡️ Manejo de errores</span>
+            <span class="b bt">📊 Monitoreo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-g" onclick="goTo('batch')">← Anterior</button>
+        <button class="btn btn-p" onclick="goTo('intro')">↺ Volver al inicio</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const sections=['intro','system','iter','steps','images','tracing','save','stream','batch','perfiles'];
+  function go(id,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) el.classList.add('active');
+    updateProgress(id);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function goTo(id){const el=document.querySelector(".nav-item[onclick*=\"'"+id+"'\"]");go(id,el);}
+  function updateProgress(id){
+    const idx=sections.indexOf(id);
+    const pct=Math.round(((idx+1)/sections.length)*100);
+    document.getElementById('progress').style.width=pct+'%';
+    document.getElementById('progress-text').textContent='Sección '+(idx+1)+' de '+sections.length;
+  }
+</script>
+</body>
+</html>
